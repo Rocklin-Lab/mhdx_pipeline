@@ -1,18 +1,123 @@
-# The main entry point of your workflow.
-# After configuring, running snakemake -n in a clone of this repository should successfully execute a dry-run of the workflow.
+subset_indices = [14, 94, 95, 96, 97, 98, 99, 100, 101, 102, 160, 161, 162, 233, 234, 235, 236, 264, 265, 266, 267, 268, 269, 304, 390, 476, 477, 478, 542, 681, 846, 891, 
+976, 1210,1211, 1212, 1482, 1483, 1484, 1528, 1529, 1530, 1531, 1532, 1861, 2023, 2088, 2089, 2090, 2091, 2092, 2093, 2124, 2144, 2145, 2281, 2282, 2283, 2284, 2285, 2392, 
+2416, 2417, 2558, 2803, 2836, 2866, 2885, 2886, 2892, 2964, 2965, 2966, 2967, 2968, 2969, 2970, 2972, 2988, 2989, 3219, 3220, 3221, 3249, 3372, 3614, 3697, 3734, 3735, 3736,
+3737, 3738, 3739, 3745, 3746, 3747, 3748, 3749, 3840, 3841, 3842, 3843, 3844, 3865, 3978, 3979, 4064, 4065, 4066, 4067, 4074, 4075, 4218, 4219, 4220, 4298, 4299]
 
+# A Snakefile to pipeline the processing and analysis of time-series HDX LC-IM-MS data. 
+configfile: "config.yaml"
+import pandas as pd
+from collections import OrderedDict
 
-report: "report/workflow.rst"
-
-# Allow users to fix the underlying OS via singularity.
-singularity: "docker://continuumio/miniconda3"
-
+subset_names = list(OrderedDict.fromkeys(pd.read_csv("data/library_info/library_info.csv").iloc[subset_indices]['name'].values))
 
 rule all:
-    input:
-        # The first rule should define the default target files
-        # Subsequent target rules can be specified below. They should start with all_*.
+	input:
+		config['run_name']+"_plot_linker.html" #).iloc[:i] to limit run to specific # of charge states
 
 
-include: "rules/common.smk"
-include: "rules/other.smk"
+
+library_info = pd.read_csv("data/library_info/library_info.csv")#.iloc[:12] limit number of jobs by subsetting master list
+
+
+
+rule isolate_tensors:
+	input:
+		"data/library_info/library_info.csv",
+		"data/gzip_mzml/{mzml_gz}"
+	output:
+		expand("data/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = subset_indices)#range(len(library_info)))
+	script:
+		"scripts/isolate_tensors.py"
+
+
+
+#Can use def to pass inputs as fxn of name wildcard
+#creates analyze_tensor input filenames in fixed pattern, input tensor names only include library_info index and timepoint of species
+def analyze_tensors_inputs(name, library_info):
+	name_inputs = []
+	idxs = library_info.index[library_info['name'] == name].tolist()
+	for key in config['timepoints']:
+		if len(config[key]) > 1:
+			for file in config[key]:
+				for idx in idxs:
+					name_inputs.append("data/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib") #This may have to be changed depending on .RAW or .mzML starting files
+		else:
+			file = config[key][0]
+			for idx in idxs:
+				name_inputs.append("data/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib")
+
+	return name_inputs
+
+
+
+rule generate_tensors:
+	input:
+		"data/library_info/library_info.csv",
+		lambda wildcards: analyze_tensors_inputs(wildcards.name, library_info)
+	output:
+		"data/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
+	script:
+		"scripts/generate_tensors.py"
+
+rule optimize_paths:
+	input:
+		"data/library_info/library_info.csv",
+		"data/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
+	output:
+		"plots/ic_time_series/html/{name}_time_series.html",
+		#"plots/ic_time_series/pdf/{name}_time_series.pdf",
+		"data/ic_time_series/{name}_winner.cpickle.zlib",
+		"data/ic_time_series/{name}_runners.cpickle.zlib",
+		"data/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
+		"data/ic_time_series/{name}_winner_scores.cpickle.zlib",
+		"data/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib"
+	script:
+		"scripts/optimize_paths.py"
+
+
+
+rule make_overview_plot:
+	input:
+		expand("data/ic_time_series/{name}_winner.cpickle.zlib", name = subset_names),
+		expand("data/ic_time_series/{name}_undeut_grounds.cpickle.zlib", name = subset_names),
+		expand("data/ic_time_series/{name}_winner_scores.cpickle.zlib", name = subset_names),
+		expand("data/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name = subset_names)
+	output:
+		"plots/"+config['run_name']+"_overview.html"
+	script:
+		"scripts/overview_plotter.py"
+
+
+
+rule make_plot_linker:
+	input:
+		"plots/"+config['run_name']+"_overview.html",
+		expand("plots/ic_time_series/html/{name}_time_series.html", name = subset_names)
+	output:
+		config['run_name']+"_plot_linker.html"
+	script:
+		"scripts/plot_linker.py"
+
+
+
+rule calculate_hdx_rates:
+	input:
+		"data/ic_time_series/{name}_winner.cpickle.zlib"
+	output:
+		"data/rates/{name}_rates.ext" #idk ext atm
+	script:
+		"scripts/hxrates.py"
+
+
+
+"""
+rule calculate_delta_g_unfolding:
+	input:
+		"data/rates/{name}_rates.ext"
+	output:
+		"data/delta_g_unfolding/{name}_delta_g_unfolding.ext" #to be revised for brevity and ext
+	script:
+		#TBW - Suggie
+"""
+
+#HH appt: doxy.me/drhowardherman

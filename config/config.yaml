@@ -1,4 +1,192 @@
-# This file should contain everything to configure the workflow on a global scale.
-# In case of sample based data, it should be complemented by a samples.tsv file that contains
-# one row per sample. It can be parsed easily via pandas.
-samples: "config/samples.tsv"
+#This file allows its internal values to be accessed by Snakefiles, as well as within python scripts called by rules. 
+
+
+#It's treated as a python dictionary in Snakefiles and python scripts, and must be designated as the configfile by a Snakefile
+#to be used by either. 
+
+#This is done in Snakefiles with the declaration:
+#configfile: </workdir/relative/path/to/name.yaml>
+
+#which allows it to be called as config in the Snakefile, and snakemake.config in python scripts called by that snakefile. 
+
+
+#The values stored are:
+
+#1: HDX Timepoints in integer seconds
+#2: Filenames corresponding to each timepoint (.RAW, .mzML, or .mzML.gz depending on what you're starting with)
+#3: Important parameters which will constrain different functions within the pipeline
+
+
+
+#Name for pipeline run:
+"run_name": "180604_Mix2_MES_nonlin_05_21_2020"
+
+
+
+########################################
+###############TIMEPOINTS###############
+########################################
+
+
+#Enter your HDX timepoints in integer seconds, ascending, in .yaml list format:
+
+#timepoints:
+#  - 0
+#  - 10
+#  - 16
+#  .
+#  .
+#  .
+#  - tp_n
+
+#Must start with 0 for undeuterated!
+
+#in seconds, in ascending order, including 0
+timepoints:
+  - 0
+  - 10
+  - 16
+  - 26
+  - 40
+  - 65
+  - 105
+  - 160
+  - 270
+  - 430
+  - 690
+  - 1050
+  - 1680
+  - 2640
+  - 4200
+  - 6600
+  - 11400
+  - 18900
+  - 33600
+  - 62220
+  - 100800
+
+
+
+########################################
+###############FILE PATHS###############
+########################################
+
+
+#Use the integer second timepoints as keys and enter all corresponding MS-Data-file filenames in list form (allows for replicates of any/all timepoints):
+#0:
+#  - <tp0_fn1>
+#  - <tp0_fn2>
+#10:
+#  - <tp1_fn1>
+#16:
+#  - <tp2_fn1>
+#  - <tp2_fn2>
+#.
+#.
+#.
+#tp_n: 
+#  - <tpN_fn1>
+
+#Exclude paths in filenames! 
+
+#If you provide .mzML or .mzML.gz files the pipeline will recognize this and skip upstream jobs to start as far downstream as possible.
+
+
+0: 
+  - "180604_Mix2_MES_nonlin_UN.mzML"
+  - "180604_Mix2_MES_nonlin_UN2.mzML"
+  - "180604_Mix2_MES_nonlin_UN3.mzML"
+10:
+  - "180604_Mix2_MES_nonlin_10s.mzML"
+16:
+  - "180604_Mix2_MES_nonlin_16s.mzML"
+26:
+  - "180604_Mix2_MES_nonlin_26s.mzML"
+40:
+  - "180604_Mix2_MES_nonlin_40s.mzML"
+65:
+  - "180604_Mix2_MES_nonlin_65s.mzML"
+105:
+  - "180604_Mix2_MES_nonlin_105s.mzML"
+160:
+  - "180604_Mix2_MES_nonlin_160s.mzML"
+270:
+  - "180604_Mix2_MES_nonlin_4m30.mzML"
+430:
+  - "180604_Mix2_MES_nonlin_7m10.mzML"
+690:
+  - "180604_Mix2_MES_nonlin_11m30s.mzML"
+1050:
+  - "180604_Mix2_MES_nonlin_17m30s.mzML"
+1680:
+  - "180604_Mix2_MES_nonlin_28m.mzML"
+2640:
+  - "180604_Mix2_MES_nonlin_44m.mzML"
+4200:
+  - "180604_Mix2_MES_nonlin_70m.mzML"
+6600:
+  - "180604_Mix2_MES_nonlin_1hr50.mzML"
+11400:
+  - "180604_Mix2_MES_nonlin_3hr10.mzML"
+18900:
+  - "180604_Mix2_MES_nonlin_5hr15.mzML"
+33600:
+  - "180604_Mix2_MES_nonlin_9hr20.mzML"
+62220:
+  - "180604_Mix2_MES_nonlin_17hr45.mzML"
+100800:
+  - "180604_Mix2_MES_nonlin_28hr.mzML"
+
+
+
+########################################
+###############PARAMETERS###############
+########################################
+
+
+#Control parameters for various important functional values in the pipeline, format is <(str) name_of_param>: <value>; value datatype is specific to use within pipeline.
+
+### PREPROCESSING ###
+# Determines percentage of max LC peak an LC peak must reach to be included in creation of consensus RT bounds 
+"lc_peak_prominence_cutoff": 0.15 
+#Sets bounds on how far away a peak can be in LC from others like it and still be processed in a single DataTensor, default is 0.2 mins
+"rt_group_cutoff": 0.2 
+
+
+### Main Snakefile ###
+
+#path to old data for comparison, !!!set to null to make None in python!!! this will be default or removed from full release, requires ending '/' for dir
+"old_data_dir": "/projects/p30802/digs_old/HX/180604_mix2_MES/hx_fits/"
+
+#boundaries on tensor size in each dimension (LC-time in decimal minutes, IMS time in ms, M/Z by mass-units)
+"rt_radius": 0.4
+"dt_radius_scale": 0.06
+
+#the two values below are added to the length of the protein sequence to determine the total_mass_window of a tensor (70 for a protein with 43 resiudes)
+
+#this value creates a margin behind the POI monoisotopic mass to avoid IsotopicCluster truncation
+"low_mass_margin": 10 
+#this value is added to the length of the amino acid sequence to give a 'rightward' margin for readability 
+"high_mass_margin": 17 
+
+#error bounds on expected peak positions
+"ppm_radius": 30
+
+#Number of factors to use in the Non-Negative_PARAFAC decompositions of all DataTensors, ideally should be = (# of protein signals in DataTensor + 1 factor for noise)
+#if n_factors_low = n_factors_high, only the low value is used, otherwise all intervening values are used, including the upper value. 2 - 5 will perform 4 factorizations. 
+#use multiple factorizations to get better chances of a good factorization for each tensor. Beware the factorization is computationally intensive, increasing with n_factors
+"n_factors_low": 3
+"n_factors_high": 3
+
+#used for smoothing coarse retention and drift time axes of DataTensors
+#std-dev of rt dimension gaussian
+#std_dev of dt dimension gaussian
+"gauss_params": 
+  - 3 
+  - 1 
+
+#Limits number of plotted runner ICs in bokeh_plot
+"n_runners": 5
+
+
+
