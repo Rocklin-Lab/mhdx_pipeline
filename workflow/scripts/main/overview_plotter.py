@@ -12,7 +12,7 @@ mpl.use("AGG")
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
-sys.path.append(os.getcwd()+"/scripts/auxiliary")
+sys.path.append(os.getcwd()+"/workflow/scripts/auxiliary")
 import LC_IM_MS_TensorAnalysis as ta
 
 from bokeh.models import HoverTool, ColorBar, Text, Div
@@ -172,7 +172,7 @@ if snakemake.config['old_data_dir'] is not None:
         old_scores[key] = [] 
 
     #get old files and populate dict of lists
-    for file in glob.iglob("data/old_data*.pickle"): #TODO: This needs to look for files in data/old_data now
+    for file in glob.iglob("resources/old_data/*.pickle"): #TODO: This should be controlled by a run-variable in config
         with pickle.loads(open(file, 'rb').read()) as ts:
             old_scores['idotp'].append(ts['fit_to_theo_dist'])
             old_scores['delta_mz_rate'].append(ts['delta_mz_rate'])
@@ -192,13 +192,13 @@ if snakemake.config['old_data_dir'] is not None:
     g.map_upper(plt.scatter)
     g.map_lower(sns.kdeplot)
     g.add_legend();
-    plt.savefig("plots/"+snakemake.config['run_name']+"_overview_pairplot.png")
+    plt.savefig("results/plots/"+snakemake.config['run_name']+"_overview_pairplot.png") #TODO: This should be a snakemake.output value
 else:
     g = sns.PairGrid(score_frame)
     g.map_diag(sns.distplot)
     g.map_upper(plt.scatter)
     g.map_lower(sns.kdeplot)
-    plt.savefig("plots/"+snakemake.config['run_name']+"_overview_pairplot.png")
+    plt.savefig("results/plots/"+snakemake.config['run_name']+"_overview_pairplot.png") #TODO: Above
 
 #Pairplot can now be accessed as a source in a bokeh Div(<img>) obj
 

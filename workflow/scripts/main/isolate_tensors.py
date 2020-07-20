@@ -131,7 +131,7 @@ for scan_number in relevant_scans:
                 keep_scan_times = scan_times[(drift_times >= dt_lbounds[i]) & (drift_times <= dt_ubounds[i]) & (scan_times <= ret_ubounds[i]) & (scan_times >= ret_lbounds[i])]
                 output = [sorted(set(keep_scan_times)), sorted(set(keep_drift_times)), output_scans[i]]
                 #FIX FOR NEW FILE SCHEME TODO
-                my_out = [out for out in snakemake.output if out=="data/tensors/"+str(i)+"_"+mzml+".gz.cpickle.zlib"][0]
+                my_out = [out for out in snakemake.output if out=="resources/tensors/"+str(i)+"_"+mzml+".gz.cpickle.zlib"][0]
                 print("My_out: "+str(my_out))
                 with open(my_out, 'wb') as file:
                     file.write(zlib.compress(cpickle.dumps(output)))

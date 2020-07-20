@@ -21,7 +21,7 @@ from scipy.optimize import basinhopping
 from sklearn.metrics import mean_squared_error
 from scipy.optimize import fmin_powell, fmin_bfgs
 
-molmass_spec = importlib.util.spec_from_file_location("molmass.py", "scripts/auxiliary/molmass.py")
+molmass_spec = importlib.util.spec_from_file_location("molmass.py", "workflow/scripts/auxiliary/molmass.py")
 molmass = importlib.util.module_from_spec(molmass_spec)
 molmass_spec.loader.exec_module(molmass)
 

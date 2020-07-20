@@ -97,7 +97,7 @@ import copy
 from functools import reduce
 
 import importlib.util
-elements_spec = importlib.util.spec_from_file_location("elements.py", "scripts/auxiliary/elements.py")
+elements_spec = importlib.util.spec_from_file_location("elements.py", "workflow/scripts/auxiliary/elements.py")
 elements = importlib.util.module_from_spec(elements_spec)
 elements_spec.loader.exec_module(elements)
 

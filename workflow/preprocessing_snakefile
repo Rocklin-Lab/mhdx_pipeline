@@ -11,36 +11,36 @@ rule raw_to_mzml:
 """
 rule all:
 	input:
-		"data/library_info/library_info.csv"
+		"resources/library_info/library_info.csv"
 
 rule isotopes_to_info_csv:
 	input:
 		#.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
-		"data/isotopes/{undeut_fn}.peaks.isotopes",
-		"data/library_info/new_HX_order.csv"
+		"resources/isotopes/{undeut_fn}.peaks.isotopes",
+		"resources/library_info/new_HX_order.csv"
 	output:
-		"data/library_info/{undeut_fn}_intermediate.csv",
-		"plots/preprocessing/{undeut_fn}_original_mz.pdf",
-		"plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
+		"resources/library_info/{undeut_fn}_intermediate.csv",
+		"results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
+		"results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
 	script:
-		"scripts/preprocessing/undeuterated_imtbx_reader.py"
+		"workflow/scripts/preprocessing/undeuterated_imtbx_reader.py"
 
 rule modify_mzmls_for_random_access:
 	input:
-		"data/mzml/{mzml}"
+		"resources/mzml/{mzml}"
 	output:
-		"data/gzip_mzml/{mzml}.gz"
+		"resources/{mzml}.gz"
 	script:
-		"scripts/preprocessing/gzip_mzml.py"
+		"workflow/scripts/preprocessing/gzip_mzml.py"
 
 rule make_ims_tics:
 	#calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
 	input:
-		"data/mzml/{mzml}"
+		"resources/mzml/{mzml}"
 	output:
-		"data/tics/{mzml}.ims.mz.tic"
+		"resources/tics/{mzml}.ims.mz.tic"
 	script:
-		"scripts/preprocessing/make_ims_mz_tics.py"
+		"workflow/scripts/preprocessing/make_ims_mz_tics.py"
 
 #make flat list of all MS datafiles
 all_timepoint_files = []
@@ -50,12 +50,12 @@ for key in config['timepoints']:
 
 rule make_library_master_list:
 	input:
-		"data/library_info/new_HX_order.csv",
-		expand("data/mzml/{mzml}", mzml=all_timepoint_files[0]),
-		expand("data/library_info/{undeut_fn}_intermediate.csv", undeut_fn=config[0]),
-		expand("data/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files)
+		"resources/library_info/new_HX_order.csv",
+		expand("resources/mzml/{mzml}", mzml=all_timepoint_files[0]),
+		expand("resources/library_info/{undeut_fn}_intermediate.csv", undeut_fn=config[0]),
+		expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files)
 	output:
-		"plots/preprocessing/stretched_times_plots.pdf",
-		"data/library_info/library_info.csv"
+		"results/plots/preprocessing/stretched_times_plots.pdf",
+		"resources/library_info/library_info.csv"
 	script:
-		"scripts/preprocessing/make_library_master_list.py"
+		"workflow/scripts/preprocessing/make_library_master_list.py"

@@ -8,7 +8,7 @@ configfile: "config.yaml"
 import pandas as pd
 from collections import OrderedDict
 
-subset_names = list(OrderedDict.fromkeys(pd.read_csv("data/library_info/library_info.csv").iloc[subset_indices]['name'].values))
+subset_names = list(OrderedDict.fromkeys(pd.read_csv("resources/library_info/library_info.csv").iloc[subset_indices]['name'].values))
 
 rule all:
 	input:
@@ -16,18 +16,18 @@ rule all:
 
 
 
-library_info = pd.read_csv("data/library_info/library_info.csv")#.iloc[:12] limit number of jobs by subsetting master list
+library_info = pd.read_csv("resources/library_info/library_info.csv")#.iloc[:12] limit number of jobs by subsetting master list
 
 
 
 rule isolate_tensors:
 	input:
-		"data/library_info/library_info.csv",
-		"data/gzip_mzml/{mzml_gz}"
+		"resources/library_info/library_info.csv",
+		"resources/mzml/{mzml_gz}"
 	output:
-		expand("data/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = subset_indices)#range(len(library_info)))
+		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = subset_indices)#range(len(library_info)))
 	script:
-		"scripts/isolate_tensors.py"
+		"workflow/scripts/isolate_tensors.py"
 
 
 
@@ -40,11 +40,11 @@ def analyze_tensors_inputs(name, library_info):
 		if len(config[key]) > 1:
 			for file in config[key]:
 				for idx in idxs:
-					name_inputs.append("data/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib") #This may have to be changed depending on .RAW or .mzML starting files
+					name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib") #This may have to be changed depending on .RAW or .mzML starting files
 		else:
 			file = config[key][0]
 			for idx in idxs:
-				name_inputs.append("data/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib")
+				name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib")
 
 	return name_inputs
 
@@ -52,70 +52,70 @@ def analyze_tensors_inputs(name, library_info):
 
 rule generate_tensors:
 	input:
-		"data/library_info/library_info.csv",
+		"resources/library_info/library_info.csv",
 		lambda wildcards: analyze_tensors_inputs(wildcards.name, library_info)
 	output:
-		"data/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
+		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
 	script:
-		"scripts/generate_tensors.py"
+		"workflow/scripts/generate_tensors.py"
 
 rule optimize_paths:
 	input:
-		"data/library_info/library_info.csv",
-		"data/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
+		"resources/library_info/library_info.csv",
+		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
 	output:
-		"plots/ic_time_series/html/{name}_time_series.html",
+		"results/plots/ic_time_series/html/{name}_time_series.html",
 		#"plots/ic_time_series/pdf/{name}_time_series.pdf",
-		"data/ic_time_series/{name}_winner.cpickle.zlib",
-		"data/ic_time_series/{name}_runners.cpickle.zlib",
-		"data/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
-		"data/ic_time_series/{name}_winner_scores.cpickle.zlib",
-		"data/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib"
+		"resources/ic_time_series/{name}_winner.cpickle.zlib",
+		"resources/ic_time_series/{name}_runners.cpickle.zlib",
+		"resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
+		"resources/ic_time_series/{name}_winner_scores.cpickle.zlib",
+		"resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib"
 	script:
-		"scripts/optimize_paths.py"
+		"workflow/scripts/optimize_paths.py"
 
 
 
 rule make_overview_plot:
 	input:
-		expand("data/ic_time_series/{name}_winner.cpickle.zlib", name = subset_names),
-		expand("data/ic_time_series/{name}_undeut_grounds.cpickle.zlib", name = subset_names),
-		expand("data/ic_time_series/{name}_winner_scores.cpickle.zlib", name = subset_names),
-		expand("data/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name = subset_names)
+		expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name = subset_names),
+		expand("resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib", name = subset_names),
+		expand("resources/ic_time_series/{name}_winner_scores.cpickle.zlib", name = subset_names),
+		expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name = subset_names)
 	output:
-		"plots/"+config['run_name']+"_overview.html"
+		"results/plots/"+config['run_name']+"_overview.html"
 	script:
-		"scripts/overview_plotter.py"
+		"workflow/scripts/overview_plotter.py"
 
 
 
 rule make_plot_linker:
 	input:
 		"plots/"+config['run_name']+"_overview.html",
-		expand("plots/ic_time_series/html/{name}_time_series.html", name = subset_names)
+		expand("results/plots/ic_time_series/html/{name}_time_series.html", name = subset_names)
 	output:
 		config['run_name']+"_plot_linker.html"
 	script:
-		"scripts/plot_linker.py"
+		"workflow/scripts/plot_linker.py"
 
 
 
 rule calculate_hdx_rates:
 	input:
-		"data/ic_time_series/{name}_winner.cpickle.zlib"
+		"resources/ic_time_series/{name}_winner.cpickle.zlib"
 	output:
-		"data/rates/{name}_rates.ext" #idk ext atm
+		"resources/rates/{name}_rates.ext" #idk ext atm
 	script:
-		"scripts/hxrates.py"
+		"workflow/scripts/hxrates.py"
 
 
 
 """
 rule calculate_delta_g_unfolding:
 	input:
-		"data/rates/{name}_rates.ext"
+		"resources/rates/{name}_rates.ext"
 	output:
-		"data/delta_g_unfolding/{name}_delta_g_unfolding.ext" #to be revised for brevity and ext
+		"resources/delta_g_unfolding/{name}_delta_g_unfolding.ext" #to be revised for brevity and ext
 	script:
 		#TBW - Suggie
 """
