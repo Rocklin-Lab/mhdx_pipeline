@@ -405,8 +405,7 @@ class Factor:
         
 #This can be a shared function
         self.integration_box_centers = []
-        for i, j in zip(self.lows, self.highs):
-            self.integration_box_centers.append(i+((j-i)/2))
+        [self.integration_box_centers.append(i+((j-i)/2)) for i, j in zip(self.lows, self.highs)]
            
         self.box_intensities = self.mz_data[self.grate]
         self.max_peak_height = max(self.box_intensities)
@@ -414,7 +413,7 @@ class Factor:
         #Unused at factor level
         #self.peak_error, self.peaks_chosen = self.peak_error(self.mz_data, self.mz_peaks, self.integration_box_centers, self.max_peak_height)
                 
-        #this is a poor implementation, at least use list comprehensions   TODO  
+        #this is a poor implementation, at least use list comprehensions TODO  
         self.box_dist_avg = 0
         for i in range(1,len(self.integration_box_centers)):
             self.box_dist_avg += self.integration_box_centers[i]-self.integration_box_centers[i-1]
@@ -1772,7 +1771,7 @@ class PathOptimizer:
             mean_rtxdt_err = source.data['rtxdt_err'][0]
             mean_color = manual_cmap(mean_rtxdt_err, 0, 2, Spectral6)
             p.multi_line(xs = 'whisker_x', ys = 'whisker_y', source = source, view = winner_view, line_color = 'black', line_width = 1.5)
-            p.line(x = 'timepoint', y = 'baseline_integrated_mz_com', line_color = mean_color, source = source, view = winner_view,  line_width = 3)
+            p.line(x = 'timepoint', y = 'baseline_integrated_mz_com', line_color = mean_color, source = source, view = winner_view, line_width = 3)
             p.circle(x = 'timepoint', y = 'baseline_integrated_mz_com', source = source, view = winner_view, line_color = err_mapper, color = err_mapper, fill_alpha = 1, size = 12)
             #p.add_layout(Whisker(source = source, base = "timepoint", view = winner_view, upper = "upper_added_mass", lower = "lower_added_mass"))
 
@@ -1816,24 +1815,24 @@ class PathOptimizer:
         
         def winner_plotter(source, i, tooltips, old_source = None):
             if i == max([int(tp) for tp in source.data['timepoint']]):
-                p = figure(title = "Timepoint "+str(i)+": Winning Isotopic-Cluster Added-Mass Distribution", plot_height = 400, plot_width = 450, y_range = (0, max_intensity), background_fill_color = 'whitesmoke', tools = 'pan,wheel_zoom,hover,reset,help')
+                p = figure(title = "Timepoint "+str(i)+": Winning Isotopic-Cluster Added-Mass Distribution", plot_height = 400, plot_width = 450, y_range = (0, 1), background_fill_color = 'whitesmoke', tools = 'pan,wheel_zoom,hover,reset,help')
                 p.min_border_bottom = 100
             else:
-                p = figure(title = "Timepoint "+str(i)+": Winning Isotopic Cluster Added-Mass Distribution", plot_height = 300, plot_width = 450, y_range = (0, max_intensity), background_fill_color = 'whitesmoke', tools = 'pan,wheel_zoom,hover,reset,help')
+                p = figure(title = "Timepoint "+str(i)+": Winning Isotopic Cluster Added-Mass Distribution", plot_height = 300, plot_width = 450, y_range = (0, 1), background_fill_color = 'whitesmoke', tools = 'pan,wheel_zoom,hover,reset,help')
             p.title.text_font_size = "8pt"
 
             #Have a figure by here, use glyph plotting from here
             new_hover = HoverTool(tooltips = tooltips, names = ['new'])
             index_view = CDSView(source = source, filters = [IndexFilter(indices = [i])])
-            new_ics = MultiLine(xs = 'int_mz_x', ys = 'int_mz_y', line_color = "blue", line_width = 1.5)
-            new_ics_hover = MultiLine(xs = 'int_mz_x', ys = 'int_mz_y', line_color = "red", line_width = 1.5)
+            new_ics = MultiLine(xs = 'int_mz_x', ys = 'int_mz_rescale', line_color = "blue", line_width = 1.5)
+            new_ics_hover = MultiLine(xs = 'int_mz_x', ys = 'int_mz_rescale', line_color = "red", line_width = 1.5)
             new_renderer = p.add_glyph(source, new_ics, view = index_view, name = 'new', hover_glyph=new_ics_hover)
             p.add_tools(new_hover)
 
             if old_source is not None: #plot ics matching the timepoint from old data
                 old_hover = HoverTool(tooltips = [("Charge", '@charge'), ("Added-Mass Distribution Centroid", "@"),("Width", '@width')], names = ['old'])
-                old_ics = MultiLine(xs = 'int_mz_xs', ys = 'int_mz_ys', line_color = 'wheat', line_width = 1.5)
-                old_ics_hover = MultiLine(xs = 'int_mz_xs', ys = 'int_mz_ys', line_color = 'red', line_width = 1.5)
+                old_ics = MultiLine(xs = 'int_mz_xs', ys = 'int_mz_rescale', line_color = 'wheat', line_width = 1.5)
+                old_ics_hover = MultiLine(xs = 'int_mz_xs', ys = 'int_mz_rescale', line_color = 'red', line_width = 1.5)
                 old_tp_view = CDSView(source = old_source, filters = [GroupFilter(column_name = 'type', group = 'ic'), GroupFilter(column_name = 'timepoint', group = str(i))])
                 old_renderer = p.add_glyph(old_source, old_ics, view = old_tp_view, hover_glyph = old_ics_hover, name = 'old')
                 p.add_tools(old_hover)
@@ -1846,13 +1845,13 @@ class PathOptimizer:
 
         def runner_plotter(source, i, tooltips):
             if i == max([int(tp) for tp in source.data['timepoint']]):
-                p = figure(title = "Runner-Up Isotopic Cluster Added-Mass Distributions", plot_height = 400, plot_width = 375, y_range = (0,max_intensity), background_fill_color = 'whitesmoke', tools = 'pan,wheel_zoom,hover,reset,help', tooltips = tooltips)
+                p = figure(title = "Runner-Up Isotopic Cluster Added-Mass Distributions", plot_height = 400, plot_width = 375, y_range = (0, 1), background_fill_color = 'whitesmoke', tools = 'pan,wheel_zoom,hover,reset,help', tooltips = tooltips)
                 p.min_border_bottom = 100
             else:
-                p = figure(title = "Runner-Up Isotopic Cluster Added-Mass Distributions", plot_height = 300, plot_width = 375, y_range = (0,max_intensity), background_fill_color = 'whitesmoke', tools = 'pan,wheel_zoom,hover,reset,help', tooltips = tooltips)
+                p = figure(title = "Runner-Up Isotopic Cluster Added-Mass Distributions", plot_height = 300, plot_width = 375, y_range = (0, 1), background_fill_color = 'whitesmoke', tools = 'pan,wheel_zoom,hover,reset,help', tooltips = tooltips)
             p.title.text_font_size = "8pt"
             runner_timepoint_view = CDSView(source = source, filters = [GroupFilter(column_name = "timepoint", group = str(i)), GroupFilter(column_name = "winner_or_runner", group = str(1))])
-            p.multi_line(xs = 'int_mz_x', ys = 'int_mz_y', source = source, view = runner_timepoint_view, line_color = "blue", alpha = 0.5, hover_color = 'red', hover_alpha = 1, line_width = 1.5)
+            p.multi_line(xs = 'int_mz_x', ys = 'int_mz_rescale', source = source, view = runner_timepoint_view, line_color = "blue", alpha = 0.5, hover_color = 'red', hover_alpha = 1, line_width = 1.5)
             p.xaxis.axis_label = "Added-Mass Units"
             p.yaxis.axis_label = "Relative Intensity"
             return p
@@ -1886,7 +1885,7 @@ class PathOptimizer:
             #old_charges will be used for plotting added-mass and time-series stats
 
             #init dicts with columns for plotting
-            old_ics = dict.fromkeys(['timepoint', 'added_mass_centroid', 'added_mass_width', 'int_mz_ys', 'int_mz_xs', 'type'])
+            old_ics = dict.fromkeys(['timepoint', 'added_mass_centroid', 'added_mass_width', 'int_mz_ys', 'int_mz_xs', 'type', "int_mz_rescale"])
             for key in old_ics.keys():
                 old_ics[key] = []
 
@@ -1919,6 +1918,7 @@ class PathOptimizer:
                     old_ics['added_mass_centroid'].append(ts['centroid'][tp])
                     old_ics['added_mass_width'].append(len(np.nonzero(ts['major_species_integrated_intensities'][tp])[0]))
                     old_ics['int_mz_ys'].append(ts['major_species_integrated_intensities'][tp])
+                    old_ics['int_mz_rescale'].append(ts['major_species_integrated_intensities'][tp]/max(ts['major_species_integrated_intensities'][tp]))
                     old_ics['int_mz_xs'].append(int_mz_xs)
                     old_ics['type'].append("ic")
 
@@ -1941,13 +1941,13 @@ class PathOptimizer:
         winner_rtxdt_rmse = np.sqrt(np.mean([((ic.bokeh_tuple[18]*0.07)*ic.bokeh_tuple[19])**2 for ic in self.winner]))
         for tp in range(len(self.winner)):
             edit_buffer = copy.copy(self.winner[tp].bokeh_tuple)
-            edit_buffer = edit_buffer[:18]+(edit_buffer[18]*0.07,)+edit_buffer[19:]+(str(tp), np.nonzero(edit_buffer[17])[0][-1], np.nonzero(edit_buffer[17])[0][0], "0", ((edit_buffer[18]*0.07)*edit_buffer[19]), winner_rtxdt_rmse, np.asarray([tp, tp]), np.asarray([np.nonzero(edit_buffer[17])[0][0], np.nonzero(edit_buffer[17])[0][-1]])) #0.07 is adjustment from bins to ms
+            edit_buffer = edit_buffer[:18]+(edit_buffer[18]*0.07,)+edit_buffer[19:]+(str(tp), np.nonzero(edit_buffer[17])[0][-1], np.nonzero(edit_buffer[17])[0][0], "0", ((edit_buffer[18]*0.07)*edit_buffer[19]), winner_rtxdt_rmse, np.asarray([tp, tp]), np.asarray([np.nonzero(edit_buffer[17])[0][0], np.nonzero(edit_buffer[17])[0][-1]]), edit_buffer[17]/max(edit_buffer[17])) #0.07 is adjustment from bins to ms
             data.append(edit_buffer)
 
         for tp in range(len(self.filtered_runners)):
             for ic in self.filtered_runners[tp]:
                 edit_buffer = copy.copy(ic.bokeh_tuple)
-                edit_buffer = edit_buffer[:18]+(edit_buffer[18]*0.07,)+edit_buffer[19:]+(str(tp), np.nonzero(edit_buffer[17])[0][-1], np.nonzero(edit_buffer[17])[0][0], "1", ((edit_buffer[18]*0.07)*edit_buffer[19]), "NA", np.asarray([tp, tp]), np.asarray([np.nonzero(edit_buffer[17])[0][0], np.nonzero(edit_buffer[17])[0][-1]])) #0.07 is adjustment from bins to ms
+                edit_buffer = edit_buffer[:18]+(edit_buffer[18]*0.07,)+edit_buffer[19:]+(str(tp), np.nonzero(edit_buffer[17])[0][-1], np.nonzero(edit_buffer[17])[0][0], "1", ((edit_buffer[18]*0.07)*edit_buffer[19]), "NA", np.asarray([tp, tp]), np.asarray([np.nonzero(edit_buffer[17])[0][0], np.nonzero(edit_buffer[17])[0][-1]]), edit_buffer[17]/max(edit_buffer[17])) #0.07 is adjustment from bins to ms
                 data.append(edit_buffer)
 
 
@@ -1988,7 +1988,8 @@ class PathOptimizer:
                                         "rtxdt_err",
                                         "rtxdt_rmse",
                                         "whisker_x",
-                                        "whisker_y"
+                                        "whisker_y",
+                                        "int_mz_rescale"
                                         ]
                                     )
         
