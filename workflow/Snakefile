@@ -4,7 +4,7 @@ subset_indices = [14, 94, 95, 96, 97, 98, 99, 100, 101, 102, 160, 161, 162, 233,
 3737, 3738, 3739, 3745, 3746, 3747, 3748, 3749, 3840, 3841, 3842, 3843, 3844, 3865, 3978, 3979, 4064, 4065, 4066, 4067, 4074, 4075, 4218, 4219, 4220, 4298, 4299]
 
 # A Snakefile to pipeline the processing and analysis of time-series HDX LC-IM-MS data. 
-configfile: "config.yaml"
+configfile: "config/config.yaml"
 import pandas as pd
 from collections import OrderedDict
 
