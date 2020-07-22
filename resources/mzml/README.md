@@ -1,0 +1,1 @@
+.mzML file for each MS run being included. All duplicates of all timepoints will appear here, either automatically downstream of .raw processing, or manually if you are not using a Waters instrument outputting a .raw format. See the naming conventions in the annotations of config.yaml for starting your pipeline run from manually input .mzML files.

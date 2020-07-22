@@ -1,2 +1,1 @@
-This folder is meant to contain all resources necessary for running the workflow, for example reference sequences or databases.
-Wherever feasible, they can also be downloaded programmatically via rules defined in the pipeline.
+Total Ionic Current -TIC- summation of MS intensity over Drift and M/z dimensions - aka Chromatogram showing intensity of signal over the duration of an LC run. Used in timewarping LC runs during preprocessing.

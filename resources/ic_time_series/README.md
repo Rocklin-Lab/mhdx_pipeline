@@ -1,0 +1,1 @@
+HDX_LIMIT IsotopicCluster objects output from the HDX_LIMIT TensorGenerator, identified as having a sufficiently correct shape in expected-peak-integrated M/z space to be included as a candidate in HDX_LIMIT PathOptimizer HDX time-series fitting.

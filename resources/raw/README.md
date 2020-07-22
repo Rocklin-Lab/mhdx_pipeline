@@ -1,0 +1,1 @@
+Most upstream resource of the pipeline, only compatible with Waters .raw files. If not using a compatible instrument, manually convert your MS files to .mzML and input them to the mzml directory according to the naming conventions outlined in config.yaml.
