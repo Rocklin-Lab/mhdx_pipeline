@@ -27,7 +27,7 @@ rule isolate_tensors:
 	output:
 		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = subset_indices)#range(len(library_info)))
 	script:
-		"workflow/scripts/isolate_tensors.py"
+		"scripts/isolate_tensors.py"
 
 
 
@@ -57,7 +57,7 @@ rule generate_tensors:
 	output:
 		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
 	script:
-		"workflow/scripts/generate_tensors.py"
+		"scripts/generate_tensors.py"
 
 rule optimize_paths:
 	input:
@@ -72,7 +72,7 @@ rule optimize_paths:
 		"resources/ic_time_series/{name}_winner_scores.cpickle.zlib",
 		"resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib"
 	script:
-		"workflow/scripts/optimize_paths.py"
+		"scripts/optimize_paths.py"
 
 
 
@@ -85,7 +85,7 @@ rule make_overview_plot:
 	output:
 		"results/plots/"+config['run_name']+"_overview.html"
 	script:
-		"workflow/scripts/overview_plotter.py"
+		"scripts/overview_plotter.py"
 
 
 
@@ -96,7 +96,7 @@ rule make_plot_linker:
 	output:
 		config['run_name']+"_plot_linker.html"
 	script:
-		"workflow/scripts/plot_linker.py"
+		"scripts/plot_linker.py"
 
 
 
@@ -106,7 +106,7 @@ rule calculate_hdx_rates:
 	output:
 		"resources/rates/{name}_rates.ext" #idk ext atm
 	script:
-		"workflow/scripts/hxrates.py"
+		"scripts/hxrates.py"
 
 
 
