@@ -20,7 +20,8 @@ def main(mzml_path, out_path):
 
 
 if __name__ == "__main__":
-    try:
-        main(snakemake.input[0], snakemake.output[0])
-    except:
-        print(main.__doc__)
+    for fin, fout in zip(snakemake.input, snakemake.output):
+        try:
+            main(fin, fout)
+        except:
+            print(main.__doc__)

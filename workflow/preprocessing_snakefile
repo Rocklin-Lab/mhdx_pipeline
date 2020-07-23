@@ -9,9 +9,13 @@ rule raw_to_mzml:
 	script:
 		script to run docker/wine env for msconvert.exe
 """
-rule all:
-	input:
-		"resources/library_info/library_info.csv"
+#make flat list of all MS datafiles
+all_timepoint_files = []
+for key in config['timepoints']:
+	for file in config[key]:
+		all_timepoint_files.append(file)
+
+print(all_timepoint_files)
 
 rule isotopes_to_info_csv:
 	input:
@@ -27,11 +31,17 @@ rule isotopes_to_info_csv:
 
 rule modify_mzmls_for_random_access:
 	input:
-		"resources/mzml/{mzml}"
+		expand("resources/mzml/{mzml}", mzml = all_timepoint_files)
 	output:
-		"resources/{mzml}.gz"
+		expand("resources/mzml/{mzml}.gz", mzml = all_timepoint_files)
 	script:
 		"scripts/preprocessing/gzip_mzml.py"
+
+rule all:
+	input:
+		"resources/library_info/library_info.csv",
+		#"resources/mzml/{mzml}.gz"
+		rules.modify_mzmls_for_random_access.output
 
 rule make_ims_tics:
 	#calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
@@ -42,18 +52,12 @@ rule make_ims_tics:
 	script:
 		"scripts/preprocessing/make_ims_mz_tics.py"
 
-#make flat list of all MS datafiles
-all_timepoint_files = []
-for key in config['timepoints']:
-	for file in config[key]:
-		all_timepoint_files.append(file)
-
 rule make_library_master_list:
 	input:
 		"resources/library_info/new_HX_order.csv",
-		expand("resources/mzml/{mzml}", mzml=all_timepoint_files[0]),
-		expand("resources/library_info/{undeut_fn}_intermediate.csv", undeut_fn=config[0]),
-		expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files)
+		expand("resources/mzml/{mzml}", mzml = all_timepoint_files[0]),
+		expand("resources/library_info/{undeut_fn}_intermediate.csv", undeut_fn = config[0]),
+		expand("resources/tics/{mzml}.ims.mz.tic", mzml = all_timepoint_files)
 	output:
 		"results/plots/preprocessing/stretched_times_plots.pdf",
 		"resources/library_info/library_info.csv"
