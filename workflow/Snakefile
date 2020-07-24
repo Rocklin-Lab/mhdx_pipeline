@@ -1,7 +1,7 @@
-subset_indices = [14, 94, 95, 96, 97, 98, 99, 100, 101, 102, 160, 161, 162, 233, 234, 235, 236, 264, 265, 266, 267, 268, 269, 304, 390, 476, 477, 478, 542, 681, 846, 891, 
-976, 1210,1211, 1212, 1482, 1483, 1484, 1528, 1529, 1530, 1531, 1532, 1861, 2023, 2088, 2089, 2090, 2091, 2092, 2093, 2124, 2144, 2145, 2281, 2282, 2283, 2284, 2285, 2392, 
-2416, 2417, 2558, 2803, 2836, 2866, 2885, 2886, 2892, 2964, 2965, 2966, 2967, 2968, 2969, 2970, 2972, 2988, 2989, 3219, 3220, 3221, 3249, 3372, 3614, 3697, 3734, 3735, 3736,
-3737, 3738, 3739, 3745, 3746, 3747, 3748, 3749, 3840, 3841, 3842, 3843, 3844, 3865, 3978, 3979, 4064, 4065, 4066, 4067, 4074, 4075, 4218, 4219, 4220, 4298, 4299]
+subset_indices = [14, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 159, 160, 161, 162, 233, 234, 235, 236, 237, 263, 264, 265, 266, 267, 268, 269, 303, 304, 390, 476, 477, 478, 542, 681, 846, 891, 
+976, 977, 978, 979, 980, 1210, 1211, 1212, 1213, 1214, 1215, 1482, 1483, 1484, 1527, 1528, 1529, 1530, 1531, 1532, 1533, 1534, 1535, 1861, 1862, 1863, 2022, 2023, 2024, 2025, 2026, 2087, 2088, 2089, 2090, 2091, 2092, 2093, 2094, 2124, 2143, 2144, 2145, 2146, 2281, 2282, 2283, 2284, 2285, 2286, 2392, 2393, 2394, 2395, 2396,
+2415, 2416, 2417, 2558, 2803, 2832, 2833, 2834, 2835, 2836, 2866, 2882, 2883, 2884, 2885, 2886, 2887, 2891, 2892, 2963, 2964, 2965, 2966, 2967, 2968, 2969, 2970, 2972, 2987, 2988, 2989, 2990, 3215, 3216, 3217, 3218, 3219, 3220, 3221, 3222, 3223, 3249, 3250, 3368, 3369, 3370, 3371, 3372, 3614, 3615, 3616, 3617, 3618, 3697, 3729, 3730, 3731, 3732, 3733, 3734, 3735, 3736,
+3737, 3738, 3739, 3740, 3741, 3742, 3743, 3744, 3745, 3746, 3747, 3748, 3749, 3750, 3751, 3752, 3753, 3839, 3840, 3841, 3842, 3843, 3844, 3865, 3866, 3978, 3979, 4064, 4065, 4066, 4067, 4068, 4073, 4074, 4075, 4216, 4217, 4218, 4219, 4220, 4221, 4298, 4299, 4300]
 
 # A Snakefile to pipeline the processing and analysis of time-series HDX LC-IM-MS data. 
 configfile: "config/config.yaml"
@@ -31,16 +31,15 @@ rule isolate_tensors:
 
 
 
-#Can use def to pass inputs as fxn of name wildcard
-#creates analyze_tensor input filenames in fixed pattern, input tensor names only include library_info index and timepoint of species
 def analyze_tensors_inputs(name, library_info):
+	#Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
 	name_inputs = []
 	idxs = library_info.index[library_info['name'] == name].tolist()
 	for key in config['timepoints']:
 		if len(config[key]) > 1:
 			for file in config[key]:
 				for idx in idxs:
-					name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib") #This may have to be changed depending on .RAW or .mzML starting files
+					name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
 		else:
 			file = config[key][0]
 			for idx in idxs:
@@ -50,14 +49,15 @@ def analyze_tensors_inputs(name, library_info):
 
 
 
-rule generate_tensors:
+rule analyze_tensors:
+	#TODO: Docstring
 	input:
 		"resources/library_info/library_info.csv",
 		lambda wildcards: analyze_tensors_inputs(wildcards.name, library_info)
 	output:
 		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
 	script:
-		"scripts/generate_tensors.py"
+		"scripts/analyze_tensors.py"
 
 rule optimize_paths:
 	input:
@@ -91,7 +91,7 @@ rule make_overview_plot:
 
 rule make_plot_linker:
 	input:
-		"plots/"+config['run_name']+"_overview.html",
+		"results/plots/"+config['run_name']+"_overview.html",
 		expand("results/plots/ic_time_series/html/{name}_time_series.html", name = subset_names)
 	output:
 		config['run_name']+"_plot_linker.html"

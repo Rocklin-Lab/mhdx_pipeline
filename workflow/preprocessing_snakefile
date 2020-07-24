@@ -15,8 +15,6 @@ for key in config['timepoints']:
 	for file in config[key]:
 		all_timepoint_files.append(file)
 
-print(all_timepoint_files)
-
 rule isotopes_to_info_csv:
 	input:
 		#.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
@@ -40,7 +38,6 @@ rule modify_mzmls_for_random_access:
 rule all:
 	input:
 		"resources/library_info/library_info.csv",
-		#"resources/mzml/{mzml}.gz"
 		rules.modify_mzmls_for_random_access.output
 
 rule make_ims_tics:
