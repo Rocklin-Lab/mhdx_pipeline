@@ -1119,7 +1119,8 @@ class PathOptimizer:
         self.precalculate_fit_to_ground()
 
         #TODO: Refine prefilter after exploring ic attribute correlations to downstream outcome metrics, find best predictors for outcomes. 
-        self.prefilter_ics()
+        #self.prefilter_ics()
+        self.prefiltered_ics = all_tp_clusters
         self.generate_sample_paths()
 
     def gather_old_data(self):
@@ -1168,9 +1169,8 @@ class PathOptimizer:
                 charge_dict['fit_to_theo_dist'] = max([HX1.calculate_isotope_dist(d) for d in undeut_amds])
 
         undeuts = []
-        for undeut in all_tp_clusters[:n_undeut_runs]:
-            for ic in undeut:
-                undeuts.append(ic)
+        for ic in all_tp_clusters[0]: #hardcode for all replicates being collapsed into their tp index
+            undeuts.append(ic)
         dot_products = []
 
         #make list of all normed dot products between an undeuterated IC and the theoretical distribution, calculate_isotope_dist requires Pandas input
@@ -1783,11 +1783,11 @@ class PathOptimizer:
                     ],
                     names = ['old'])
 
-                old_ics = MultiLine(xs = 'added_mass_xs', ys = 'centroid', line_color = 'wheat', line_width = 1.5)
-                old_tp_view = CDSView(source = old_source, filters = [GroupFilter(column_name = 'type', group = 'ts')])
+                old_ics = Line(x = 'timepoint', y = 'added_mass_centroid', line_color = 'wheat', line_width = 1.5)
+                old_tp_view = CDSView(source = old_source, filters = [GroupFilter(column_name = 'type', group = 'ic')])
                 old_renderer = p.add_glyph(old_source, old_ics, view = old_tp_view, name = 'old')
                 #p.add_layout(Whisker(source = old_source, base = "added_mass_xs", upper = "uppers", lower = "lowers")) #TODO Change alt color
-                #p.add_tools(old_hover)
+                p.add_tools(old_hover)
 
             p.xaxis.axis_label = "Timepoint Index"
             p.yaxis.axis_label = "Mean Added-Mass Units"
@@ -1899,7 +1899,8 @@ class PathOptimizer:
 
                 
                 int_mz_xs = list(range(len(ts['major_species_integrated_intensities'][0])))
-                timepoints = list(range(len(ts['centroid'])))
+                timepoints = list(range(len(ts['major_species_centroid'])))
+                print("old_data timepoints: "+str(timepoints))
                
 
                 #Add line to old_charges for each charge file
@@ -1908,14 +1909,17 @@ class PathOptimizer:
 
                 old_charges['added_mass_xs'].append(timepoints)
                 old_charges['major_species_widths'].append([len(np.nonzero(ic)[0]) for ic in ts['major_species_integrated_intensities']])
-                old_charges['lowers'].append([ts['centroid'][tp]-(ts['major_species_widths'][tp]/2) for tp in timepoints])
-                old_charges['uppers'].append([ts['centroid'][tp]+(ts['major_species_widths'][tp]/2) for tp in timepoints])
+                old_charges['lowers'].append([ts['major_species_centroid'][tp]-(ts['major_species_widths'][tp]/2) for tp in timepoints])
+                old_charges['uppers'].append([ts['major_species_centroid'][tp]+(ts['major_species_widths'][tp]/2) for tp in timepoints])
                 old_charges['type'].append('ts')
 
                 #Add line to old_ics for each hdx timepoint in each charge file
                 for tp in timepoints:
-                    old_ics['timepoint'].append(str(tp))
-                    old_ics['added_mass_centroid'].append(ts['centroid'][tp])
+                    if tp < 3:
+                        old_ics['timepoint'].append(str(0))
+                    else:
+                        old_ics['timepoint'].append(str(tp-2))
+                    old_ics['added_mass_centroid'].append(ts['major_species_centroid'][tp])
                     old_ics['added_mass_width'].append(len(np.nonzero(ts['major_species_integrated_intensities'][tp])[0]))
                     old_ics['int_mz_ys'].append(ts['major_species_integrated_intensities'][tp])
                     old_ics['int_mz_rescale'].append(ts['major_species_integrated_intensities'][tp]/max(ts['major_species_integrated_intensities'][tp]))
@@ -2056,6 +2060,7 @@ class PathOptimizer:
         ]
         
         n_timepoints = len(self.winner)
+        print("internal n_timepoints: "+str(n_timepoints))
         if self.old_data_dir is not None:
             winner_plots = [winner_plotter(cds, i, winner_tts, old_source=gabe_cds) for i in range(n_timepoints)]    
         
