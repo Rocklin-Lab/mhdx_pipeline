@@ -86,7 +86,8 @@ output_scans = [[] for i in range(len(library_info))]
 for i in range(len(library_info)):
     #print i
     #sys.stdout.flush()
-    if i in sample_indices:
+    #TODO: This was a hack to limit pipeline runs to a subset, should be an organized feature
+    if i in range(len(library_info)): #sample_indices:
         keep_scans = scan_numbers[(drift_times >= dt_lbounds[i]) & (drift_times <= dt_ubounds[i]) & (scan_times <= ret_ubounds[i]) & (scan_times >= ret_lbounds[i])]
         scans_per_line.append(len(keep_scans))
         for scan in keep_scans:
@@ -107,7 +108,7 @@ for scan_number in relevant_scans:
         try:
             scan=msrun[scan_number]
             scan.set_peaks(scan.peaks('raw'), 'centroided')
-            spectrum = np.array(scan.peaks('reprofiled')).astype(np.float32)
+            spectrum = np.array(scan.peaks('raw')).astype(np.float32)
             if len(spectrum) == 0: spectrum = scan.peaks('raw').astype(np.float32)
             spectrum=spectrum[spectrum[:,1] > 10]
         except:

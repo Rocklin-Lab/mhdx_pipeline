@@ -67,6 +67,7 @@ import seaborn as sns
 import matplotlib as mpl
 import _pickle as cpickle
 import matplotlib.pyplot as plt
+from collections import defaultdict as ddict
 
 ### FUNCTIONS ###
 from Bio.PDB import *
@@ -124,7 +125,6 @@ class DataTensor:
         **kwargs
         ):
 
-        
         ###Set Common Attributes###
 
         #Positional args
@@ -135,6 +135,8 @@ class DataTensor:
         self.total_mass_window = total_mass_window
         self.n_concatenated = n_concatenated
         self.charge_states = charge_states
+        self.measured_precision = 1e-6 #hardcode from pymzml
+        self.internal_precision = 1000 #chosen for low-loss compression of mz dimension
 
         #Keyword Args
         if kwargs is not None:
@@ -166,7 +168,7 @@ class DataTensor:
         #Handle normal case: new DataTensor from output of isolate_tensors.py
         if self.n_concatenated == 1:
 
-            self.grid_out = np.reshape(self.seq_out, (len(self.rts), len(self.dts)))
+            self.grid_out = np.reshape(self.reprofile(), (len(self.rts), len(self.dts)))
 
             #For creating full_grid_out, a 3d array with all mz dimensions having the same length
             #Find min and max mz range values:
@@ -175,14 +177,13 @@ class DataTensor:
             self.mz_bin_low = 1E9
             for j in range(len(self.grid_out)):
                 for k in range(len(self.grid_out[j])):
-                    if np.shape(self.grid_out[j][k])[0] != 0:
-                        if self.grid_out[j][k][0].item(0) < self.mz_bin_low:
-                            self.mz_bin_low = self.grid_out[j][k][0].item(0)
-                        if self.grid_out[j][k][-1].item(0) > self.mz_bin_high:
-                            self.mz_bin_high = self.grid_out[j][k][-1].item(0)
+                    if self.grid_out[j][k][0][0] < self.mz_bin_low:
+                        self.mz_bin_low = self.grid_out[j][k][0][0]
+                    if self.grid_out[j][k][-1][0] > self.mz_bin_high:
+                        self.mz_bin_high = self.grid_out[j][k][-1][0]
 
             #create zero array with range of bin indices
-            self.mz_bins = np.arange(self.mz_bin_low, self.mz_bin_high, 0.002)
+            self.mz_bins = np.arange(self.mz_bin_low, self.mz_bin_high, 0.02) #hardcode for desired coarseness of gaussian representation
             self.mz_len = len(self.mz_bins)
 
             #create empty space with dimensions matching grid_out and m/z indices
@@ -217,7 +218,7 @@ class DataTensor:
 
             self.full_gauss_grids = self.gauss(self.full_grid_out)
            
-        #Handle concatenated tensor case, kwarg values cannot be computed internally and must be passed 
+        #Handle concatenated tensor case, check for required inputs
         else: 
             if not all('dts' in kwargs and \
                 'rts' in kwargs and \
@@ -229,7 +230,32 @@ class DataTensor:
 
                 print("Concatenated Tensor Missing Required Values")
                 sys.exit()
+
         
+    def reprofile(self): 
+        out = []
+        for scan in self.seq_out:
+            tmp = ddict(int)
+            for mz, i in scan:
+                # Let the measured precision be 2 sigma of the signal width
+                # When using normal distribution
+                # FWHM = 2 sqt(2 * ln(2)) sigma = 2.3548 sigma
+                s = mz * self.measured_precision * 2  # in before 2
+                s2 = s * s
+                floor = mz - 5.0 * s  # Gauss curve +- 3 sigma
+                ceil = mz + 5.0 * s
+                ip = self.internal_precision / 4
+                # more spacing, i.e. less points describing the gauss curve
+                # -> faster adding
+                for _ in range(int(round(floor * ip)), int(round(ceil * ip)) + 1):
+                    if _ % int(5) == 0:
+                        a = float(_) / float(ip)
+                        y = i * math.exp(-1 * ((mz - a) * (mz - a)) / (2 * s2))
+                        tmp[a] += y
+            out.append(np.asarray([[key, tmp[key]] for key in list(tmp.keys())]))
+        return out
+
+
     #Takes tensor input and gaussian filter parameters, outputs filtered data
     def gauss(self, grid, rt_sig = 3, dt_sig = 1):
 

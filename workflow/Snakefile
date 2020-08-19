@@ -9,6 +9,7 @@ import pandas as pd
 from collections import OrderedDict
 
 subset_names = list(OrderedDict.fromkeys(pd.read_csv("resources/library_info/library_info.csv").iloc[subset_indices]['name'].values))
+names =  list(OrderedDict.fromkeys(pd.read_csv("resources/library_info/library_info.csv")['name'].values))
 
 rule all:
 	input:
@@ -25,7 +26,7 @@ rule isolate_tensors:
 		"resources/library_info/library_info.csv",
 		"resources/mzml/{mzml_gz}"
 	output:
-		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = subset_indices)#range(len(library_info)))
+		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info))) #subset_indices)#
 	script:
 		"scripts/main/isolate_tensors.py"
 
@@ -78,10 +79,10 @@ rule optimize_paths:
 
 rule make_overview_plot:
 	input:
-		expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name = subset_names),
-		expand("resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib", name = subset_names),
-		expand("resources/ic_time_series/{name}_winner_scores.cpickle.zlib", name = subset_names),
-		expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name = subset_names)
+		expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name = names), #subset_names),
+		expand("resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib", name = names), #subset_names),
+		expand("resources/ic_time_series/{name}_winner_scores.cpickle.zlib", name = names), #subset_names),
+		expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name = names), #subset_names)
 	output:
 		"results/plots/"+config['run_name']+"_overview.html"
 	script:
@@ -92,7 +93,7 @@ rule make_overview_plot:
 rule make_plot_linker:
 	input:
 		"results/plots/"+config['run_name']+"_overview.html",
-		expand("results/plots/ic_time_series/html/{name}_time_series.html", name = subset_names)
+		expand("results/plots/ic_time_series/html/{name}_time_series.html", name = names), #subset_names)
 	output:
 		config['run_name']+"_plot_linker.html"
 	script:
