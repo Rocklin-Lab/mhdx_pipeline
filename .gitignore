@@ -11,7 +11,7 @@ analysis/*
 !results/tables
 !results/logs
 !notebooks
-!notebooks/*
+!notebooks/**
 !workflow
 !workflow/**
 !.gitignore
