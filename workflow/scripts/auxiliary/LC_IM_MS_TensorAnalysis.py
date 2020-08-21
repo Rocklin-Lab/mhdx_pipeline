@@ -183,7 +183,7 @@ class DataTensor:
                         self.mz_bin_high = self.grid_out[j][k][-1][0]
 
             #create zero array with range of bin indices
-            self.mz_bins = np.arange(self.mz_bin_low, self.mz_bin_high, 0.02) #hardcode for desired coarseness of gaussian representation
+            self.mz_bins = np.arange(self.mz_bin_low, self.mz_bin_high, 0.02) #hardcode for desired coarseness of gaussian representation, could be parameterized
             self.mz_len = len(self.mz_bins)
 
             #create empty space with dimensions matching grid_out and m/z indices
@@ -233,6 +233,9 @@ class DataTensor:
 
         
     def reprofile(self): 
+        #Reads list of mz peak centroids and returns full length mz array of gaussians. 
+        #Measured and interal precision are adjusted to vary compression of the mz dimension. 
+        #Adapted from pymzml, used here to push peak reprofiling downstream of mzml extraction for more efficient load distribution. 
         out = []
         for scan in self.seq_out:
             tmp = ddict(int)
@@ -264,10 +267,11 @@ class DataTensor:
             gauss_grid[:,:,i] = gaussian_filter(grid[:,:,i],(rt_sig, dt_sig))
         return gauss_grid
     
+    
+    def interpolate(self, grid_in, new_mz_len, gauss_params = None):
     #Takes length of mz_bins to interpolated to, and optional gaussian filter parameters
     #Returns the interpolated tensor, length of interpolated axis, interpolated low_lims and high_lims
-    def interpolate(self, grid_in, new_mz_len, gauss_params = None):
-        
+
         if gauss_params != None:
             grid = self.gauss(grid_in, gauss_params[0], gauss_params[1])
         else:
@@ -291,34 +295,27 @@ class DataTensor:
         
         return [interpolated_out, interpolated_low_lims, interpolated_high_lims]
 
-    #Decomp series takes low n_factors to high n_factors and stores lists of factors in a list within the DataTensor
-    def decomposition_series(
-        self, 
-        n_factors_low, 
-        n_factors_high, 
-        new_mz_len = None,
-        gauss_params = None
-        ):
 
-        self.decomps = []
-        self.decomp_times = []
-        for i in range(n_factors_low, n_factors_high+1):
-            t1 = time.time()
-            self.decomps.append(self.factorize(i, new_mz_len, gauss_params))
-            t2 = time.time()
-            self.decomp_times.append(t2-t1)
-            print(str(i-n_factors_low+1)+" of "+str(n_factors_high-n_factors_low+1)+" T+"+str(t2-t1))
+    def corr_check(self, factors):
+    #Checks scipy non_negatve_parafac output factors for inter-factor (off-diagonal) correlations > cutoff, returns True if all values are < cutoff
+
+        def check(a):
+            if any(a[np.where(~np.eye(a.shape[0],dtype=bool))] > cutoff):
+                return False
+            else:
+                return True
         
-    #Takes single specified data type from a DataTensor object and desired number of factors, returns list of factorization components. Input lows and highs if 
-    #using interpolated data, use n_concatenated to pass the number of data tensors concatenated together to the component object
-    #Gauss_params must be tuple of len=2
-    def factorize(
-        self, 
-        n_factors, 
-        new_mz_len = None, 
-        gauss_params = None
-        ):
+        for i in range(3):
+            if not check(np.corrcoef(factors[1][i].T)):
+                return False
+
+        return True
         
+
+    def factorize(self, new_mz_len = None, gauss_params = None):
+    #Test factorization starting at n_factors = 15 and counting down, keep factorization that has no factors with correlation greater than 0.2 in any dimension.
+        
+        #handle concatenation and intetrpolfilter option
         factors = []
         if self.n_concatenated != 1: 
             grid, lows, highs, concat_dt_idxs = self.concatenated_grid, self.lows, self.highs, self.concat_dt_idxs
@@ -336,15 +333,30 @@ class DataTensor:
                     grid = self.full_grid_out
                 
         
-        #Multiplies all values outside of integration box boundaries by 0, good for reducing noise because we only care about data within the bounds
+        #Multiply all values outside of integration box boundaries by 0, TODO: demonstrate this against keeping the full tensor - obv faster, self-evidently better fac: quantify as support
         zero_mult = np.zeros((np.shape(grid)))
         for lo, hi in zip(lows, highs):
             zero_mult[:,:,lo:hi] = 1
         grid *= zero_mult
 
+        #Count down from 15 and find best n_factors
+        nf = 15
+        cutoff = 0.2
+        flag = True
+        while flag:
+            nnp = non_negative_parafac(grid, nf)
+            if nf > 1:
+                if corr_check(factors, cutoff):
+                    flag = False
+                    break
+                nf -= 1
+                
+            else:
+                flag = False
+                print("All n-factors failed for Index: "+str(index)+", Step: "+str(step))
 
-        nnp = non_negative_parafac(grid, n_factors, init = 'svd')# or 'random' #, n_iter_max = 50) can be used to limit time of calculations at cost of higher reconstruction error
-        for i in range(n_factors):
+        #Create Factor objects
+        for i in range(nf):
             factors.append(
                 Factor(
                     source_file = self.source_file,
@@ -366,7 +378,7 @@ class DataTensor:
                     )
                 )
 
-        return factors
+        self.factors = factors
     
 ###    
 ### Class - Factor:        
@@ -930,6 +942,8 @@ class TensorGenerator:
     #Must be called externally on an instance of TensorGenerator.   
     def generate_tensors(self):
 
+        #TODO: variable n fn inputs to save different data scales: 'if factor_fn in kwargs: limit_write(...' ?
+
         #will both have nested-list structure with outer-length = n_timepoints
         all_tp_clusters = []
         all_tp_factors = []
@@ -973,7 +987,7 @@ class TensorGenerator:
                     newDataTensor.lows = np.searchsorted(newDataTensor.mz_bins, self.low_lims[lib_idx])
                     newDataTensor.highs = np.searchsorted(newDataTensor.mz_bins, self.high_lims[lib_idx])
                     
-                    newDataTensor.decomposition_series(n_factors_low = self.n_factors_low, n_factors_high = self.n_factors_high, gauss_params = self.gauss_params)
+                    newDataTensor.factorize()
                     DataTensors.append(newDataTensor)
 
                 fn_factors = []
@@ -1052,7 +1066,7 @@ class TensorGenerator:
                                     abs_mz_low = mz_bin_low
                                     )
                                 )
-                            DataTensors[-1].decomposition_series(n_factors_low, n_factors_high)   
+                            DataTensors[-1].factorize()   
 
                             #Add concatenated factors to fn_factors, ICs emptied later
                             for decomp in DataTensors[-1].decomps:
