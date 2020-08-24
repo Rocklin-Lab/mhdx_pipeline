@@ -313,6 +313,16 @@ class DataTensor:
                     return False
 
             return True
+
+        def max_corr(factors):
+            def check(a):
+                return(max(a[np.where(~np.eye(a.shape[0],dtype=bool))]))
+
+            if len(factors[1][0].T) > 1:
+                return max([check(np.corrcoef(factors[1][i].T)) for i in range(3)])
+            else:
+                return [1]
+
         
         #handle concatenation and intetrpolfilter option
         if self.n_concatenated != 1: 
@@ -338,11 +348,12 @@ class DataTensor:
         grid *= zero_mult
 
         #Count down from 15 and find best n_factors
-        nf = 15
-        cutoff = 0.3
-        flag = True
-        while flag:
+        corrs = []
+        for nf in np.arange(15, 0 , -1):
             nnp = non_negative_parafac(grid, nf)
+            corrs.append(max_corr(nnp))
+            
+            """
             if nf > 1:
                 if corr_check(nnp, cutoff):
                     flag = False
@@ -352,6 +363,9 @@ class DataTensor:
             else:
                 flag = False
                 print("All n-factors failed for Index: "+str(self.name))
+            """
+
+        nnp = non_negative_parafac(grid, corrs.index(min(corrs))) #factorize to nf w/ min max cor coef in any dim
 
         #Create Factor objects
         factors = []
