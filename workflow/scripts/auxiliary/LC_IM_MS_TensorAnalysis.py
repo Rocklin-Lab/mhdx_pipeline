@@ -94,7 +94,7 @@ from bokeh.models.sources import ColumnDataSource, CDSView
 from bokeh.models.filters import Filter, GroupFilter, IndexFilter
 
 ### SPECLOAD ###
-hxtools_spec = importlib.util.spec_from_file_location("hxtools", "scripts/auxiliary/hxtools.py")
+hxtools_spec = importlib.util.spec_from_file_location("hxtools", "workflow/scripts/auxiliary/hxtools.py")
 hxtools = importlib.util.module_from_spec(hxtools_spec)
 hxtools_spec.loader.exec_module(hxtools)
 
@@ -172,15 +172,15 @@ class DataTensor:
 
             #For creating full_grid_out, a 3d array with all mz dimensions having the same length
             #Find min and max mz range values:
-            #check head and tail of each grid_out index ndarray and compare them
+            #check high 
+            self.mz_bin_low = 1e9
             self.mz_bin_high = 0
-            self.mz_bin_low = 1E9
-            for j in range(len(self.grid_out)):
-                for k in range(len(self.grid_out[j])):
-                    if self.grid_out[j][k][0][0] < self.mz_bin_low:
-                        self.mz_bin_low = self.grid_out[j][k][0][0]
-                    if self.grid_out[j][k][-1][0] > self.mz_bin_high:
-                        self.mz_bin_high = self.grid_out[j][k][-1][0]
+            for x in self.grid_out:
+                for y in x:
+                    if len(y) > 0:
+                        z = np.asarray(y)[:,0]
+                        if min(z) < self.mz_bin_low: self.mz_bin_low = y[np.argmin(z)][0]
+                        if max(z) > self.mz_bin_high: self.mz_bin_high = y[np.argmax(z)][0]
 
             #create zero array with range of bin indices
             self.mz_bins = np.arange(self.mz_bin_low, self.mz_bin_high, 0.02) #hardcode for desired coarseness of gaussian representation, could be parameterized
@@ -256,7 +256,7 @@ class DataTensor:
                         y = i * math.exp(-1 * ((mz - a) * (mz - a)) / (2 * s2))
                         tmp[a] += y
             out.append(np.asarray([[key, tmp[key]] for key in list(tmp.keys())]))
-        return out
+        return np.asarray(out)
 
 
     #Takes tensor input and gaussian filter parameters, outputs filtered data
@@ -294,29 +294,27 @@ class DataTensor:
         interpolated_high_lims = np.searchsorted(interpolated_bin_mzs, self.mz_bins[self.highs])
         
         return [interpolated_out, interpolated_low_lims, interpolated_high_lims]
-
-
-    def corr_check(self, factors):
-    #Checks scipy non_negatve_parafac output factors for inter-factor (off-diagonal) correlations > cutoff, returns True if all values are < cutoff
-
-        def check(a):
-            if any(a[np.where(~np.eye(a.shape[0],dtype=bool))] > cutoff):
-                return False
-            else:
-                return True
-        
-        for i in range(3):
-            if not check(np.corrcoef(factors[1][i].T)):
-                return False
-
-        return True
         
 
     def factorize(self, new_mz_len = None, gauss_params = None):
     #Test factorization starting at n_factors = 15 and counting down, keep factorization that has no factors with correlation greater than 0.2 in any dimension.
+
+        def corr_check(factors, cutoff):
+        #Checks scipy non_negatve_parafac output factors for inter-factor (off-diagonal) correlations > cutoff, returns True if all values are < cutoff
+
+            def check(a):
+                if any(a[np.where(~np.eye(a.shape[0],dtype=bool))] > cutoff):
+                    return False
+                else:
+                    return True
+            
+            for i in range(3):
+                if not check(np.corrcoef(factors[1][i].T)):
+                    return False
+
+            return True
         
         #handle concatenation and intetrpolfilter option
-        factors = []
         if self.n_concatenated != 1: 
             grid, lows, highs, concat_dt_idxs = self.concatenated_grid, self.lows, self.highs, self.concat_dt_idxs
         else:    
@@ -341,21 +339,22 @@ class DataTensor:
 
         #Count down from 15 and find best n_factors
         nf = 15
-        cutoff = 0.2
+        cutoff = 0.3
         flag = True
         while flag:
             nnp = non_negative_parafac(grid, nf)
             if nf > 1:
-                if corr_check(factors, cutoff):
+                if corr_check(nnp, cutoff):
                     flag = False
                     break
                 nf -= 1
                 
             else:
                 flag = False
-                print("All n-factors failed for Index: "+str(index)+", Step: "+str(step))
+                print("All n-factors failed for Index: "+str(self.name))
 
         #Create Factor objects
+        factors = []
         for i in range(nf):
             factors.append(
                 Factor(
@@ -368,7 +367,7 @@ class DataTensor:
                     dts = nnp[1][1].T[i], 
                     mz_data = nnp[1][2].T[i], 
                     factor_idx = i, 
-                    n_factors = n_factors, 
+                    n_factors = nf, 
                     lows = lows, 
                     highs = highs, 
                     abs_mz_low = self.mz_bin_low, 
@@ -749,7 +748,7 @@ class IsotopeCluster:
                         self.source_file, #Filename of data used to create parent DataTensor
                         self.tensor_idx, #Library master list row of parent-DataTensor
                         self.n_factors, #Number of factors in parent decomposition
-                        self.factor_idx, #Index of IC parent-factor in DataTensor.decomps[]
+                        self.factor_idx, #Index of IC parent-factor in DataTensor.factors[]
                         self.cluster_idx, #Index of IC in parent-factor.isotope_clusters[]
                         self.charge_states, #List of charge states in IC
                         self.n_concatenated, #number of source tensors IC parent-DataTensor was made from
@@ -994,12 +993,11 @@ class TensorGenerator:
                 fn_clusters = []
                 fn_cluster_info = []
                 for tensor in DataTensors:
-                    for decomp in tensor.decomps:
-                        for factor in decomp:
-                            fn_factors.append(factor)
-                            for ic in factor.isotope_clusters:
-                                fn_clusters.append(ic)
-                                fn_cluster_info.append(ic.info_tuple) 
+                    for factor in tensor.factors:
+                        fn_factors.append(factor)
+                        for ic in factor.isotope_clusters:
+                            fn_clusters.append(ic)
+                            fn_cluster_info.append(ic.info_tuple) 
 
                 try:
                     protein_clusters = pd.DataFrame(fn_cluster_info)
@@ -1069,9 +1067,8 @@ class TensorGenerator:
                             DataTensors[-1].factorize()   
 
                             #Add concatenated factors to fn_factors, ICs emptied later
-                            for decomp in DataTensors[-1].decomps:
-                                for factor in decomp:
-                                    fn_factors.append(factor)
+                            for factor in DataTensors[-1].facctors:
+                                fn_factors.append(factor)
                         
                         except ValueError:
                             #handle length mismatches in future, now just skip it and show the error TODO

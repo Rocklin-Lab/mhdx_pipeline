@@ -58,7 +58,7 @@ rule analyze_tensors:
 	output:
 		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
 	script:
-		"scripts/analyze_tensors.py"
+		"scripts/main/analyze_tensors.py"
 
 rule optimize_paths:
 	input:
