@@ -167,9 +167,11 @@ class DataTensor:
         
         #Handle normal case: new DataTensor from output of isolate_tensors.py
         if self.n_concatenated == 1:
-
+            t0 = time.time()
+            print('Reprofiling...')
             self.grid_out = np.reshape(self.reprofile(), (len(self.rts), len(self.dts)))
-
+            t = time.time()
+            print("T+"+str(t-t0))
             #For creating full_grid_out, a 3d array with all mz dimensions having the same length
             #Find min and max mz range values:
             #check high 
@@ -298,32 +300,21 @@ class DataTensor:
 
     def factorize(self, new_mz_len = None, gauss_params = None):
     #Test factorization starting at n_factors = 15 and counting down, keep factorization that has no factors with correlation greater than 0.2 in any dimension.
-
+        t0 = time.time()
+        print('Beginning Factorization...')
+       
         def corr_check(factors, cutoff):
         #Checks scipy non_negatve_parafac output factors for inter-factor (off-diagonal) correlations > cutoff, returns True if all values are < cutoff
-
-            def check(a):
-                if any(a[np.where(~np.eye(a.shape[0],dtype=bool))] > cutoff):
-                    return False
-                else:
-                    return True
             
-            for i in range(3):
-                if not check(np.corrcoef(factors[1][i].T)):
+            a = np.minimum(np.minimum(np.corrcoef(factors[1][0].T),np.corrcoef(factors[1][1].T)),np.corrcoef(factors[1][2].T))
+            
+            if any(a[np.where(~np.eye(a.shape[0],dtype=bool))] > cutoff):
                     return False
-
-            return True
-
-        def max_corr(factors):
-            def check(a):
-                return(max(a[np.where(~np.eye(a.shape[0],dtype=bool))]))
-
-            if len(factors[1][0].T) > 1:
-                return max([check(np.corrcoef(factors[1][i].T)) for i in range(3)])
             else:
-                return [1]
+                return True
 
-        
+        t = time.time()
+        print('Filtering... T+'+str(t-t0))
         #handle concatenation and intetrpolfilter option
         if self.n_concatenated != 1: 
             grid, lows, highs, concat_dt_idxs = self.concatenated_grid, self.lows, self.highs, self.concat_dt_idxs
@@ -340,35 +331,39 @@ class DataTensor:
                 else:
                     grid = self.full_grid_out
                 
-        
+        t = time.time()
+        print('Zeroing Non-POI M/z... T+'+str(t-t0))
         #Multiply all values outside of integration box boundaries by 0, TODO: demonstrate this against keeping the full tensor - obv faster, self-evidently better fac: quantify as support
         zero_mult = np.zeros((np.shape(grid)))
         for lo, hi in zip(lows, highs):
             zero_mult[:,:,lo:hi] = 1
         grid *= zero_mult
 
-        #Count down from 15 and find best n_factors
-        corrs = []
-        for nf in np.arange(15, 0 , -1):
+        #Count down from 15 and keep highest n_factors that satisfies corr_check
+        nf = 14
+        flag = True
+        t = time.time()
+        print('Start Factorization Series... T+'+str(t-t0))
+        while flag:
+            t1 = time.time()
+            print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
             nnp = non_negative_parafac(grid, nf)
-            corrs.append(max_corr(nnp))
-            
-            """
-            if nf > 1:
-                if corr_check(nnp, cutoff):
+            t2 = time.time()
+            print('Factorization Duration: '+str(t2-t1))
+
+            if nf > 2:
+                if corr_check(nnp, 0.25):
                     flag = False
                     break
                 nf -= 1
-                
             else:
                 flag = False
                 print("All n-factors failed for Index: "+str(self.name))
-            """
-
-        nnp = non_negative_parafac(grid, corrs.index(min(corrs))) #factorize to nf w/ min max cor coef in any dim
-
+           
         #Create Factor objects
         factors = []
+        t = time.time()
+        print('Saving Factor Objects... T+'+str(t-t0))
         for i in range(nf):
             factors.append(
                 Factor(
@@ -392,6 +387,8 @@ class DataTensor:
                 )
 
         self.factors = factors
+        t = time.time()
+        print('Done: T+'+str(t-t0))
     
 ###    
 ### Class - Factor:        
@@ -1013,84 +1010,88 @@ class TensorGenerator:
                             fn_clusters.append(ic)
                             fn_cluster_info.append(ic.info_tuple) 
 
-                try:
-                    protein_clusters = pd.DataFrame(fn_cluster_info)
-                    protein_clusters.columns = [
-                        "source_file",
-                        "tensor_idx", 
-                        "n_factors", 
-                        "factor_idx", 
-                        "cluster_idx",
-                        "charge_states", 
-                        "n_concatenated",
-                        "mz_bin_low", #from factor bins
-                        "mz_bin_high", #from factor bins
-                        "baseline_subtracted_area_under_curve", 
-                        "baseline_subtracted_grate_sum",  
-                        "baseline_subtracted_peak_error",
-                        "baseline_integrated_mz_com", 
-                        "abs_mz_com",
-                        "rts", 
-                        "dts", 
-                        "int_mz_x",
-                        "int_mz_y"]
-                except:
-                    ipdb.set_trace()
+                if len(fn_clusters) == 0:
+                    tp_factors.append(fn_factors)
+                
+                else:
+                    try:
+                        protein_clusters = pd.DataFrame(fn_cluster_info)
+                        protein_clusters.columns = [
+                            "source_file",
+                            "tensor_idx", 
+                            "n_factors", 
+                            "factor_idx", 
+                            "cluster_idx",
+                            "charge_states", 
+                            "n_concatenated",
+                            "mz_bin_low", #from factor bins
+                            "mz_bin_high", #from factor bins
+                            "baseline_subtracted_area_under_curve", 
+                            "baseline_subtracted_grate_sum",  
+                            "baseline_subtracted_peak_error",
+                            "baseline_integrated_mz_com", 
+                            "abs_mz_com",
+                            "rts", 
+                            "dts", 
+                            "int_mz_x",
+                            "int_mz_y"]
+                    except:
+                        ipdb.set_trace()
 
-                top_fn_clusters = protein_clusters.sort_values(by = ['baseline_subtracted_peak_error'], ascending = False)[:math.ceil(len(protein_clusters)/5)]
+                    top_fn_clusters = protein_clusters.sort_values(by = ['baseline_subtracted_peak_error'], ascending = False)[:math.ceil(len(protein_clusters)/5)]
 
-                #cheks that each tensor gives 85% of the even split contribution to the top 20% of clusters, if less the tensor is not included in the concatenated data
-                #85% is an arbitrary choice of cutoff value, empirically determine point at which adding DT to combined harms quality
-                concat_ins = []
-                concat_charges = []
-                concat_dt_lens = []
-                if len(output)>0:    
-                    for i in range(len(DataTensors)):
-                        contribution = len(top_fn_clusters.loc[top_fn_clusters['tensor_idx'] == i])
-                        if contribution > (math.floor(math.ceil(len(protein_clusters)/5)/len(DataTensors))*0.85):
-                            concat_ins.append(DataTensors[i].interpolate(DataTensors[i].full_grid_out, 5000, (3,1))[0])
-                            concat_charges.append(DataTensors[i].charge_states[0])
-                            concat_dt_lens.append(len(DataTensors[i].dts))
-                    if len(concat_ins)>1:
-                        print("CONCATENATING")
-                        try:
-                            interpolated_lows, interpolated_highs = DataTensors[0].interpolate(DataTensors[0].full_grid_out, new_mz_len = 5000, gauss_params = self.gauss_params)[1:3]
-                            concatenated = np.concatenate(concat_ins, axis = 1)
-                            concat_dt_idxs = np.cumsum(concat_dt_lens)
-                            mz_bin_low = min([x.mz_bin_low for x in DataTensors])
-                           
-                            #RT is taken from last tensor read in, consider averaging?
-                            DataTensors.append(
-                                DataTensor(
-                                    source_file = "Concatenated, see IC.charge_states",
-                                    tensor_idx = "Concatenated, see IC.charge_states",
-                                    timepoint_idx = tp,
-                                    name = self.name, 
-                                    total_mass_window = self.total_mass_window,
-                                    charge_states = concat_charges, 
-                                    rts = output[0], 
-                                    dts = concatenated, 
-                                    n_concatenated = len(concat_ins), 
-                                    concat_dt_idxs = concat_dt_idxs, 
-                                    concatenated_grid = concatenated, 
-                                    lows = interpolated_lows, 
-                                    highs = interpolated_highs, 
-                                    abs_mz_low = mz_bin_low
+                    #cheks that each tensor gives 85% of the even split contribution to the top 20% of clusters, if less the tensor is not included in the concatenated data
+                    #85% is an arbitrary choice of cutoff value, empirically determine point at which adding DT to combined harms quality
+                    concat_ins = []
+                    concat_charges = []
+                    concat_dt_lens = []
+                    if len(output)>0:    
+                        for i in range(len(DataTensors)):
+                            contribution = len(top_fn_clusters.loc[top_fn_clusters['tensor_idx'] == i])
+                            if contribution > (math.floor(math.ceil(len(protein_clusters)/5)/len(DataTensors))*0.85):
+                                concat_ins.append(DataTensors[i].interpolate(DataTensors[i].full_grid_out, 5000, (3,1))[0])
+                                concat_charges.append(DataTensors[i].charge_states[0])
+                                concat_dt_lens.append(len(DataTensors[i].dts))
+                        if len(concat_ins)>1:
+                            print("CONCATENATING")
+                            try:
+                                interpolated_lows, interpolated_highs = DataTensors[0].interpolate(DataTensors[0].full_grid_out, new_mz_len = 5000, gauss_params = self.gauss_params)[1:3]
+                                concatenated = np.concatenate(concat_ins, axis = 1)
+                                concat_dt_idxs = np.cumsum(concat_dt_lens)
+                                mz_bin_low = min([x.mz_bin_low for x in DataTensors])
+                               
+                                #RT is taken from last tensor read in, consider averaging?
+                                DataTensors.append(
+                                    DataTensor(
+                                        source_file = "Concatenated, see IC.charge_states",
+                                        tensor_idx = "Concatenated, see IC.charge_states",
+                                        timepoint_idx = tp,
+                                        name = self.name, 
+                                        total_mass_window = self.total_mass_window,
+                                        charge_states = concat_charges, 
+                                        rts = output[0], 
+                                        dts = concatenated, 
+                                        n_concatenated = len(concat_ins), 
+                                        concat_dt_idxs = concat_dt_idxs, 
+                                        concatenated_grid = concatenated, 
+                                        lows = interpolated_lows, 
+                                        highs = interpolated_highs, 
+                                        abs_mz_low = mz_bin_low
+                                        )
                                     )
-                                )
-                            DataTensors[-1].factorize()   
+                                DataTensors[-1].factorize()   
 
-                            #Add concatenated factors to fn_factors, ICs emptied later
-                            for factor in DataTensors[-1].facctors:
-                                fn_factors.append(factor)
-                        
-                        except ValueError:
-                            #handle length mismatches in future, now just skip it and show the error TODO
-                            #often a +- 1 error
-                            print("Length mistmatch in the tensors to be combined")
+                                #Add concatenated factors to fn_factors, ICs emptied later
+                                for factor in DataTensors[-1].facctors:
+                                    fn_factors.append(factor)
+                            
+                            except ValueError:
+                                #handle length mismatches in future, now just skip it and show the error TODO
+                                #often a +- 1 error
+                                print("Length mistmatch in the tensors to be combined")
 
-                #append list of fn_factor lists to tp_factors
-                tp_factors.append(fn_factors)
+                    #append list of fn_factor lists to tp_factors
+                    tp_factors.append(fn_factors)
             #collect all tp_factor lists into one master list
             all_tp_factors.append(tp_factors) # 3D: Timepoints X Replicates X Factors
         
