@@ -457,7 +457,10 @@ class Factor:
            
         self.box_intensities = self.mz_data[self.grate]
         self.max_peak_height = max(self.box_intensities)
-        self.mz_peaks = sp.signal.find_peaks(self.mz_data, height = 0.01)[0] # TODO consider replacing with prominence, check in notebook
+        try:
+            self.mz_peaks = sp.signal.find_peaks(self.mz_data, height = 0.01)[0] # TODO consider replacing with prominence, check in notebook
+        except:
+            ipdb.set_trace()
         #Unused at factor level
         #self.peak_error, self.peaks_chosen = self.peak_error(self.mz_data, self.mz_peaks, self.integration_box_centers, self.max_peak_height)
                 
@@ -694,7 +697,10 @@ class IsotopeCluster:
         self.grate_sum = sum(self.box_intensities)
         
         #identify peaks and find error from expected peak positions using raw mz
-        self.mz_peaks = sp.signal.find_peaks(self.factor_mz_data, distance = self.box_dist_avg/10)[0]
+        try:
+            self.mz_peaks = sp.signal.find_peaks(self.factor_mz_data, distance = self.box_dist_avg)[0]
+        except:
+            ipdb.set_trace()
         self.max_peak_height = max(self.box_intensities)
         self.peak_error, self.peaks_chosen = self.find_peak_error(self.cluster_mz_data, 
                                                         self.mz_peaks, 
