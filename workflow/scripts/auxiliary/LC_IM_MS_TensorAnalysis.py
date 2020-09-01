@@ -314,7 +314,7 @@ class DataTensor:
                 return True
 
         t = time.time()
-        print('Filtering... T+'+str(t-t0))
+        #print('Filtering... T+'+str(t-t0))
         #handle concatenation and intetrpolfilter option
         if self.n_concatenated != 1: 
             grid, lows, highs, concat_dt_idxs = self.concatenated_grid, self.lows, self.highs, self.concat_dt_idxs
@@ -332,7 +332,7 @@ class DataTensor:
                     grid = self.full_grid_out
                 
         t = time.time()
-        print('Zeroing Non-POI M/z... T+'+str(t-t0))
+        #print('Zeroing Non-POI M/z... T+'+str(t-t0))
         #Multiply all values outside of integration box boundaries by 0, TODO: demonstrate this against keeping the full tensor - obv faster, self-evidently better fac: quantify as support
         zero_mult = np.zeros((np.shape(grid)))
         for lo, hi in zip(lows, highs):
@@ -363,7 +363,7 @@ class DataTensor:
         #Create Factor objects
         factors = []
         t = time.time()
-        print('Saving Factor Objects... T+'+str(t-t0))
+        #print('Saving Factor Objects... T+'+str(t-t0))
         for i in range(nf):
             factors.append(
                 Factor(
@@ -1220,7 +1220,7 @@ class PathOptimizer:
 
         HX1 = hxtools.hxprot(seq=library_info.loc[library_info['name']==name]['sequence'].values[0])
 
-        if self.old_data_dir is not None: #if comparing to old data, save old-data's fits in-place CONSIDER OUTPUTTING TO SNAKEMAKE DIR
+        if self.old_data_dir is not None: #if comparing to old data, save old-data's fits in-place TODO: CONSIDER OUTPUTTING TO SNAKEMAKE DIR
             #open first three (undeut) dicts in list, store fit to theoretical dist
             for charge_dict in self.old_data:
                 undeut_amds = [{'major_species_integrated_intensities': charge_dict['major_species_integrated_intensities'][i]} for i in range(3)]#hardcode for gabe's undeut idxs in list   
@@ -1380,36 +1380,37 @@ class PathOptimizer:
                 #TODO: Rework this to make better sense
 
                 for i in range(ic.n_concatenated):
-                    
-                    undeut = undeut_grounds[ic.charge_states[i]]
-                    
-                    rt_ground_errs.append(abs(ic.rt_com - undeut.rt_com))
-                    
-                    #Trys all dt_coms (for concatenated tensors) keeps best error
-                    dt_ground_errs.append(min([abs(ic.dt_coms[i] - undeut.dt_coms[j]) for j in range(len(undeut.dt_coms))])) 
+
+                    if ic.charge_states[i] in undeut_grounds.keys():
+                        undeut = undeut_grounds[ic.charge_states[i]]
+                        
+                        rt_ground_errs.append(abs(ic.rt_com - undeut.rt_com))
+                        
+                        #Trys all dt_coms (for concatenated tensors) keeps best error
+                        dt_ground_errs.append(min([abs(ic.dt_coms[i] - undeut.dt_coms[j]) for j in range(len(undeut.dt_coms))])) 
 
 
-                    diff = len(ic.dt_norms[i]) - len(undeut_grounds[ic.charge_states[i]].dt_norms[0])
-                    if diff == 0:
-                        dt_ground_fits.append(np.dot(ic.dt_norms[i], undeut_grounds[ic.charge_states[i]].dt_norms[0]))
-                    else:
-                        if diff > 0:
-                            u_buff = copy.copy(undeut_grounds[ic.charge_states[i]].dt_norms[0])
-                            u_buff = np.append(u_buff, [0]*diff)
-                            dt_ground_fits.append(np.dot(ic.dt_norms[i], u_buff))
+                        diff = len(ic.dt_norms[i]) - len(undeut_grounds[ic.charge_states[i]].dt_norms[0])
+                        if diff == 0:
+                            dt_ground_fits.append(np.dot(ic.dt_norms[i], undeut_grounds[ic.charge_states[i]].dt_norms[0]))
                         else:
-                            dt_ground_fits.append(np.dot(ic.dt_norms[i], undeut_grounds[ic.charge_states[i]].dt_norms[0][:diff]))
+                            if diff > 0:
+                                u_buff = copy.copy(undeut_grounds[ic.charge_states[i]].dt_norms[0])
+                                u_buff = np.append(u_buff, [0]*diff)
+                                dt_ground_fits.append(np.dot(ic.dt_norms[i], u_buff))
+                            else:
+                                dt_ground_fits.append(np.dot(ic.dt_norms[i], undeut_grounds[ic.charge_states[i]].dt_norms[0][:diff]))
 
-                    diff = len(ic.rt_norm) - len(undeut_grounds[ic.charge_states[0]].rt_norm)
-                    if diff == 0:
-                        rt_ground_fits.append(np.dot(ic.rt_norm, undeut_grounds[ic.charge_states[0]].rt_norm))
-                    else:
-                        if diff > 0:
-                            u_buff = copy.copy(undeut_grounds[ic.charge_states[0]].rt_norm)
-                            u_buff = np.append(u_buff, [0]*diff)
-                            rt_ground_fits.append(np.dot(ic.rt_norm, u_buff))
+                        diff = len(ic.rt_norm) - len(undeut_grounds[ic.charge_states[0]].rt_norm)
+                        if diff == 0:
+                            rt_ground_fits.append(np.dot(ic.rt_norm, undeut_grounds[ic.charge_states[0]].rt_norm))
                         else:
-                            rt_ground_fits.append(np.dot(ic.rt_norm, undeut_grounds[ic.charge_states[0]].rt_norm[:diff]) )
+                            if diff > 0:
+                                u_buff = copy.copy(undeut_grounds[ic.charge_states[0]].rt_norm)
+                                u_buff = np.append(u_buff, [0]*diff)
+                                rt_ground_fits.append(np.dot(ic.rt_norm, u_buff))
+                            else:
+                                rt_ground_fits.append(np.dot(ic.rt_norm, undeut_grounds[ic.charge_states[0]].rt_norm[:diff]) )
 
                 ic.dt_ground_err = np.average(dt_ground_errs)
                 ic.rt_ground_err = np.average(rt_ground_errs)
@@ -1471,11 +1472,11 @@ class PathOptimizer:
                             #pick lowest mz
                             path.append(sorted(prefiltered_ics[tp], key = lambda ic: ic.baseline_integrated_mz_com)[0])
                     else:
-                        #oh shid wutz goin on
+                        #No ics in tp, print message and append path[-1]
                         import os
                         import sys
                         sys.stdout.write("len(PO.prefiltered_ics["+str(tp)+"]) == 0")
-                        os.kill(os.getpid())
+                        path.append(path[-1])
 
         
         return tuple(path)
@@ -2118,7 +2119,7 @@ class PathOptimizer:
         ]
         
         n_timepoints = len(self.winner)
-        print("internal n_timepoints: "+str(n_timepoints))
+        #print("internal n_timepoints: "+str(n_timepoints))
         if self.old_data_dir is not None:
             winner_plots = [winner_plotter(cds, i, winner_tts, old_source=gabe_cds) for i in range(n_timepoints)]    
         

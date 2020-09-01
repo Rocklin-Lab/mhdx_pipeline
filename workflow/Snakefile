@@ -31,6 +31,22 @@ rule isolate_tensors:
 		"scripts/main/isolate_tensors.py"
 
 
+def idotp_filter_inputs(name, library_info):
+	#Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
+	name_inputs = []
+	idxs = library_info.index[library_info['name'] == name].tolist()
+	
+	if len(config[0]) > 1:
+		for file in config[0]:
+			for idx in idxs:
+				name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
+	else:
+		file = config[key][0]
+		for idx in idxs:
+			name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib")
+
+	return undeut_inputs
+
 
 def analyze_tensors_inputs(name, library_info):
 	#Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
@@ -50,8 +66,20 @@ def analyze_tensors_inputs(name, library_info):
 
 
 
+rule idotp_filter:
+	#TODO: docstring
+	input:
+		"resources/library_info/library_info.csv",
+		lambda wildcards: idotp_filter_inputs(wildcards.name, library_info)
+	output:
+		"resources/idotp_filter/{name}_idotp_check.csv"
+	script:
+		"scripts/main/idotp_filter.py"
+
+
+
 rule analyze_tensors:
-	#TODO: Docstring
+	#TODO: docstring
 	input:
 		"resources/library_info/library_info.csv",
 		lambda wildcards: analyze_tensors_inputs(wildcards.name, library_info)
@@ -59,6 +87,8 @@ rule analyze_tensors:
 		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
 	script:
 		"scripts/main/analyze_tensors.py"
+
+
 
 rule optimize_paths:
 	input:
