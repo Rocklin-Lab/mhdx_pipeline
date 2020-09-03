@@ -168,10 +168,10 @@ class DataTensor:
         #Handle normal case: new DataTensor from output of isolate_tensors.py
         if self.n_concatenated == 1:
             t0 = time.time()
-            print('Reprofiling...')
+            #print('Reprofiling...')
             self.grid_out = np.reshape(self.reprofile(), (len(self.rts), len(self.dts)))
             t = time.time()
-            print("T+"+str(t-t0))
+            #print("T+"+str(t-t0))
             #For creating full_grid_out, a 3d array with all mz dimensions having the same length
             #Find min and max mz range values:
             #check high 
@@ -343,13 +343,13 @@ class DataTensor:
         nf = 14
         flag = True
         t = time.time()
-        print('Start Factorization Series... T+'+str(t-t0))
+        #print('Start Factorization Series... T+'+str(t-t0))
         while flag:
             t1 = time.time()
-            print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
+            #print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
             nnp = non_negative_parafac(grid, nf)
             t2 = time.time()
-            print('Factorization Duration: '+str(t2-t1))
+            #print('Factorization Duration: '+str(t2-t1))
 
             if nf > 2:
                 if corr_check(nnp, 0.25):

@@ -8,16 +8,14 @@ configfile: "config/config.yaml"
 import pandas as pd
 from collections import OrderedDict
 
+library_info = pd.read_csv("resources/library_info/library_info.csv")#.iloc[:12] limit number of jobs by subsetting master list
 subset_names = list(OrderedDict.fromkeys(pd.read_csv("resources/library_info/library_info.csv").iloc[subset_indices]['name'].values))
-names =  list(OrderedDict.fromkeys(pd.read_csv("resources/library_info/library_info.csv")['name'].values))
+names =  list(OrderedDict.fromkeys(library_info['name'].values))
 
 rule all:
 	input:
-		config['run_name']+"_plot_linker.html" #).iloc[:i] to limit run to specific # of charge states
-
-
-
-library_info = pd.read_csv("resources/library_info/library_info.csv")#.iloc[:12] limit number of jobs by subsetting master list
+		expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
+		#config['run_name']+"_plot_linker.html" #).iloc[:i] to limit run to specific # of charge states
 
 
 
@@ -31,7 +29,8 @@ rule isolate_tensors:
 		"scripts/main/isolate_tensors.py"
 
 
-def idotp_filter_inputs(name, library_info):
+"""
+def idotp_check_inputs(name, library_info):
 	#Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
 	name_inputs = []
 	idxs = library_info.index[library_info['name'] == name].tolist()
@@ -46,6 +45,8 @@ def idotp_filter_inputs(name, library_info):
 			name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib")
 
 	return undeut_inputs
+"""
+
 
 
 def analyze_tensors_inputs(name, library_info):
@@ -66,15 +67,45 @@ def analyze_tensors_inputs(name, library_info):
 
 
 
-rule idotp_filter:
+def idotp_check_inputs(i, library_info):
+	idx_inputs = []
+	if len(config[0]) > 1:
+		for file in config[0]:
+			idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
+	else:
+		file = config[key][0]
+		idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib")
+
+	return idx_inputs
+
+
+
+rule idotp_check:
 	#TODO: docstring
 	input:
 		"resources/library_info/library_info.csv",
-		lambda wildcards: idotp_filter_inputs(wildcards.name, library_info)
+		lambda wildcards: idotp_check_inputs(wildcards.i, library_info)
 	output:
-		"resources/idotp_filter/{name}_idotp_check.csv"
+		"resources/idotp_filter/{i}_idotp_check.csv"
+	script:
+		"scripts/main/idotp_check.py"
+
+
+
+rule idotp_filter:
+	#TODO: docstring
+	input:
+		expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
+	output: 
+		"results/tables/idotp_filter.csv"
 	script:
 		"scripts/main/idotp_filter.py"
+
+
+
+###
+### BREAK HERE FOR DAG RESOLUTION ###
+###
 
 
 
