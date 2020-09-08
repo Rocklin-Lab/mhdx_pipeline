@@ -107,7 +107,6 @@ for scan_number in relevant_scans:
     if len(scan_to_lines[scan_number]) > 0:
         try:
             scan=msrun[scan_number]
-            scan.set_peaks(scan.peaks('raw'), 'centroided')
             spectrum = np.array(scan.peaks('raw')).astype(np.float32)
             if len(spectrum) == 0: spectrum = scan.peaks('raw').astype(np.float32)
             spectrum=spectrum[spectrum[:,1] > 10]

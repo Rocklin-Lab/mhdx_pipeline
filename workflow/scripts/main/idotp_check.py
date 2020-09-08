@@ -78,6 +78,7 @@ for fn in undeut_fns:
                             int_seq_out = None
                             )
     print("Loop: "+str(count)+", Debug 3")
+    print("Tensor Dims: "+str(np.shape(newDataTensor.full_grid_out)))
     
     newDataTensor.lows = np.searchsorted(newDataTensor.mz_bins, low_lims)
     newDataTensor.highs = np.searchsorted(newDataTensor.mz_bins, high_lims)
