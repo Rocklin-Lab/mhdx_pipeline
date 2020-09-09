@@ -18,13 +18,12 @@ rule all:
 		#config['run_name']+"_plot_linker.html" #).iloc[:i] to limit run to specific # of charge states
 
 
-
 rule isolate_tensors:
 	input:
 		"resources/library_info/library_info.csv",
 		"resources/mzml/{mzml_gz}"
 	output:
-		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info))) #subset_indices)#
+		directory(expand("resources/mzml/{idx}/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info)))) #subset_indices)#
 	script:
 		"scripts/main/isolate_tensors.py"
 

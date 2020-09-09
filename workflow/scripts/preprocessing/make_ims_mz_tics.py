@@ -47,7 +47,7 @@ def make_ims_tic(mzml):
     rtIndex = 0
     for spectrum in run:
         if spectrum['id'] == 'TIC': continue
-        spec_id = int(spectrum['id'])
+        spec_id = int(spectrum['id']-1)
         id_appearance_count[spec_id] += 1
         #if spectrum['ms level'] == 1:
         if id_appearance_count[spec_id] == 1: #this replaces 'ms level'
