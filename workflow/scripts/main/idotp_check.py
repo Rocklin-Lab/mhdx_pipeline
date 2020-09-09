@@ -73,15 +73,15 @@ for fn in undeut_fns:
                             n_concatenated = 1,
                             charge_states = [library_info["charge"].values[i]], 
                             rts = output[0], 
-                            dts= output[1], 
+                            dts = output[1], 
                             seq_out = output[2], 
                             int_seq_out = None
                             )
     print("Loop: "+str(count)+", Debug 3")
     print("Tensor Dims: "+str(np.shape(newDataTensor.full_grid_out)))
     
-    newDataTensor.lows = np.searchsorted(newDataTensor.mz_bins, low_lims)
-    newDataTensor.highs = np.searchsorted(newDataTensor.mz_bins, high_lims)
+    newDataTensor.lows = np.searchsorted(newDataTensor.mz_labels, low_lims)
+    newDataTensor.highs = np.searchsorted(newDataTensor.mz_labels, high_lims)
     newDataTensor.factorize()
     print("Loop: "+str(count)+", Debug 4")
     #Hacky, clean

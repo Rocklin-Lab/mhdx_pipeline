@@ -10,42 +10,28 @@ from collections import OrderedDict
 
 library_info = pd.read_csv("resources/library_info/library_info.csv")#.iloc[:12] limit number of jobs by subsetting master list
 subset_names = list(OrderedDict.fromkeys(pd.read_csv("resources/library_info/library_info.csv").iloc[subset_indices]['name'].values))
-names =  list(OrderedDict.fromkeys(library_info['name'].values))
+names =  list(set(library_info['name'].values))
+
 
 rule all:
-	input:
-		expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
-		#config['run_name']+"_plot_linker.html" #).iloc[:i] to limit run to specific # of charge states
+	input:expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
 
 
 rule isolate_tensors:
 	input:
 		"resources/library_info/library_info.csv",
-		"resources/mzml/{mzml_gz}"
+		"resources/mzml_gz/{mzml_gz}"
 	output:
-		directory(expand("resources/mzml/{idx}/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info)))) #subset_indices)#
+		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info))) #subset_indices)#
 	script:
 		"scripts/main/isolate_tensors.py"
 
 
-"""
-def idotp_check_inputs(name, library_info):
-	#Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
-	name_inputs = []
-	idxs = library_info.index[library_info['name'] == name].tolist()
-	
-	if len(config[0]) > 1:
-		for file in config[0]:
-			for idx in idxs:
-				name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
-	else:
-		file = config[key][0]
-		for idx in idxs:
-			name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib")
-
-	return undeut_inputs
-"""
-
+#rule all:
+	#input:
+		#expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
+		#config['run_name']+"_plot_linker.html" #).iloc[:i] to limit run to specific # of charge states
+		#rules.isolate_tensors.output
 
 
 def analyze_tensors_inputs(name, library_info):

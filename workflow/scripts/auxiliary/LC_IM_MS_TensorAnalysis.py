@@ -167,6 +167,7 @@ class DataTensor:
         
         #Handle normal case: new DataTensor from output of isolate_tensors.py
         if self.n_concatenated == 1:
+            """
             t0 = time.time()
             #print('Reprofiling...')
             self.grid_out = np.reshape(self.reprofile(), (len(self.rts), len(self.dts)))
@@ -215,9 +216,9 @@ class DataTensor:
                         except:
                             ipdb.set_trace()
                             print("this stops the iterator")
+            """
 
-            self.full_grid_out = self.full_grid_out
-
+            self.retention_labels, self.drift_labels, self.mz_labels, self.min_mz, self.max_mz, self.full_grid_out = self.sparse_to_full_tensor((self.rts, self.dts, self.seq_out))
             self.full_gauss_grids = self.gauss(self.full_grid_out)
            
         #Handle concatenated tensor case, check for required inputs
@@ -233,7 +234,28 @@ class DataTensor:
                 print("Concatenated Tensor Missing Required Values")
                 sys.exit()
 
+    def sparse_to_full_tensor(self, data):
+        retention_labels, drift_labels, sparse_data = data
         
+        min_mz = min([min(x[:,0]) for x in sparse_data if len(x[:,0]) > 0])
+        max_mz = max([max(x[:,0]) for x in sparse_data if len(x[:,0]) > 0])
+        #print (min_mz, max_mz)
+        #mz_labels = np.arange(min_mz, max_mz + 0.03, 0.02)
+        mz_labels = np.arange(min_mz, max_mz + 0.03, 0.02)
+        
+        tensor3_out = np.zeros((len(retention_labels), len(drift_labels), len(mz_labels)))
+        
+        scan = 0
+        for i in range(len(retention_labels)):
+            for j in range(len(drift_labels)):
+                mz_indices = np.searchsorted(mz_labels, sparse_data[scan][:,0])            
+                large_array = np.zeros((len(sparse_data[scan]), len(mz_labels)))
+                large_array[np.arange(len(sparse_data[scan])), mz_indices] = sparse_data[scan][:,1]
+                tensor3_out[i][j] = np.sum(large_array, axis = 0)
+                scan += 1
+
+        return (retention_labels, drift_labels, mz_labels, min_mz, max_mz, tensor3_out)
+
     def reprofile(self): 
         #Reads list of mz peak centroids and returns full length mz array of gaussians. 
         #Measured and interal precision are adjusted to vary compression of the mz dimension. 
@@ -379,7 +401,7 @@ class DataTensor:
                     n_factors = nf, 
                     lows = lows, 
                     highs = highs, 
-                    abs_mz_low = self.mz_bin_low, 
+                    abs_mz_low = self.min_mz, 
                     n_concatenated = self.n_concatenated, 
                     concat_dt_idxs = concat_dt_idxs,
                     total_mass_window = self.total_mass_window
