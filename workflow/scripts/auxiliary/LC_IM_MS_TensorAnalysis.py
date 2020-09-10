@@ -373,14 +373,15 @@ class DataTensor:
             t2 = time.time()
             #print('Factorization Duration: '+str(t2-t1))
 
-            if nf > 2:
+            if nf > 1:
                 if corr_check(nnp, 0.25):
                     flag = False
                     break
-                nf -= 1
+                else:
+                    nf -= 1
             else:
                 flag = False
-                print("All n-factors failed for Index: "+str(self.name))
+                print("All n-factors failed for Index: "+str(self.name)+", keeping 1 factor decomposition.")
            
         #Create Factor objects
         factors = []
