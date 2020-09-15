@@ -82,7 +82,7 @@ for fn in undeut_fns:
     
     newDataTensor.lows = np.searchsorted(newDataTensor.mz_labels, low_lims)
     newDataTensor.highs = np.searchsorted(newDataTensor.mz_labels, high_lims)
-    newDataTensor.factorize()
+    newDataTensor.factorize(gauss_params=(3,1))
     print("Loop: "+str(count)+", Debug 4")
     #Hacky, clean
     [undeut_ics.append(ic) for i in range(len(newDataTensor.factors)) for ic in newDataTensor.factors[i].isotope_clusters]

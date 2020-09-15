@@ -481,7 +481,7 @@ class Factor:
         self.box_intensities = self.mz_data[self.grate]
         self.max_peak_height = max(self.box_intensities)
         try:
-            self.mz_peaks = sp.signal.find_peaks(self.mz_data, height = 0.01)[0] # TODO consider replacing with prominence, check in notebook
+            self.mz_peaks = sp.signal.find_peaks(self.mz_data, prominence = 0.01, width = 0.5)[0] # TODO consider replacing with prominence, check in notebook
         except:
             ipdb.set_trace()
         #Unused at factor level
@@ -499,13 +499,19 @@ class Factor:
     #Uses find_window function to identify portions of the integrated mz dimension that look 'isotopic-cluster-like', saves as Factor attribute
     def find_isotope_clusters(self, peak_width, **kwargs):
         self.isotope_clusters = []
-        peaks = sp.signal.find_peaks(self.integrated_mz_data, **kwargs)[0]
+        out = sp.signal.find_peaks(self.integrated_mz_data, prominence = 0.01, width = 0.5)
+        peaks = out[0]
+
         if len(peaks) == 0:
             return
         else:
+            ic_idxs = [(out[1]['left_bases'][i], out[1]['left_bases'][i+1]) if out[1]['left_bases'][i] < out[1]['left_bases'][i+1] else (out[1]['left_bases'][i], out[1]['left_bases'][i]+6) for i in range(len(out[0])-1)]
+            if len(peaks) > 1:
+                ic_idxs.append((out[1]['left_bases'][-1], len(self.integrated_mz_data)-1))
             cluster_idx = 0
-            for i in range(len(peaks)):
-                integrated_indices = self.find_window(self.integrated_mz_data, peaks[i], peak_width)
+            for tup in ic_idxs:
+                integrated_indices = tup
+                #integrated_indices = self.find_window(self.integrated_mz_data, peaks[i], peak_width)
                 if integrated_indices != None:
                     self.isotope_clusters.append(
                         IsotopeCluster(
@@ -889,8 +895,11 @@ class IsotopeCluster:
             for i in range(1,len(integration_box_centers)):
                 box_dist_total += integration_box_centers[i]-integration_box_centers[i-1]
             
-            
-            peak_error = (peak_error / peaks_total_height / (box_dist_total/(len(integration_box_centers)-1)))
+            if len(integration_box_centers) == 1:
+                peak_error = (peak_error / peaks_total_height / (box_dist_total/(len(integration_box_centers))))
+            else:   
+                peak_error = (peak_error / peaks_total_height / (box_dist_total/(len(integration_box_centers)-1)))
+
             return peak_error, peaks_chosen
     
 ###
