@@ -1,1 +1,0 @@
-Total Ionic Current -TIC- summation of MS intensity over Drift and M/z dimensions - aka Chromatogram showing intensity of signal over the duration of an LC run. Used in timewarping LC runs during preprocessing.
