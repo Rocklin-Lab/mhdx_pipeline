@@ -133,4 +133,4 @@ for dt in DTs:
 n_factors = [dt.n_factors for dt in DTs]
 
 print("Index: "+str(i)+", IdotP: "+str(best_idotp)+", Best Factor IdotP: "+str(best_factor_idotp))    
-hx.limit_write(pd.DataFrame({'index': [i], 'name': [name], 'charge': [charge], 'idotp': [best_idotp],"factor_idotp": [best_factor_idotp], "best": [dot_products[best_idotp_idx][2]], "ic_mzs": [charge_ic_int_mzs], "factor_mzs": [factors], "n_factors"}), snakemake.output[0])
+hx.limit_write(pd.DataFrame({'index': [i], 'name': [name], 'charge': [charge], 'idotp': [best_idotp],"factor_idotp": [best_factor_idotp], "best": [dot_products[best_idotp_idx][2]], "ic_mzs": [charge_ic_int_mzs], "factor_mzs": [factors], "n_factors": [n_factors]}), snakemake.output[0])
