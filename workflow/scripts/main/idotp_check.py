@@ -21,9 +21,18 @@ sys.path.append(os.getcwd()+"/workflow/scripts/auxiliary/")
 import hxtools
 import LC_IM_MS_TensorAnalysis as hx
 
-ins = copy.copy(snakemake.input)
+#Tensor label-generation constants
+hd_mass_diff = 1.006277
+c13_mass_diff = 1.00335
 
+#config params
+low_mass_margin = 10
+high_mass_margin = 17
+ppm_radius = 30
+
+ins = copy.copy(snakemake.input)
 library_info = pd.read_csv(ins.pop(0))
+library_info['Drift Time MS1'] = library_info['im_mono'] / 200.0 * 13.781163434903
 i = int(ins[0].split('/')[-1].split('_')[0])
 
 #make hxprot representation per sequence
