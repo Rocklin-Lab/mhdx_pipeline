@@ -26,17 +26,11 @@ ins = copy.copy(snakemake.input)
 library_info = pd.read_csv(ins.pop(0))
 i = int(ins[0].split('/')[-1].split('_')[0])
 
-hd_mass_diff = 1.006277
-c13_mass_diff = 1.00335
-low_mass_margin = 10
-high_mass_margin = 17
-ppm_radius = 30
-
 #make hxprot representation per sequence
 name = library_info.iloc[i]['name']
 charge = library_info.iloc[i]['charge']
 seq = library_info.loc[library_info['name'] == name]['sequence'].values[0]
-hx_prot = hxtools.hxprot(seq=seq)
+hx_prot = hxtools.hxprot(seq = seq)
 dot_products = []
 
 #Compute DataTensor init inputs
@@ -58,11 +52,13 @@ undeut_fns = [fn for fn in glob.glob("resources/tensors/"+str(i)+"_*") if "UN" i
 print("Debug: Start undeut factorizations")
 count = 1
 undeut_ics = []
-for fn in undeut_fns:
+gauss_undeut_ics = []
+DTs = []
+charge_ic_int_mzs = []
+for fn in ins:
     #read mzml 
-    print("Loop: "+str(count)+", Debug 1")
     output = hx.limit_read(fn)
-    print("Loop: "+str(count)+", Debug 2")
+
     #make DataTensor
     newDataTensor = hx.DataTensor(
                             source_file = fn,
@@ -77,30 +73,64 @@ for fn in undeut_fns:
                             seq_out = output[2], 
                             int_seq_out = None
                             )
-    print("Loop: "+str(count)+", Debug 3")
-    print("Tensor Dims: "+str(np.shape(newDataTensor.full_grid_out)))
-    
+
     newDataTensor.lows = np.searchsorted(newDataTensor.mz_labels, low_lims)
     newDataTensor.highs = np.searchsorted(newDataTensor.mz_labels, high_lims)
-    newDataTensor.factorize(gauss_params=(3,1))
-    print("Loop: "+str(count)+", Debug 4")
-    #Hacky, clean
-    [undeut_ics.append(ic) for i in range(len(newDataTensor.factors)) for ic in newDataTensor.factors[i].isotope_clusters]
+    #newDataTensor.factorize()
 
-    print("Loop: "+str(count)+", Debug 5")
+    #Hacky, clean
+    #[undeut_ics.append(ic) for i in range(len(newDataTensor.factors)) for ic in newDataTensor.factors[i].isotope_clusters]
+
+    newDataTensor.factorize(gauss_params=(3,1))
+    [gauss_undeut_ics.append(ic) for i in range(len(newDataTensor.factors)) for ic in newDataTensor.factors[i].isotope_clusters]
+    DTs.append(newDataTensor)
+
     count += 1
 
-for ic in undeut_ics:
+for ic in gauss_undeut_ics:
     df = pd.DataFrame(ic.baseline_integrated_mz, columns = ['major_species_integrated_intensities'])
     fit = hx_prot.calculate_isotope_dist(df)
     ic.undeut_ground_dot_product = fit
-    dot_products.append((fit, ic.charge_states))
+    dot_products.append((fit, ic.charge_states, ic.baseline_integrated_mz))
+    charge_ic_int_mzs.append(ic.baseline_integrated_mz)
 
 if len(dot_products) > 0:
-	best_idotp = max(np.asarray(dot_products)[:,0])
+    best_idotp_idx = np.argmax(np.asarray(dot_products)[:,0])
+    best_idotp = max(np.asarray(dot_products)[:,0])
 else:
-	best_idotp = 0
+    best_idotp = 0
 
-print("Debug: Loop Complete")
+factors = [factor.integrated_mz_data for tensor in DTs for factor in tensor.factors] 
+factor_frames = [[factor[:i]for i in range(8,12)] for factor in factors]
+best_factor_idotp = [max([hx_prot.calculate_isotope_dist(pd.DataFrame(frame, columns = ['major_species_integrated_intensities']))for factor in factor_frames for frame in factor ]), np.argmax([hx_prot.calculate_isotope_dist(pd.DataFrame(frame, columns = ['major_species_integrated_intensities']))for factor in factor_frames for frame in factor ])]
+#print("Debug: Loop Complete")
 
-hx.limit_write(pd.DataFrame({'index': [i], 'name': [name], 'charge': [charge], 'idotp': [best_idotp]}), snakemake.output[0])
+
+#best undeut peak w/ theor undeut
+plt.figure()
+plt.plot(hx_prot.calculate_theo_isotope_dist())
+plt.plot(dot_products[best_idotp_idx][2])
+plt.show()
+plt.close()
+
+#all ics found w/ theor undeut
+plt.figure()
+plt.plot(hx_prot.isotope_dist)
+for ic in gauss_undeut_ics:
+    plt.plot(ic.baseline_integrated_mz)
+plt.show()
+plt.close()
+
+#all factor int mzs w/ theor undeut
+for dt in DTs:
+    plt.figure()
+    plt.plot(hx_prot.isotope_dist)
+    for factor in dt.factors:
+        plt.plot(factor.integrated_mz_data)
+    plt.show()
+    plt.close()
+
+n_factors = [dt.n_factors for dt in DTs]
+
+print("Index: "+str(i)+", IdotP: "+str(best_idotp)+", Best Factor IdotP: "+str(best_factor_idotp))    
+hx.limit_write(pd.DataFrame({'index': [i], 'name': [name], 'charge': [charge], 'idotp': [best_idotp],"factor_idotp": [best_factor_idotp], "best": [dot_products[best_idotp_idx][2]], "ic_mzs": [charge_ic_int_mzs], "factor_mzs": [factors], "n_factors"}), snakemake.output[0])

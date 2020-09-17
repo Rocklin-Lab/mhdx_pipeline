@@ -513,33 +513,36 @@ class Factor:
                 integrated_indices = tup
                 #integrated_indices = self.find_window(self.integrated_mz_data, peaks[i], peak_width)
                 if integrated_indices != None:
-                    self.isotope_clusters.append(
-                        IsotopeCluster(
-                            charge_states = self.charge_states, 
-                            factor_mz_data = copy.deepcopy(self.mz_data), 
-                            source_file = self.source_file,
-                            tensor_idx = self.tensor_idx, 
-                            timepoint_idx = self.timepoint_idx, 
-                            n_factors = self.n_factors, 
-                            factor_idx = self.factor_idx, 
-                            cluster_idx = cluster_idx, 
-                            low_idx = self.lows[integrated_indices[0]]-math.ceil(self.box_dist_avg/2), 
-                            high_idx = self.highs[integrated_indices[1]]+math.ceil(self.box_dist_avg/2), 
-                            lows = self.lows, 
-                            highs = self.highs, 
-                            grate = self.grate, 
-                            rts = self.rts, 
-                            dts = self.dts, 
-                            max_rtdt = self.max_rtdt, 
-                            outer_rtdt = self.outer_rtdt, 
-                            box_dist_avg = self.box_dist_avg, 
-                            abs_mz_low = self.abs_mz_low, 
-                            n_concatenated = self.n_concatenated, 
-                            concat_dt_idxs = self.concat_dt_idxs,
-                            total_mass_window = self.total_mass_window
+                    try:
+                        self.isotope_clusters.append(
+                            IsotopeCluster(
+                                charge_states = self.charge_states, 
+                                factor_mz_data = copy.deepcopy(self.mz_data), 
+                                source_file = self.source_file,
+                                tensor_idx = self.tensor_idx, 
+                                timepoint_idx = self.timepoint_idx, 
+                                n_factors = self.n_factors, 
+                                factor_idx = self.factor_idx, 
+                                cluster_idx = cluster_idx, 
+                                low_idx = self.lows[integrated_indices[0]]-math.ceil(self.box_dist_avg/2), 
+                                high_idx = self.highs[integrated_indices[1]]+math.ceil(self.box_dist_avg/2), 
+                                lows = self.lows, 
+                                highs = self.highs, 
+                                grate = self.grate, 
+                                rts = self.rts, 
+                                dts = self.dts, 
+                                max_rtdt = self.max_rtdt, 
+                                outer_rtdt = self.outer_rtdt, 
+                                box_dist_avg = self.box_dist_avg, 
+                                abs_mz_low = self.abs_mz_low, 
+                                n_concatenated = self.n_concatenated, 
+                                concat_dt_idxs = self.concat_dt_idxs,
+                                total_mass_window = self.total_mass_window
+                                )
                             )
-                        )
-                    cluster_idx += 1
+                        cluster_idx += 1
+                    except: 
+                        print("ic index out of bounds: "+str(integrated_indices))
             return
 
     #heuristically identifies 'things that look like acceptable isotopic clusters' in integrated mz dimension, roughly gaussian allowing some inflection points from noise
