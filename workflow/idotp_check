@@ -1,0 +1,45 @@
+#Define config file and import libraries
+configfile: "config/config.yaml"
+import pandas as pd
+from collections import OrderedDict
+
+#Read list of candidate POI charge states produced by preprocessing snakefile
+library_info = pd.read_csv("resources/library_info/library_info.csv")
+names =  list(set(library_info['name'].values))
+
+#all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
+rule all:
+	input:expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
+
+
+rule isolate_tensors:
+	input:
+		"resources/library_info/library_info.csv",
+		"resources/mzml_gz/{mzml_gz}"
+	output:
+		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info))) #subset_indices)#
+	script:
+		"scripts/main/isolate_tensors.py"
+
+
+def idotp_check_inputs(i, library_info):
+	idx_inputs = []
+	if len(config[0]) > 1:
+		for file in config[0]:
+			idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
+	else:
+		file = config[key][0]
+		idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib")
+
+	return idx_inputs
+
+
+rule idotp_check:
+	#TODO: docstring
+	input:
+		"resources/library_info/library_info.csv",
+		lambda wildcards: idotp_check_inputs(wildcards.i, library_info)
+	output:
+		"resources/idotp_filter/{i}_idotp_check.csv"
+	script:
+		"scripts/main/idotp_check.py"

@@ -1,37 +1,15 @@
-subset_indices = [14, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 159, 160, 161, 162, 233, 234, 235, 236, 237, 263, 264, 265, 266, 267, 268, 269, 303, 304, 390, 476, 477, 478, 542, 681, 846, 891, 
-976, 977, 978, 979, 980, 1210, 1211, 1212, 1213, 1214, 1215, 1482, 1483, 1484, 1527, 1528, 1529, 1530, 1531, 1532, 1533, 1534, 1535, 1861, 1862, 1863, 2022, 2023, 2024, 2025, 2026, 2087, 2088, 2089, 2090, 2091, 2092, 2093, 2094, 2124, 2143, 2144, 2145, 2146, 2281, 2282, 2283, 2284, 2285, 2286, 2392, 2393, 2394, 2395, 2396,
-2415, 2416, 2417, 2558, 2803, 2832, 2833, 2834, 2835, 2836, 2866, 2882, 2883, 2884, 2885, 2886, 2887, 2891, 2892, 2963, 2964, 2965, 2966, 2967, 2968, 2969, 2970, 2972, 2987, 2988, 2989, 2990, 3215, 3216, 3217, 3218, 3219, 3220, 3221, 3222, 3223, 3249, 3250, 3368, 3369, 3370, 3371, 3372, 3614, 3615, 3616, 3617, 3618, 3697, 3729, 3730, 3731, 3732, 3733, 3734, 3735, 3736,
-3737, 3738, 3739, 3740, 3741, 3742, 3743, 3744, 3745, 3746, 3747, 3748, 3749, 3750, 3751, 3752, 3753, 3839, 3840, 3841, 3842, 3843, 3844, 3865, 3866, 3978, 3979, 4064, 4065, 4066, 4067, 4068, 4073, 4074, 4075, 4216, 4217, 4218, 4219, 4220, 4221, 4298, 4299, 4300]
-
-# A Snakefile to pipeline the processing and analysis of time-series HDX LC-IM-MS data. 
+#Define config file and import libraries
 configfile: "config/config.yaml"
 import pandas as pd
 from collections import OrderedDict
 
-library_info = pd.read_csv("resources/library_info/library_info.csv")#.iloc[:12] limit number of jobs by subsetting master list
-subset_names = list(OrderedDict.fromkeys(pd.read_csv("resources/library_info/library_info.csv").iloc[subset_indices]['name'].values))
+#Read list of candidate POI charge states produced by preprocessing snakefile
+library_info = pd.read_csv("resources/library_info/library_info.csv")
 names =  list(set(library_info['name'].values))
 
-
+#all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
 rule all:
-	input:expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
-
-
-rule isolate_tensors:
-	input:
-		"resources/library_info/library_info.csv",
-		"resources/mzml_gz/{mzml_gz}"
-	output:
-		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info))) #subset_indices)#
-	script:
-		"scripts/main/isolate_tensors.py"
-
-
-#rule all:
-	#input:
-		#expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
-		#config['run_name']+"_plot_linker.html" #).iloc[:i] to limit run to specific # of charge states
-		#rules.isolate_tensors.output
+	input:config['run_name']+"_plot_linker.html"
 
 
 def analyze_tensors_inputs(name, library_info):
@@ -51,49 +29,6 @@ def analyze_tensors_inputs(name, library_info):
 	return name_inputs
 
 
-
-def idotp_check_inputs(i, library_info):
-	idx_inputs = []
-	if len(config[0]) > 1:
-		for file in config[0]:
-			idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
-	else:
-		file = config[key][0]
-		idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib")
-
-	return idx_inputs
-
-
-
-rule idotp_check:
-	#TODO: docstring
-	input:
-		"resources/library_info/library_info.csv",
-		lambda wildcards: idotp_check_inputs(wildcards.i, library_info)
-	output:
-		"resources/idotp_filter/{i}_idotp_check.csv"
-	script:
-		"scripts/main/idotp_check.py"
-
-
-
-rule idotp_filter:
-	#TODO: docstring
-	input:
-		expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
-	output: 
-		"results/tables/idotp_filter.csv"
-	script:
-		"scripts/main/idotp_filter.py"
-
-
-
-###
-### BREAK HERE FOR DAG RESOLUTION ###
-###
-
-
-
 rule analyze_tensors:
 	#TODO: docstring
 	input:
@@ -103,7 +38,6 @@ rule analyze_tensors:
 		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
 	script:
 		"scripts/main/analyze_tensors.py"
-
 
 
 rule optimize_paths:
@@ -122,7 +56,6 @@ rule optimize_paths:
 		"scripts/main/optimize_paths.py"
 
 
-
 rule make_overview_plot:
 	input:
 		expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name = names), #subset_names),
@@ -135,7 +68,6 @@ rule make_overview_plot:
 		"scripts/main/overview_plotter.py"
 
 
-
 rule make_plot_linker:
 	input:
 		"results/plots/"+config['run_name']+"_overview.html",
@@ -146,7 +78,6 @@ rule make_plot_linker:
 		"scripts/main/plot_linker.py"
 
 
-
 rule calculate_hdx_rates:
 	input:
 		"resources/ic_time_series/{name}_winner.cpickle.zlib"
@@ -154,17 +85,3 @@ rule calculate_hdx_rates:
 		"resources/rates/{name}_rates.ext" #idk ext atm
 	script:
 		"scripts/main/hxrates.py"
-
-
-
-"""
-rule calculate_delta_g_unfolding:
-	input:
-		"resources/rates/{name}_rates.ext"
-	output:
-		"resources/delta_g_unfolding/{name}_delta_g_unfolding.ext" #to be revised for brevity and ext
-	script:
-		#TBW - Suggie
-"""
-
-#HH appt: doxy.me/drhowardherman
