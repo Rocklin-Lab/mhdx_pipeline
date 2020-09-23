@@ -217,7 +217,7 @@ class DataTensor:
                             ipdb.set_trace()
                             print("this stops the iterator")
             """
-
+            
             self.retention_labels, self.drift_labels, self.mz_labels, self.min_mz, self.max_mz, self.full_grid_out = self.sparse_to_full_tensor((self.rts, self.dts, self.seq_out))
             self.full_gauss_grids = self.gauss(self.full_grid_out)
            
@@ -314,8 +314,8 @@ class DataTensor:
         interpolated_out = np.reshape(interpolated_out, (np.shape(grid)[0], np.shape(grid)[1], new_mz_len))
         
         interpolated_bin_mzs = np.linspace(self.mz_bin_low, self.mz_bin_high, new_mz_len)
-        interpolated_low_lims = np.searchsorted(interpolated_bin_mzs, self.mz_bins[self.lows])
-        interpolated_high_lims = np.searchsorted(interpolated_bin_mzs, self.mz_bins[self.highs])
+        interpolated_low_lims = np.searchsorted(interpolated_bin_mzs, self.mz_labels[self.lows])
+        interpolated_high_lims = np.searchsorted(interpolated_bin_mzs, self.mz_labels[self.highs])
         
         return [interpolated_out, interpolated_low_lims, interpolated_high_lims]
         
@@ -1035,8 +1035,8 @@ class TensorGenerator:
                                         )
 
                     #translate low/high limits on expected peak locations from absolute mz to DataTensor instance's mz bin range TODO - Change to dict to remove redundancy
-                    newDataTensor.lows = np.searchsorted(newDataTensor.mz_bins, self.low_lims[lib_idx])
-                    newDataTensor.highs = np.searchsorted(newDataTensor.mz_bins, self.high_lims[lib_idx])
+                    newDataTensor.lows = np.searchsorted(newDataTensor.mz_labels, self.low_lims[lib_idx])
+                    newDataTensor.highs = np.searchsorted(newDataTensor.mz_labels, self.high_lims[lib_idx])
                     
                     newDataTensor.factorize()
                     DataTensors.append(newDataTensor)
