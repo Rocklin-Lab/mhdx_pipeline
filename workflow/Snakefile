@@ -1,10 +1,13 @@
 #Define config file and import libraries
 configfile: "config/config.yaml"
+import glob
 import pandas as pd
 from collections import OrderedDict
 
 #Read list of candidate POI charge states produced by preprocessing snakefile
 library_info = pd.read_csv("resources/library_info/library_info.csv")
+proc = glob.glob("resources/ic_time_series/*.zlib")
+#names = [fn.split('_')[:-3] for fn in proc]
 names =  list(set(library_info['name'].values))
 
 #all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
@@ -46,7 +49,6 @@ rule optimize_paths:
 		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
 	output:
 		"results/plots/ic_time_series/html/{name}_time_series.html",
-		#"plots/ic_time_series/pdf/{name}_time_series.pdf",
 		"resources/ic_time_series/{name}_winner.cpickle.zlib",
 		"resources/ic_time_series/{name}_runners.cpickle.zlib",
 		"resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
