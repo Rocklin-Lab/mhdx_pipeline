@@ -1120,7 +1120,7 @@ class TensorGenerator:
                                         abs_mz_low = mz_bin_low
                                         )
                                     )
-                                DataTensors[-1].factorize()   
+                                DataTensors[-1].factorize(gauss_params=(3,1))   
 
                                 #Add concatenated factors to fn_factors, ICs emptied later
                                 for factor in DataTensors[-1].facctors:
