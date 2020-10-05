@@ -52,7 +52,7 @@ for tp in atc:
 
 p1 = hx.PathOptimizer(name, fatc, library_info, timepoints = snakemake.config['timepoints'], n_undeut_runs = len(snakemake.config[0]), old_data_dir = snakemake.config['old_data_dir'])
 
-p1.prefiltered_ics = weak_pareto_dom_filter(po)
+p1.prefiltered_ics = weak_pareto_dom_filter(p1)
 p1.generate_sample_paths()
 
 p1.optimize_paths()
