@@ -1038,7 +1038,7 @@ class TensorGenerator:
                     newDataTensor.lows = np.searchsorted(newDataTensor.mz_labels, self.low_lims[lib_idx])
                     newDataTensor.highs = np.searchsorted(newDataTensor.mz_labels, self.high_lims[lib_idx])
                     
-                    newDataTensor.factorize()
+                    newDataTensor.factorize(gauss_params=(3, 1))
                     DataTensors.append(newDataTensor)
 
                 fn_factors = []
