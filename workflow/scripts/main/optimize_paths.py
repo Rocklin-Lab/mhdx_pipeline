@@ -1,5 +1,6 @@
 import os
 import sys
+import numpy as np
 import pandas as pd
 
 sys.path.append(os.getcwd()+"/workflow/scripts/auxiliary/")
