@@ -47,12 +47,8 @@ def weak_pareto_dom_filter(po):
 library_info=pd.read_csv(snakemake.input[0])
 name = snakemake.wildcards['name']
 atc = hx.limit_read(snakemake.input[1])
-fatc = []
-for tp in atc:
-    fatc.append([ic for ic in tp if ic.baseline_peak_error/ic.baseline_auc < 0.25])
 
-p1 = hx.PathOptimizer(name, fatc, library_info, timepoints = snakemake.config['timepoints'], n_undeut_runs = len(snakemake.config[0]), old_data_dir = snakemake.config['old_data_dir'])
-
+p1 = hx.PathOptimizer(name, atc, library_info, timepoints = snakemake.config['timepoints'], n_undeut_runs = len(snakemake.config[0]), old_data_dir = snakemake.config['old_data_dir'])
 p1.prefiltered_ics = weak_pareto_dom_filter(p1)
 p1.generate_sample_paths()
 
