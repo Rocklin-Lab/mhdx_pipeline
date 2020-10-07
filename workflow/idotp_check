@@ -9,17 +9,20 @@ names =  list(set(library_info['name'].values))
 
 #all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
 rule all:
-	input:expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
+	input:
+		expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
 
 
-rule isolate_tensors:
+rule extract_tensors:
 	input:
 		"resources/library_info/library_info.csv",
 		"resources/mzml_gz/{mzml_gz}"
 	output:
 		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info))) #subset_indices)#
+	benchmark:
+		results/benchmarks/extract_tensors.{mzml_gz}.benchmark.txt
 	script:
-		"scripts/main/isolate_tensors.py"
+		"scripts/main/extract_tensors.py"
 
 
 def idotp_check_inputs(i, library_info):
@@ -41,5 +44,7 @@ rule idotp_check:
 		lambda wildcards: idotp_check_inputs(wildcards.i, library_info)
 	output:
 		"resources/idotp_filter/{i}_idotp_check.csv"
+	benchmark:
+		results/benchmarks/idotp_check.{i}.benchmark.txt
 	script:
 		"scripts/main/idotp_check.py"

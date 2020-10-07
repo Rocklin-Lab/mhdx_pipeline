@@ -1132,7 +1132,7 @@ class TensorGenerator:
                                 print("Length mistmatch in the tensors to be combined")
 """
                     #append list of fn_factor lists to tp_factors
-                    tp_factors.append(fn_factors)
+                tp_factors.append(fn_factors)
             #collect all tp_factor lists into one master list
             all_tp_factors.append(tp_factors) # 3D: Timepoints X Replicates X Factors
         

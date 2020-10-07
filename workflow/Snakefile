@@ -32,15 +32,17 @@ def analyze_tensors_inputs(name, library_info):
 	return name_inputs
 
 
-rule analyze_tensors:
+rule generate_rt_group_ics:
 	#TODO: docstring
 	input:
 		"resources/library_info/library_info.csv",
 		lambda wildcards: analyze_tensors_inputs(wildcards.name, library_info)
 	output:
 		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
+	benchmark:
+		"results/benchmarks/generate_rt_group_ics.{name}.benchmark.txt"
 	script:
-		"scripts/main/analyze_tensors.py"
+		"scripts/main/generate_rt_group_ics.py"
 
 
 rule optimize_paths:
@@ -54,6 +56,8 @@ rule optimize_paths:
 		"resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
 		"resources/ic_time_series/{name}_winner_scores.cpickle.zlib",
 		"resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib"
+	benchmark:
+		"results/benchmarks/optimize_paths.{name}.benchmark.txt"
 	script:
 		"scripts/main/optimize_paths.py"
 
@@ -66,6 +70,8 @@ rule make_overview_plot:
 		expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name = names), #subset_names)
 	output:
 		"results/plots/"+config['run_name']+"_overview.html"
+	benchmark:
+		"results/benchmarks/make_overview_plot.benchmark.txt"
 	script:
 		"scripts/main/overview_plotter.py"
 
@@ -76,6 +82,8 @@ rule make_plot_linker:
 		expand("results/plots/ic_time_series/html/{name}_time_series.html", name = names), #subset_names)
 	output:
 		config['run_name']+"_plot_linker.html"
+	benchmark:
+		"results/benchmarks/make_plot_linker.benchmark.txt"
 	script:
 		"scripts/main/plot_linker.py"
 
@@ -85,5 +93,7 @@ rule calculate_hdx_rates:
 		"resources/ic_time_series/{name}_winner.cpickle.zlib"
 	output:
 		"resources/rates/{name}_rates.ext" #idk ext atm
+	benchmark:
+		"results/benchmarks/calculate_hdx_rates.{name}.benchmark.txt"
 	script:
 		"scripts/main/hxrates.py"
