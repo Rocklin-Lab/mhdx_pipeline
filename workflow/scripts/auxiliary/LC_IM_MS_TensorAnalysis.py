@@ -929,8 +929,9 @@ class TensorGenerator:
         self, 
         name, 
         library_info,
-        inputs, #passes a flat list of limit-readable tensors for all charge-states of all timepoints of a single protein RT-group
+        inputs, #2-deep nested list of filenames, ordered by hdx timepoint and replicate, and including all charge states of the rt-group: [ [[UN_0 all charge fns], [UN_1...], [UN_2...]], [[TP0_0...], [TP0_1...]], [[TP1_0...], [TP1_1...], ...], ..., [[TPN_0]]]
         timepoints,
+        keep_tensors = False,
         **kwargs
         ):
 
@@ -940,6 +941,10 @@ class TensorGenerator:
         self.library_info = library_info
         self.inputs = inputs
         self.timepoints = timepoints
+        self.keep_tensors = keep_tensors
+
+        if keep_tensors:
+            self.tensor_archive = []
         
 
         if kwargs is not None: #TODO: Default control values should be placed in a check statement below (if hasattr(self, 'name of value'): Do) do this for other kwargs fxns
@@ -1003,6 +1008,8 @@ class TensorGenerator:
         for tp in range(len(self.timepoints)):
             print("Starting "+str(self.timepoints[tp])+" seconds, "+str(tp+1)+" of "+str(len(self.timepoints)))
             tp_factors = []
+            if self.keep_tensors:
+                tp_tensors = []
             #iterate over each replicate of a given timepoint
             for fn in self.inputs[tp]:
                 print("Sourcefile: "+fn+", "+str(self.inputs[tp].index(fn)+1)+" of "+str(len(self.inputs[tp])))
@@ -1029,7 +1036,7 @@ class TensorGenerator:
                                         n_concatenated = 1,
                                         charge_states = [self.library_info["charge"].values[lib_idx]], 
                                         rts = output[0], 
-                                        dts= output[1], 
+                                        dts = output[1], 
                                         seq_out = output[2], 
                                         int_seq_out = None
                                         )
@@ -1038,8 +1045,11 @@ class TensorGenerator:
                     newDataTensor.lows = np.searchsorted(newDataTensor.mz_labels, self.low_lims[lib_idx])
                     newDataTensor.highs = np.searchsorted(newDataTensor.mz_labels, self.high_lims[lib_idx])
                     
-                    newDataTensor.factorize(gauss_params=(3, 1))
+                    newDataTensor.factorize(gauss_params = (3, 1))
                     DataTensors.append(newDataTensor)
+
+                    if self.keep_tensors:
+                        [tp_tensors.append(t) for t in DataTensors]
 
                 fn_factors = []
                 fn_clusters = []
@@ -1135,6 +1145,9 @@ class TensorGenerator:
                 tp_factors.append(fn_factors)
             #collect all tp_factor lists into one master list
             all_tp_factors.append(tp_factors) # 3D: Timepoints X Replicates X Factors
+
+            if self.keep_tensors:
+                self.tensor_archive.append(tp_tensors)
         
         #empty ICs from factors into convenient IC-only list
         for tp in all_tp_factors:
@@ -1210,11 +1223,46 @@ class PathOptimizer:
         self.gather_old_data()
         self.select_undeuterated()
         self.precalculate_fit_to_ground()
-
-        #TODO: Refine prefilter after exploring ic attribute correlations to downstream outcome metrics, find best predictors for outcomes. 
-        #self.prefilter_ics()
-        self.prefiltered_ics = all_tp_clusters
+        self.prefiltered_ics = self.weak_pareto_dom_filter()
         self.generate_sample_paths()
+
+
+    def weak_pareto_dom_filter(self):
+        out = []
+        for tp in self.all_tp_clusters:
+            
+            tp_buffer = []
+            center_dict = {}
+            
+            #make dict for tp int mz bins
+            for i in range(len(tp[0].baseline_integrated_mz)):
+                center_dict[i] = []
+            
+            #add ic to bin list closest to center
+            for ic in tp:
+                center_dict[np.round(ic.baseline_integrated_mz_com)].append(ic)
+            
+            #score all ics in each int_mz bin, keep only those that are best in 
+            for i in range(len(tp[0].baseline_integrated_mz)): 
+                int_mz_buffer = []
+                score_df = pd.DataFrame().from_dict({
+                "idx": [j for j in range(len(center_dict[i]))],
+                "rt_ground_err": [ic.rt_ground_err for ic in center_dict[i]],
+                "dt_ground_err": [ic.dt_ground_err for ic in center_dict[i]],
+                "peak_err": [ic.baseline_peak_error for ic in center_dict[i]]
+                })
+                
+                if len(score_df) > 0:
+                    for key in ["rt_ground_err", "dt_ground_err", "peak_err"]:
+                        win_idx = int(score_df.sort_values(key).iloc[0]['idx'])
+                        if win_idx not in int_mz_buffer:
+                            tp_buffer.append(center_dict[i][win_idx])
+                            int_mz_buffer.append(win_idx)
+                    
+            out.append(tp_buffer)
+        
+        return out
+
 
     def gather_old_data(self):
         if self.old_data_dir is not None:
@@ -1227,6 +1275,7 @@ class PathOptimizer:
                 ts['major_species_widths'] = [len(np.nonzero(x)[0]) for x in ts['major_species_integrated_intensities']]
                 self.old_data.append(ts)
             
+
     def select_undeuterated(
         self, 
         all_tp_clusters = None, 
@@ -1299,99 +1348,6 @@ class PathOptimizer:
         
         self.undeut_grounds = out
         self.undeut_ground_dot_products = charge_fits
-    
-    #THIS CAN PROBABLY BE REMOVED? MAYBE PREFILTER BY BPE? TODO
-    def prefilter_ics(
-        self, 
-        all_tp_clusters = None, 
-        prefilter = None
-        ):
-
-        if all_tp_clusters is None:
-            all_tp_clusters = self.all_tp_clusters
-        if prefilter is None:
-            prefilter = self.prefilter
-
-        if self.prefilter == 0:
-            outer = []
-            uns = []
-            for tp in self.all_tp_clusters[:self.n_undeut_runs]:
-                for ic in tp:
-                    uns.append(ic)
-            outer.append(uns)
-            for tp in self.all_tp_clusters[self.n_undeut_runs:]:
-                outer.append(tp)
-            self.prefiltered_ics = outer
-            
-        else:
-            #prefiltered_ics has same shape as all_tp_clusters, but collapses 3 UN timepoints into 1
-            prefiltered_ics = []
-
-            #pre_scoring has same order as a single tp of all_tp_clusters
-            pre_scoring = []
-
-            #idx_scores contains the sum of the weighted BPE/BGAR sorted indices of ics in prefiltered_ics, with pre_scoring order
-            idx_scores = []
-
-            #Prefilitering UN clusters by integration box alignment to low mz
-            prefiltered_ics.append([])
-            for tp in all_tp_clusters[:3]:
-                for ic in tp:
-                    if np.argmax(ic.baseline_integrated_mz) <= 5:
-                        prefiltered_ics[0].append(ic)
-
-            #Further filter each tp by BGAR and PeakError
-
-            #Decorate
-            for ic in prefiltered_ics[0]:
-                pre_scoring.append((ic.baseline_auc, ic.baseline_peak_error))
-
-            #Sort, add weights here for tuning
-            AUC_sorted = sorted(pre_scoring, key = lambda x: x[0], reverse = True)
-            BPE_sorted = sorted(pre_scoring, key = lambda x: x[1])
-
-            #Undecorate
-            for tup in pre_scoring:
-                idx_scores.append(sum([AUC_sorted.index(tup), BPE_sorted.index(tup)]))
-            idx_scores_sorted = sorted(idx_scores, key = lambda x: x)
-            score_filter = idx_scores_sorted[math.ceil(len(idx_scores_sorted)*prefilter)]
-
-            undec_buffer = []
-            for i in range(len(idx_scores)):
-                if idx_scores[i] <= score_filter:
-                    undec_buffer.append(prefiltered_ics[0][i])
-
-            #Reset prefiltered UN tp to BPE and BGAR filtered ics
-            prefiltered_ics[0] = undec_buffer
-
-            #Repeat process for remaining timepoints
-            for tp in range(self.n_undeut_runs, len(all_tp_clusters)):
-                #Reset tp vars
-                pre_scoring = []
-                idx_scores = []
-
-                #Decorate
-                for ic in all_tp_clusters[tp]:
-                    pre_scoring.append((ic.baseline_auc, ic.baseline_peak_error))
-
-                #Sort, add weights for tuning
-                AUC_sorted = sorted(pre_scoring, key = lambda x: x[0], reverse = True)
-                BPE_sorted = sorted(pre_scoring, key = lambda x: x[1])
-
-                #Undecorate
-                for tup in pre_scoring:
-                    idx_scores.append(sum([AUC_sorted.index(tup), BPE_sorted.index(tup)]))
-                idx_scores_sorted = sorted(idx_scores, key = lambda x: x)
-                score_filter = idx_scores_sorted[math.ceil(len(idx_scores_sorted)*prefilter)]
-
-                tp_buffer = []
-                for i in range(len(idx_scores)):
-                    if idx_scores[i] <= score_filter:
-                        tp_buffer.append(all_tp_clusters[tp][i])
-
-                prefiltered_ics.append(tp_buffer)
-
-            self.prefiltered_ics = prefiltered_ics   
 
 
     def precalculate_fit_to_ground(
@@ -1425,7 +1381,7 @@ class PathOptimizer:
                         dt_errs = []
                         for j in range(len(undeut.dt_coms)):
                             dt_errs.append(ic.dt_coms[i] - undeut.dt_coms[j])
-                        dt_ground_errors.append(dt_errs[np.argmin([abs(x) for x in dt_errs])])
+                        dt_ground_errs.append(dt_errs[np.argmin([abs(x) for x in dt_errs])])
 
 
                         diff = len(ic.dt_norms[i]) - len(undeut_grounds[ic.charge_states[i]].dt_norms[0])
