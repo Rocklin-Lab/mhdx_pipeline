@@ -477,16 +477,10 @@ class Factor:
 #This can be a shared function
         self.integration_box_centers = []
         [self.integration_box_centers.append(i+((j-i)/2)) for i, j in zip(self.lows, self.highs)]
-           
-        self.box_intensities = self.mz_data[self.grate]
-        self.max_peak_height = max(self.box_intensities)
-        try:
-            self.mz_peaks = sp.signal.find_peaks(self.mz_data, prominence = 0.01, width = 0.5)[0] # TODO consider replacing with prominence, check in notebook
-        except:
-            ipdb.set_trace()
-        #Unused at factor level
-        #self.peak_error, self.peaks_chosen = self.peak_error(self.mz_data, self.mz_peaks, self.integration_box_centers, self.max_peak_height)
-                
+
+        self.integrated_mz_baseline = peakutils.baseline(np.asarray(self.integrated_mz_data), 6) #6 degree curve seems to work well
+        self.baseline_subtracted_integrated_mz = self.integrated_mz_data-self.integrated_mz_baseline
+
         #this is a poor implementation, at least use list comprehensions TODO  
         self.box_dist_avg = 0
         for i in range(1,len(self.integration_box_centers)):
@@ -498,8 +492,27 @@ class Factor:
 
     #Uses find_window function to identify portions of the integrated mz dimension that look 'isotopic-cluster-like', saves as Factor attribute
     def find_isotope_clusters(self, peak_width, **kwargs):
+
+        def rel_height_peak_bounds(centers, int_mz, bound=5):
+            out = []
+            baseline = max(int_mz)*0.15 #TODO: HARDCODE
+            for center in centers:
+                if int_mz[center] > baseline:
+                    i, j = center, center
+                    cutoff = int_mz[center]*(bound/100)
+                    while (center-i <= 10 and i-1 != -1):
+                        i -= 1
+                        if int_mz[i] < cutoff:
+                            break
+                    while (j-center <= 10 and j+1 != len(int_mz)): 
+                        j += 1
+                        if int_mz[j] < cutoff:
+                            break 
+                    out.append((i,j))
+            return out
+
         self.isotope_clusters = []
-        out = sp.signal.find_peaks(self.integrated_mz_data, prominence = 0.01, width = 0.5)
+        out = sp.signal.find_peaks(self.baseline_subtracted_integrated_mz, prominence = 0.01, width = 0.5)
         peaks = out[0]
 
         if len(peaks) == 0:
@@ -507,40 +520,41 @@ class Factor:
         else:
             ic_idxs = [(out[1]['left_bases'][i], out[1]['left_bases'][i+1]) if out[1]['left_bases'][i] < out[1]['left_bases'][i+1] else (out[1]['left_bases'][i], out[1]['left_bases'][i]+6) for i in range(len(out[0])-1)]
             if len(peaks) > 1:
-                ic_idxs.append((out[1]['left_bases'][-1], len(self.integrated_mz_data)-1))
+                ic_idxs.append((out[1]['left_bases'][-1], len(self.baseline_subtracted_integrated_mz)-1))
+            height_filtered = rel_height_peak_bounds(out[0], self.baseline_subtracted_integrated_mz)
+            [ic_idxs.append(tup) for tup in height_filtered]
             cluster_idx = 0
             for tup in ic_idxs:
                 integrated_indices = tup
-                #integrated_indices = self.find_window(self.integrated_mz_data, peaks[i], peak_width)
                 if integrated_indices != None:
-                    try:
-                        self.isotope_clusters.append(
-                            IsotopeCluster(
-                                charge_states = self.charge_states, 
-                                factor_mz_data = copy.deepcopy(self.mz_data), 
-                                source_file = self.source_file,
-                                tensor_idx = self.tensor_idx, 
-                                timepoint_idx = self.timepoint_idx, 
-                                n_factors = self.n_factors, 
-                                factor_idx = self.factor_idx, 
-                                cluster_idx = cluster_idx, 
-                                low_idx = self.lows[integrated_indices[0]]-math.ceil(self.box_dist_avg/2), 
-                                high_idx = self.highs[integrated_indices[1]]+math.ceil(self.box_dist_avg/2), 
-                                lows = self.lows, 
-                                highs = self.highs, 
-                                grate = self.grate, 
-                                rts = self.rts, 
-                                dts = self.dts, 
-                                max_rtdt = self.max_rtdt, 
-                                outer_rtdt = self.outer_rtdt, 
-                                box_dist_avg = self.box_dist_avg, 
-                                abs_mz_low = self.abs_mz_low, 
-                                n_concatenated = self.n_concatenated, 
-                                concat_dt_idxs = self.concat_dt_idxs,
-                                total_mass_window = self.total_mass_window
-                                )
+                    try:    
+                        newIC = IsotopeCluster(
+                            charge_states = self.charge_states, 
+                            factor_mz_data = copy.deepcopy(self.mz_data), 
+                            source_file = self.source_file,
+                            tensor_idx = self.tensor_idx, 
+                            timepoint_idx = self.timepoint_idx, 
+                            n_factors = self.n_factors, 
+                            factor_idx = self.factor_idx, 
+                            cluster_idx = cluster_idx, 
+                            low_idx = self.lows[integrated_indices[0]]-math.ceil(self.box_dist_avg/2), 
+                            high_idx = self.highs[integrated_indices[1]]+math.ceil(self.box_dist_avg/2), 
+                            lows = self.lows, 
+                            highs = self.highs, 
+                            grate = self.grate, 
+                            rts = self.rts, 
+                            dts = self.dts, 
+                            max_rtdt = self.max_rtdt, 
+                            outer_rtdt = self.outer_rtdt, 
+                            box_dist_avg = self.box_dist_avg, 
+                            abs_mz_low = self.abs_mz_low, 
+                            n_concatenated = self.n_concatenated, 
+                            concat_dt_idxs = self.concat_dt_idxs,
+                            total_mass_window = self.total_mass_window
                             )
-                        cluster_idx += 1
+                        if newIC.baseline_peak_error/newIC.baseline_auc < 0.2: #TODO: HARDCODE
+                            self.isotope_clusters.append(newIC)
+                            cluster_idx += 1
                     except: 
                         print("ic index out of bounds: "+str(integrated_indices))
             return
@@ -1618,7 +1632,7 @@ class PathOptimizer:
                 substituted_scores = score_dict(substituted_series)
                 ic.bokeh_tuple = ic.info_tuple + (ic.rt_ground_err, ic.dt_ground_err) + score_diff(winner_scores, substituted_scores)
 
-    def filter_runners(self, n_runners = 10):
+    def filter_runners(self, n_runners = 5):
         filtered_runners = []
         for tp in self.runners:
             if len(tp) > n_runners:
