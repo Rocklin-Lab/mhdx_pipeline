@@ -518,7 +518,7 @@ class Factor:
         if len(peaks) == 0:
             return
         else:
-            ic_idxs = [(out[1]['left_bases'][i], out[1]['right_bases'][i+1]) if out[1]['left_bases'][i] < out[1]['right_bases'][i] andout[1]['right_bases'][i] - out[1]['left_bases'][i] > 4 for i in range(len(out[0]))]
+            ic_idxs = [(out[1]['left_bases'][i], out[1]['right_bases'][i+1]) for i in range(len(out[0])) if out[1]['left_bases'][i] < out[1]['right_bases'][i] if out[1]['right_bases'][i] - out[1]['left_bases'][i] > 4]
             #ic_idxs = [(out[1]['left_bases'][i], out[1]['left_bases'][i+1]) if out[1]['left_bases'][i] < out[1]['left_bases'][i+1] else (out[1]['left_bases'][i], out[1]['left_bases'][i]+6) for i in range(len(out[0])-1)]
             if len(peaks) > 1:
                 ic_idxs.append((out[1]['left_bases'][-1], len(self.baseline_subtracted_integrated_mz)-1))
