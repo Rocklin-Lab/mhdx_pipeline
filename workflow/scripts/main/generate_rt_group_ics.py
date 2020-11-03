@@ -13,8 +13,4 @@ tp_inputs = [[tensor for tensor in snakemake.input if snakemake.config[tp][0].sp
 t1 = hx.TensorGenerator(name, library_info, tp_inputs, snakemake.config['timepoints'])
 t1.generate_tensors()
 
-fatc = []
-for tp in t1.all_tp_clusters:
-    fatc.append([ic for ic in tp if ic.baseline_peak_error/ic.baseline_auc < 0.25])
-
-hx.limit_write(fatc, snakemake.output[0])
+hx.limit_write(t1.all_tp_clusters, snakemake.output[0])

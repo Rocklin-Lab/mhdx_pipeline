@@ -9,7 +9,7 @@ The module contains 3 Data-Classes and 2 Processing-Classes:
     Data-Classes: 
         - DataTensor: An object created from LC-IM-MS data extracted from a .mzML.gz file, with methods to perform a deconvoluting Tensor-Factorization.
         - Factor: Objects created and stored within the DataTensor through a Tensor-Factorization - the n-dimensional analog to multaplicative-factorization.
-        - IsotopicCluster: Objects within a factor identified as 'looking sufficiently like' an MS protein signal.
+        - IsotopeCluster: Objects within a factor identified as 'looking sufficiently like' an MS protein signal.
     
     Processing-Classes:
         - TensorGenerator: Main class for creating tensors from incoming data, handles all timeseries and charge state data. Stores all DataTensor outputs internally. 
@@ -19,7 +19,7 @@ The module contains 3 Data-Classes and 2 Processing-Classes:
 
 The TensorGenerator and PathOptimizer classes are instantiated once per 'protein retention-time group' (RT-group):
 
-    In the HDX-LIMIT approach, a 'protein RT-group' is a collection of isotopic-clusters identified as close to the expected mass of a library protein-of-interest, for all 
+    In the HDX-LIMIT approach, a 'protein RT-group' is a collection of isotope-clusters identified as close to the expected mass of a library protein-of-interest, for all 
     non-redundant charge states that fall within a parameterized range of LC retention-time. Depending on the width of a protein's elution window, multiple RT-groups
     can be identified for a single sample protein - and are handled separately to increase the stability of the tensor factorization.
 
@@ -490,10 +490,10 @@ class Factor:
         #Writes to self.isotope_clusters 
         self.find_isotope_clusters(5, height = 0.5) #heuristic height value, should be high-level param TODO - Will require passage through DataTensor class
 
-    #Uses find_window function to identify portions of the integrated mz dimension that look 'isotopic-cluster-like', saves as Factor attribute
+    #Uses find_window function to identify portions of the integrated mz dimension that look 'isotope-cluster-like', saves as Factor attribute
     def find_isotope_clusters(self, peak_width, **kwargs):
 
-        def rel_height_peak_bounds(centers, int_mz, bound=5):
+        def rel_height_peak_bounds(centers, int_mz, bound=20):
             out = []
             baseline = max(int_mz)*0.15 #TODO: HARDCODE
             for center in centers:
@@ -559,7 +559,7 @@ class Factor:
                         print("ic index out of bounds: "+str(integrated_indices))
             return
 
-    #heuristically identifies 'things that look like acceptable isotopic clusters' in integrated mz dimension, roughly gaussian allowing some inflection points from noise
+    #heuristically identifies 'things that look like acceptable isotope clusters' in integrated mz dimension, roughly gaussian allowing some inflection points from noise
     def find_window(self, array, peak_idx, width):
         rflag = True
         lflag = True
@@ -731,7 +731,7 @@ class IsotopeCluster:
             self.integration_box_centers.append(i+((j-i)/2))
         
         #prune factor_mz to get window around cluster that is consistent between charge-states
-        self.cluster_mz_data = self.factor_mz_data
+        self.cluster_mz_data = copy.deepcopy(self.factor_mz_data)
         self.cluster_mz_data[0:self.low_idx] = 0
         self.cluster_mz_data[self.high_idx:] = 0
         
@@ -743,21 +743,21 @@ class IsotopeCluster:
         self.grate_sum = sum(self.box_intensities)
         
         #identify peaks and find error from expected peak positions using raw mz
-        try:
-            self.mz_peaks = sp.signal.find_peaks(self.factor_mz_data, distance = self.box_dist_avg)[0]
-        except:
-            ipdb.set_trace()
+     
+        self.mz_peaks = sp.signal.find_peaks(self.factor_mz_data, distance = self.box_dist_avg)[0]
         self.max_peak_height = max(self.box_intensities)
+        
         self.peak_error, self.peaks_chosen = self.find_peak_error(self.cluster_mz_data, 
                                                         self.mz_peaks, 
                                                         self.integration_box_centers[np.searchsorted(self.lows, self.low_idx): np.searchsorted(self.highs, self.high_idx)], 
                                                         self.max_peak_height)
         
+
         #subtract baseline from IC mz values, recompute intrinsic values with new array
         self.baseline = peakutils.baseline(self.cluster_mz_data[self.low_idx:self.high_idx], 6) #6 degree curve seems to work well
         self.baseline_subtracted_mz = self.cluster_mz_data
         self.baseline_subtracted_mz[self.low_idx: self.high_idx] = self.cluster_mz_data[self.low_idx: self.high_idx]-self.baseline
-        self.baseline_auc = sum(self.baseline_subtracted_mz)
+        self.baseline_auc = sum(self.baseline_subtracted_mz) * self.outer_rtdt
         self.log_baseline_auc = np.log(self.baseline_auc)
         self.baseline_box_intensities = self.baseline_subtracted_mz[self.grate]
         self.baseline_grate_sum = sum(self.baseline_box_intensities)
@@ -915,13 +915,15 @@ class IsotopeCluster:
             if len(integration_box_centers) == 1:
                 peak_error = (peak_error / peaks_total_height / (box_dist_total/(len(integration_box_centers))))
             else:   
-                peak_error = (peak_error / peaks_total_height / (box_dist_total/(len(integration_box_centers)-1)))
-
+                if len(integration_box_centers) > 1:
+                    peak_error = (peak_error / peaks_total_height / (box_dist_total/(len(integration_box_centers)-1)))
+                else:
+                    peak_error = 100000
             return peak_error, peaks_chosen
     
 ###
 ### Class - TensorGenerator:
-### Collects and clusters all hdx timepoint files associated with a single protein name, creates and factorizes DataTensors, extracts isotopic clusters for PathOptimizer
+### Collects and clusters all hdx timepoint files associated with a single protein name, creates and factorizes DataTensors, extracts isotope clusters for PathOptimizer
 ###
 
 class TensorGenerator:  
@@ -1299,7 +1301,7 @@ class PathOptimizer:
         ):
 
         """
-        Selects undeuterated isotopic cluster which best matches theoretically calculated isotopic distribution for POI sequence, for each observed charge state of the POI
+        Selects undeuterated isotope cluster which best matches theoretically calculated isotope distribution for POI sequence, for each observed charge state of the POI
         all_tp_clusters = TensorG enerator attribute, e.g. T1 = TensorGenerator(...)\n select_undeuterated(T1.all_tp_clusters)
         n_undeut_runs = number of undeuterated HDX runs included in the 'library_info' master csv
         """
@@ -1453,8 +1455,13 @@ class PathOptimizer:
             max_peak_center = self.max_peak_center
 
         path = []
-        #randomly select UN from PO.undeut_grounds by taking randint within range(len(PO.undeut_grounds.keys()))
-        path.append(undeut_grounds[list(undeut_grounds.keys())[np.random.randint(0, high = len(undeut_grounds.keys()))]])
+        uds = []
+        fits = []
+        #pick best-fitting undeut charge-state for all paths
+        for key in undeut_grounds.keys():
+            uds.append(undeut_grounds[key])
+            fits.append(undeut_grounds[key].undeut_ground_dot_product)
+        path.append(uds[np.argmin(fits)])
         
         #Relies on use of prefiltered_ics naming convention, when prefilter = 0, all_tp_clusters should have the first n_undeut_runs collapsed into a single list and be named and passed as prefiltered_ics
         xs = np.arange(len(prefiltered_ics))
