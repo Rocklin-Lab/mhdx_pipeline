@@ -1,37 +1,46 @@
 """
-This is the core module of the "Hydrogen-Deuterium-eXchange Liquid-chromatography Ion-mobility-separation Mass-spectrometry Interactive Tensor analysis" (HDX-LIMIT) pipeline.
+This is the core module of the "Hydrogen-Deuterium-eXchange Liquid-chromatography Ion-mobility-separation Mass-spectrometry 
+Interactive Tensor analysis" (HDX-LIMIT) pipeline.
 
-HDX-LIMIT defines classes which automate processing of a timeseries of 3D LC-IMS-MS data extracted from .mzML.gz files.
+HDX-LIMIT defines classes which automates the processing of a timeseries of 3D LC-IMS-MS data extracted from .mzML.gz files.
 
 
 The module contains 3 Data-Classes and 2 Processing-Classes:
     
     Data-Classes: 
-        - DataTensor: An object created from LC-IM-MS data extracted from a .mzML.gz file, with methods to perform a deconvoluting Tensor-Factorization.
-        - Factor: Objects created and stored within the DataTensor through a Tensor-Factorization - the n-dimensional analog to multaplicative-factorization.
-        - IsotopeCluster: Objects within a factor identified as 'looking sufficiently like' an MS protein signal.
+        - DataTensor: An object created from LC-IM-MS data extracted from a .mzML.gz file, with methods to perform a deconvoluting 
+          Tensor-Factorization.
+        - Factor: Objects created and stored within the DataTensor through a Tensor-Factorization - the n-dimensional analog to 
+          multiplicative factorization of integers.
+        - IsotopeCluster: General class for any Isotope Cluster signal. Made from any region of Factor M/z identified as 
+          'looking sufficiently like' a protein. 
     
     Processing-Classes:
-        - TensorGenerator: Main class for creating tensors from incoming data, handles all timeseries and charge state data. Stores all DataTensor outputs internally. 
-        - PathOptimizer: Accepts all IsotopicClusters from TensorGenerator, generates time-series of cluseters by score-based optimization from bootstrap of 'series-space'.
+        - TensorGenerator: Main class for creating tensors from incoming data, handles all timeseries and charge state data. 
+          Stores all DataTensor outputs internally. 
+        - PathOptimizer: Accepts all IsotopicClusters from TensorGenerator, identifies best-estimate time-series of clusters 
+          using a composite objective function optimization on a bootstrapped sample of the set of possible trajectories.
 
 
 
 The TensorGenerator and PathOptimizer classes are instantiated once per 'protein retention-time group' (RT-group):
 
-    In the HDX-LIMIT approach, a 'protein RT-group' is a collection of isotope-clusters identified as close to the expected mass of a library protein-of-interest, for all 
-    non-redundant charge states that fall within a parameterized range of LC retention-time. Depending on the width of a protein's elution window, multiple RT-groups
-    can be identified for a single sample protein - and are handled separately to increase the stability of the tensor factorization.
+    In the HDX-LIMIT approach, a 'protein RT-group' is a collection of isotope-cluster signals identified as close to the expected mass of a 
+    library protein-of-interest, that fall within a parameterized range of LC retention-time. Depending on the width of a protein's elution 
+    window, multiple RT-groups can be identified for a single sample protein - and are handled separately to increase the performance 
+    (smaller window decreases number of signals present, fewer factors needed) of the tensor factorization.
 
-A TensorGenerator creates a DataTensor for all charges of an RT-group, for all HDX times. The TensorGenerator iterates over the timeseries, instantiates all DataTensors,
-factorizes them, and saves their resulting Factors and IsotopicClusters internally as attributes, discarding the DataTensor objects at each timepoint.
+A TensorGenerator instance creates a DataTensor for all charges of one RT-group, for all HDX times and replicates. The TensorGenerator iterates 
+over the timeseries, instantiates all DataTensors, factorizes them, and saves their resulting Factors and IsotopicClusters internally as 
+attributes, discarding the DataTensor objects at each timepoint.
 
-The IsotopicClusters are passed to an instance of PathOptimizer, which creates a collection of 'sample-paths' - set of bootstrapped m/z centroid time-series created by 
-analytically generating a series of trajectories with ~200 different unfolding rates. These sample-paths are populated with the IsotopicClusters from the TensorGenerator 
-which are closest to the expected COM of that path at each timepoint. Each path is optimized to a cost-function by finding the single-best-substitution (the cluster at 
-any timepoint which will best-minimze the cost function), and this is repeated until no substitutions yeild benefits. The series with the lowest-score is kept as that 
-most-expected to contain the correct IsotopeClusters at each timepoint, and representing the unfolding dynamics of the protein. These series are then fed downstream to 
-scripts which determine the rate of unfolding for each residue and the overall DeltaG_unfolding of the protein. 
+The IsotopicClusters are passed to an instance of PathOptimizer, which creates a collection of 'sample-paths' - set of bootstrapped m/z centroid 
+time-series created by analytically generating a series of trajectories with ~200 different unfolding rates. These sample-paths are populated with 
+the IsotopicClusters from the TensorGenerator which are closest to the expected COM of that path at each timepoint. Each path is optimized to a 
+cost-function by finding the single-best-substitution (the cluster at any timepoint which will best-minimze the cost function), and this is 
+repeated until no substitutions yeild benefits. The series with the lowest-score is kept as that most-expected to contain the correct 
+IsotopeClusters at each timepoint, and representing the unfolding dynamics of the protein. These series are then fed downstream to scripts which 
+determines the set of residue exchange rates that produced the signal, and estimates the overall DeltaG_unfolding of the protein. 
 """
 
 
