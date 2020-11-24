@@ -12,7 +12,7 @@ names =  list(set(library_info['name'].values))
 
 #all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
 rule all:
-	input:config['run_name']+"_plot_linker.html"
+	input:expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name = names)#config['run_name']+"_plot_linker.html"
 
 
 def analyze_tensors_inputs(name, library_info):
@@ -74,6 +74,18 @@ rule make_overview_plot:
 		"results/benchmarks/make_overview_plot.benchmark.txt"
 	script:
 		"scripts/main/overview_plotter.py"
+
+rule gjr_plots:
+	input:
+		"resources/ic_time_series/{name}_winner.cpickle.zlib",
+		"resources/ic_time_series/{name}_runners.cpickle.zlib",
+		"resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib"
+	output:
+		"results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf"
+	benchmark:
+		"results/benchmarks/gjr_plot_{name}.benchmark.txt"
+	script:
+		"scripts/main/gjr_plot.py"
 
 
 rule make_plot_linker:

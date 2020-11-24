@@ -5,9 +5,9 @@ Interactive Tensor analysis" (HDX-LIMIT) pipeline.
 HDX-LIMIT defines classes which automates the processing of a timeseries of 3D LC-IMS-MS data extracted from .mzML.gz files.
 
 
-The module contains 3 Data-Classes and 2 Processing-Classes:
+The module contains 3 Data Classes and 2 Processing Classes:
     
-    Data-Classes: 
+    Data Classes: 
         - DataTensor: An object created from LC-IM-MS data extracted from a .mzML.gz file, with methods to perform a deconvoluting 
           Tensor-Factorization.
         - Factor: Objects created and stored within the DataTensor through a Tensor-Factorization - the n-dimensional analog to 
@@ -15,7 +15,7 @@ The module contains 3 Data-Classes and 2 Processing-Classes:
         - IsotopeCluster: General class for any Isotope Cluster signal. Made from any region of Factor M/z identified as 
           'looking sufficiently like' a protein. 
     
-    Processing-Classes:
+    Processing Classes:
         - TensorGenerator: Main class for creating tensors from incoming data, handles all timeseries and charge state data. 
           Stores all DataTensor outputs internally. 
         - PathOptimizer: Accepts all IsotopicClusters from TensorGenerator, identifies best-estimate time-series of clusters 
@@ -746,7 +746,7 @@ class IsotopeCluster:
         self.cluster_mz_data[self.high_idx:] = 0
         
         #integrate area of IC
-        self.auc = sum(self.cluster_mz_data)
+        self.auc = sum(self.cluster_mz_data) * self.outer_rtdt
         
         #Values of isotope cluster that fall within the grate of expected peak bounds
         self.box_intensities = self.cluster_mz_data[self.grate]
@@ -1249,11 +1249,14 @@ class PathOptimizer:
         self.gather_old_data()
         self.select_undeuterated()
         self.precalculate_fit_to_ground()
-        self.prefiltered_ics = self.weak_pareto_dom_filter()
+        #self.prefiltered_ics = self.weak_pareto_dom_filter()
+        self.prefiltered_ics = self.all_tp_clusters
         self.generate_sample_paths()
 
 
     def weak_pareto_dom_filter(self):
+        #Filters input of PO ICs to ensure no IC is worse in every score dimension than another IC (weak Pareto domination)
+
         out = []
         for tp in self.all_tp_clusters:
             
@@ -1268,22 +1271,45 @@ class PathOptimizer:
             for ic in tp:
                 center_dict[np.round(ic.baseline_integrated_mz_com)].append(ic)
             
-            #score all ics in each int_mz bin, keep only those that are best in 
+            #score all ics in each int_mz bin, keep only those that are not worse than another IC in all dimensions 
+            low_score_keys = ["rt_ground_err", "dt_ground_err", "peak_err"]
+            high_score_keys = ["rt_ground_fit", "dt_ground_fit", "baseline_auc"]
             for i in range(len(tp[0].baseline_integrated_mz)): 
                 int_mz_buffer = []
                 score_df = pd.DataFrame().from_dict({
                 "idx": [j for j in range(len(center_dict[i]))],
                 "rt_ground_err": [ic.rt_ground_err for ic in center_dict[i]],
                 "dt_ground_err": [ic.dt_ground_err for ic in center_dict[i]],
-                "peak_err": [ic.baseline_peak_error for ic in center_dict[i]]
+                "peak_err": [ic.baseline_peak_error for ic in center_dict[i]],
+                "rt_ground_fit": [ic.rt_ground_fit for ic in center_dict[i]],
+                "dt_ground_fit": [ic.dt_ground_fit for ic in center_dict[i]],
+                "baseline_auc": [ic.baseline_auc for ic in center_dict[i]]
                 })
                 
                 if len(score_df) > 0:
-                    for key in ["rt_ground_err", "dt_ground_err", "peak_err"]:
-                        win_idx = int(score_df.sort_values(key).iloc[0]['idx'])
-                        if win_idx not in int_mz_buffer:
-                            tp_buffer.append(center_dict[i][win_idx])
-                            int_mz_buffer.append(win_idx)
+                    for idx in score_df['idx'].values:
+                        int_mz_dom_dict = dict.fromkeys(low_score_keys+high_score_keys)
+                        
+                        for key in low_score_keys:
+                            dom_list = list(score_df.sort_values(key)['idx'].values)
+                            ic_pos = dom_list.index(idx)
+                            int_mz_dom_dict[key] = set(dom_list[:ic_pos])
+                        
+                        for key in high_score_keys:
+                            high_score_dom_list = list(score_df.sort_values(key, ascending = False)['idx'].values)
+                            ic_pos = dom_list.index(idx)
+                            int_mz_dom_dict[key] = set(dom_list[:ic_pos])
+                        
+                        #Check if there is some IC with a better score in all dimensions by set intersection
+                        if int_mz_dom_dict[low_score_keys[0]].intersection(int_mz_dom_dict[low_score_keys[1]], int_mz_dom_dict[low_score_keys[2]], int_mz_dom_dict[high_score_keys[0]], int_mz_dom_dict[high_score_keys[1]]):
+                            #ic is weakly Pareto dominated, leave out of output
+                            pass
+                        else:
+                            #ic is not weakly Pareto dominated, add to output
+                            int_mz_buffer.append(tp[idx])
+
+                for ic in int_mz_buffer:
+                    tp_buffer.append(ic)        
                     
             out.append(tp_buffer)
         
@@ -1471,7 +1497,7 @@ class PathOptimizer:
         for key in undeut_grounds.keys():
             uds.append(undeut_grounds[key])
             fits.append(undeut_grounds[key].undeut_ground_dot_product)
-        path.append(uds[np.argmin(fits)])
+        path.append(uds[np.argmax(fits)])
         
         #Relies on use of prefiltered_ics naming convention, when prefilter = 0, all_tp_clusters should have the first n_undeut_runs collapsed into a single list and be named and passed as prefiltered_ics
         xs = np.arange(len(prefiltered_ics))
@@ -1517,7 +1543,7 @@ class PathOptimizer:
                         
         final_paths = []
         for sample in sample_paths:
-            current = copy.deepcopy(sample)
+            current = copy.copy(sample)
             edited = True
             while edited:
 
