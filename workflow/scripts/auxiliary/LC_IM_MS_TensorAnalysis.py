@@ -521,17 +521,16 @@ class Factor:
             return out
 
         self.isotope_clusters = []
-        out = sp.signal.find_peaks(self.baseline_subtracted_integrated_mz, prominence = 0.01, width = 0.5)
-        peaks = out[0]
+        peaks, feature_dict = sp.signal.find_peaks(self.baseline_subtracted_integrated_mz, prominence = 0.01, width = 0.5)
 
         if len(peaks) == 0:
             return
         else:
-            ic_idxs = [(out[1]['left_bases'][i], out[1]['right_bases'][i+1]) for i in range(len(out[0])-1) if out[1]['left_bases'][i] < out[1]['right_bases'][i] if out[1]['right_bases'][i] - out[1]['left_bases'][i] > 4]
-            #ic_idxs = [(out[1]['left_bases'][i], out[1]['left_bases'][i+1]) if out[1]['left_bases'][i] < out[1]['left_bases'][i+1] else (out[1]['left_bases'][i], out[1]['left_bases'][i]+6) for i in range(len(out[0])-1)]
+            ic_idxs = [(feature_dict['left_bases'][i], feature_dict['right_bases'][i]) for i in range(len(peaks)) if feature_dict['left_bases'][i] < feature_dict['right_bases'][i] if feature_dict['right_bases'][i] - feature_dict['left_bases'][i] > 4]
+            #ic_idxs = [(feature_dict['left_bases'][i], feature_dict['left_bases'][i+1]) if feature_dict['left_bases'][i] < feature_dict['left_bases'][i+1] else (feature_dict['left_bases'][i], feature_dict['left_bases'][i]+6) for i in range(len(out[0])-1)]
             if len(peaks) > 1:
-                ic_idxs.append((out[1]['left_bases'][-1], len(self.baseline_subtracted_integrated_mz)-1))
-            height_filtered = rel_height_peak_bounds(out[0], self.baseline_subtracted_integrated_mz)
+                ic_idxs.append((feature_dict['left_bases'][0], feature_dict['right_bases'][-1])) #Create default ic from first left base to last right base
+            height_filtered = rel_height_peak_bounds(peaks, self.baseline_subtracted_integrated_mz)
             [ic_idxs.append(tup) for tup in height_filtered]
             cluster_idx = 0
             for tup in ic_idxs:
@@ -1221,13 +1220,13 @@ class PathOptimizer:
         #Set score weights
         self.int_mz_std_rmse_weight = 1
         self.baseline_peak_error_weight = 100
-        self.delta_mz_rate_weight = 1.65 #formerly 2
+        self.delta_mz_rate_weight = 1.65 #was 2
         self.int_mz_rot_fit_weight = 5
         self.dt_ground_fit_weight = 25
         self.rt_ground_fit_weight = 5
         self.rt_ground_rmse_weight = 10
         self.dt_ground_rmse_weight = 10
-        self.auc_ground_rmse_weight = 5
+        self.auc_ground_rmse_weight = 20
 
         #Set internal variables
         self.name = name
@@ -1776,17 +1775,17 @@ class PathOptimizer:
     def rt_ground_rmse(self, ics): 
         return math.sqrt(sum([ic.rt_ground_err**2 for ic in ics])/len(ics))
 
-    def dt_ground_fit(self, ics): #This is incorrect, TODO
-         return sum([(1.0 / ic.dt_ground_fit) for ic in ics])
+    def dt_ground_fit(self, ics): 
+        return sum([(1.0 / ic.dt_ground_fit) for ic in ics])
 
-    def rt_ground_fit(self, ics): #Both, TODO
+    def rt_ground_fit(self, ics): 
         return sum([(1.0 / ic.rt_ground_fit) for ic in ics])
 
     def baseline_peak_error(self, ics): # Use RMSE instead TODO
         #returns avg of peak_errors from baseline subtracted int_mz -> minimize score
         return np.average([ic.baseline_peak_error for ic in ics])
 
-    def auc_ground_rmse(self, ics, undeut_grounds = None): #TODO make this better
+    def auc_ground_rmse(self, ics, undeut_grounds = None): #TODO put this in PO.precalculate_fits_to_ground()
         #find corresponding charge state to each ic, compute AUC error, return avg err
         if undeut_grounds is None:
             undeut_grounds = self.undeut_grounds
