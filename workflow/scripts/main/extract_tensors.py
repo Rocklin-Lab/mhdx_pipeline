@@ -15,7 +15,29 @@ import pymzml
 import numpy as np
 import pandas as pd
 import _pickle as cpickle
+import pickle as pk
 from collections import Counter
+
+
+def load_pickle_file(pickle_fpath):
+    """
+    loads the pickle file (without any dependence on other classes or objects or functions)
+    :param pickle_fpath: file path
+    :return: pickle_object
+    """
+    with open(pickle_fpath, 'rb') as file:
+        pk_object = pk.load(file)
+    return pk_object
+
+def apply_polyfit_cal_mz(polyfit_coeffs, mz):
+    """
+    apply polyfit coeff to transform the mz values
+    :param polyfit_coeffs: polyfit coefficients
+    :param mz: mz values
+    :return: transformed mz values
+    """
+    mz_corr = np.polyval(polyfit_coeffs, mz)
+    return mz_corr
 
 #TODO
 print("mzML.gz: "+str(snakemake.input[1]))
@@ -100,6 +122,12 @@ for i in range(len(library_info)):
 relevant_scans = [i for i in scan_numbers if len(scan_to_lines[i])>0]
 print("N Scans: "+str(len(relevant_scans)))
 
+# todo: Need to specify whether to apply polyfit mz calibration in snakemake file
+apply_polyfit_mz_calibration = False
+
+if apply_polyfit_mz_calibration:
+    calib_dict = load_pickle_file(calib_pk_fpath) # todo: Ask Wes how to put fpath here
+
 for scan_number in relevant_scans:
 
     if scan_number % 1 == 0: print (scan_number, process.memory_info().rss / (1024*1024*1024), (len(library_info) - output_scans.count([])) / len(library_info) )
@@ -116,8 +144,14 @@ for scan_number in relevant_scans:
     for i in scan_to_lines[scan_number]:
         #if len(output_scans[i]) == 0:
         print("Library Index: "+str(i)+" Len Output: "+str(len(output_scans[i])))
-        mz_low = library_info['obs_mz'].values[i] - (snakemake.config['low_mass_margin']/library_info['charge'].values[i]) 
-        mz_high = library_info['obs_mz'].values[i] + (isotope_totals[i]/library_info['charge'].values[i]) 
+        obs_mz_val = library_info['obs_mz'].values[i]
+        # applies polyfit mz calibration using the calibration dictionary from the pickle file
+        if apply_polyfit_mz_calibration:
+            obs_mz_values = apply_polyfit_cal_mz(polyfit_coeffs=calib_dict['polyfit_coeffs'], mz=obs_mz_val)
+        else:
+            obs_mz_values = obs_mz_val
+        mz_low = obs_mz_values - (snakemake.config['low_mass_margin']/library_info['charge'].values[i])
+        mz_high = obs_mz_values + (isotope_totals[i]/library_info['charge'].values[i])
         try:
             output_scans[i].append(spectrum[(mz_low < spectrum[:,0]) & (spectrum[:,0] < mz_high)])
         except:
