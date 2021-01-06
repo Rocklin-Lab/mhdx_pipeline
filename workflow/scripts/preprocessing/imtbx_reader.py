@@ -150,6 +150,25 @@ def calc_mz_ppm_error(obs_mz, thr_mz):
     return ppm_err
 
 
+def gen_calib_dict(polyfit_bool=False, **args):
+    """
+    generate calibration dictionary with keywords.
+    :param polyfit_bool: True or False
+    :param args: arguements
+    :return: calibration dictionary
+    """
+
+    calib_dict = dict()
+
+    calib_dict['polyfit_bool'] = polyfit_bool
+
+    if polyfit_bool:
+        for param, value in args.items():
+            calib_dict[param] = value
+
+    return calib_dict
+
+
 def gen_mz_ppm_error_calib_polyfit(obs_mz, thr_mz, polyfit_deg=1):
     """
     use polyfit to generate a function to correlate observed and theoretical mz values. The function is used as calibration
@@ -167,16 +186,16 @@ def gen_mz_ppm_error_calib_polyfit(obs_mz, thr_mz, polyfit_deg=1):
     ppm_error_before_corr = calc_mz_ppm_error(obs_mz, thr_mz)
     ppm_error_after_corr = calc_mz_ppm_error(obs_mz_corr, thr_mz)
 
-    calib_ = dict()
-    calib_['thr_mz'] = thr_mz
-    calib_['obs_mz'] = obs_mz
-    calib_['polyfit_coeffs'] = polyfit_coeffs
-    calib_['polyfit_deg'] = polyfit_deg
-    calib_['obs_mz_corr'] = obs_mz_corr
-    calib_['ppm_error_before_corr'] = ppm_error_before_corr
-    calib_['ppm_error_after_corr'] = ppm_error_after_corr
+    cal_dict = gen_calib_dict(polyfit_bool=True,
+                              thr_mz=thr_mz,
+                              obs_mz=obs_mz,
+                              polyfit_coeffs=polyfit_coeffs,
+                              polyfit_deg=polyfit_deg,
+                              obs_mz_corr=obs_mz_corr,
+                              ppm_error_before_corr=ppm_error_before_corr,
+                              ppm_error_after_corr=ppm_error_after_corr)
 
-    return calib_
+    return cal_dict
 
 
 def apply_polyfit_cal_mz(polyfit_coeffs, mz):
@@ -202,8 +221,6 @@ def gen_mz_error_calib_output(testq, calib_pk_fpath, polyfit_degree=1, ppm_tol=5
     :param cluster_corr_tol: cluster correlation tolerance for selecting mz signals for calibration
     :return: calibration dictionary.
     """
-
-    #todo: ask Wes how to use snakemake to reference output filepath
 
     # generate high quality cluster mz signals
     cluster_hq_df = cluster_df_hq_signals(testq=testq,
@@ -392,14 +409,18 @@ kde_plot(sum_df, snakemake.output[1])
 
 
 # apply polyfit mz calibration
-# todo: Ask Wes how to use a boolean flag in snakemake (possibly config file) for the polyfit calibration to happen. Will have to include
-# todo: other parameters for calibraiton like ppm tolerance, intensity tolerance, cluster_corr_tolerance, polyfit degree, and calibration pk file path
 
-polyfit_calibration = False
-polyfit_deg = 1
-ppm_tolerance = 50
-intensity_tolerance = 1e4
-cluster_corr_tolerance = 0.99
+
+# config file dictionary
+# todo: make empty cal pk file if no polyfit calibration
+
+calib_pk_fpath = snakemake.output[3]
+
+polyfit_calibration = snakemake.config["polyfit_calibration"]
+polyfit_deg = snakemake.config["polyfit_deg"]
+ppm_tolerance = snakemake.config["ppm_tolerance"]
+intensity_tolerance = snakemake.config["intensity_tolerance"]
+cluster_corr_tolerance = snakemake.config["cluster_corr_tolerance"]
 
 if polyfit_calibration:
     calib_dict = gen_mz_error_calib_output(testq=testq,
@@ -424,6 +445,11 @@ else:
     else:
         testq['mz_mono_fix'] = [x * (1000000 + offset) / (1000000) for x in df['mz_mono']]
         testq['mz_mono_fix_round'] = np.round(testq['mz_mono_fix'].values, 3)
+
+    # create an empty calib dict pickle file for snakemake accounting
+    calib_dict = gen_calib_dict()
+    save_pickle_object(calib_dict, calib_pk_fpath)
+
 
 #re-cluster on the adjusted MZ, same weights
 apply_cluster_weights(testq, dt_weight = 5.0, rt_weight = 0.6, mz_weight = 0.006)

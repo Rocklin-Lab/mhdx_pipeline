@@ -122,11 +122,10 @@ for i in range(len(library_info)):
 relevant_scans = [i for i in scan_numbers if len(scan_to_lines[i])>0]
 print("N Scans: "+str(len(relevant_scans)))
 
-# todo: Need to specify whether to apply polyfit mz calibration in snakemake file
-apply_polyfit_mz_calibration = False
 
-if apply_polyfit_mz_calibration:
-    calib_dict = load_pickle_file(calib_pk_fpath) # todo: Ask Wes how to put fpath here
+# implement polyfit calibration if True in config file
+apply_polyfit_mz_calibration = snakemake.config["polyfit_calibration"]
+calib_dict = load_pickle_file(snakemake.input[2])
 
 for scan_number in relevant_scans:
 
