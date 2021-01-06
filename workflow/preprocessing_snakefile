@@ -30,7 +30,8 @@ rule read_imtbx:
 	output:
 		"resources/library_info/{undeut_fn}_intermediate.csv",
 		"results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
-		"results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
+		"results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
+		"results/library_info/mz_calib_dict.pk"
 	benchmark:
 		"results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
 	script:

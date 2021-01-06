@@ -188,5 +188,9 @@ timepoints:
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
 
-
-
+#mz calibration polyfit parameters
+"polyfit_calibration": False
+"polyfit_deg": 1
+"ppm_tolerance": 50
+"intensity_tolerance": 1e4
+"cluster_corr_tolerance": 0.99

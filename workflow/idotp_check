@@ -17,6 +17,7 @@ rule extract_tensors:
 	input:
 		"resources/library_info/library_info.csv",
 		"resources/mzml_gz/{mzml_gz}"
+		"results/library_info/mz_calib_dict.pk"
 	output:
 		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info))) #subset_indices)#
 	benchmark:
