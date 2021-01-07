@@ -5,7 +5,7 @@ Interactive Tensor analysis" (HDX-LIMIT) pipeline.
 HDX-LIMIT defines classes which automates the processing of a timeseries of 3D LC-IMS-MS data extracted from .mzML.gz files.
 
 
-The module contains 3 Data Classes and 2 Processing Classes:
+The module contains 3 Data Classes and 2 Processing Classes: (TODO: fix for TG removal, copy to  github readme, and remove)
     
     Data Classes: 
         - DataTensor: An object created from LC-IM-MS data extracted from a .mzML.gz file, with methods to perform a deconvoluting 
@@ -931,11 +931,12 @@ class IsotopeCluster:
             return peak_error, peaks_chosen
     
 ###
-### Class - TensorGenerator:
+### Class - SerialTensorGenerator:
 ### Collects and clusters all hdx timepoint files associated with a single protein name, creates and factorizes DataTensors, extracts isotope clusters for PathOptimizer
 ###
+### OLD TG now SerialTG
 
-class TensorGenerator:  
+class SerialTensorGenerator:  
     """
     Accepts a protein name associated with .mzML files in a specified directory, collects and clusters those files before generating DataTensors and IsotopeClusters from them.
     
@@ -943,7 +944,7 @@ class TensorGenerator:
     path = <string> directory to look for .mzML files in
     library_info = <pd.DataFrame> contains all information about identified proteins 
     inputs = <list of strings> filenames of all pickle.zlib tensors for protein name
-    n_factors = <int> of 
+    n_factors = <int> 
     """
     
     ###Class Attributes###
@@ -1022,8 +1023,6 @@ class TensorGenerator:
     #identifies IsotopicClusters within Factors, scores ICs, concatenates Tensors if deemed beneficial/possible, saves all timepoint ICs and Factors internally. 
     #Must be called externally on an instance of TensorGenerator.   
     def generate_tensors(self):
-
-        #TODO: variable n fn inputs to save different data scales: 'if factor_fn in kwargs: limit_write(...' ?
 
         #will both have nested-list structure with outer-length = n_timepoints
         all_tp_clusters = []
@@ -1113,7 +1112,7 @@ class TensorGenerator:
                             "int_mz_y"]
                     except:
                         ipdb.set_trace()
-                    """
+                    """DEPRECATED CONCATENATION BLOCK
                     top_fn_clusters = protein_clusters.sort_values(by = ['baseline_subtracted_peak_error'], ascending = False)[:math.ceil(len(protein_clusters)/5)]
 
                     #cheks that each tensor gives 85% of the even split contribution to the top 20% of clusters, if less the tensor is not included in the concatenated data
@@ -1165,6 +1164,7 @@ class TensorGenerator:
                                 #handle length mismatches in future, now just skip it and show the error TODO
                                 #often a +- 1 error
                                 print("Length mistmatch in the tensors to be combined")
+                    END DEPRECATED CONCATENATION BLOCK
                     """
                     #append list of fn_factor lists to tp_factors
                 tp_factors.append(fn_factors)
@@ -1185,6 +1185,84 @@ class TensorGenerator:
 
         #Save Factors and ICs as instance attributes
         self.all_tp_factors, self.all_tp_clusters = all_tp_factors, all_tp_clusters
+
+
+class TensorGenerator:
+    # REWORK OF SerialTG FOR SINGLE TENSORS
+
+    ###Class Attributes###
+    hd_mass_diff = 1.006277
+    c13_mass_diff = 1.00335
+
+    def __init__(
+        self, 
+        filename,
+        timepoint_index,
+        library_info,
+        **kwargs
+        ):
+
+        ###Set Instance Attributes###
+
+        self.filename = filename
+        self.timepoint_index = timepoint_index
+        self.library_info = library_info
+
+        if kwargs is not None: #TODO: Default control values should be placed in a check statement below (if hasattr(self, 'name of value'): Do) do this for other kwargs fxns
+            for key in kwargs.keys():
+                setattr(self, key, kwargs[key])
+
+        if not hasattr(self, 'low_mass_margin'):
+            self.low_mass_margin = 10
+        if not hasattr(self,'high_mass_margin'):
+            self.high_mass_margin = 17
+        if not hasattr(self, 'ppm_radius'):
+            self.ppm_radius = 30
+        if not hasattr(self, 'n_factors_low'):
+            self.n_factors_low = 1
+        if not hasattr(self, 'n_factors_high'):
+            self.n_factors_high = 3
+        if not hasattr(self, 'gauss_params'):
+            self.gauss_params = (3,1)
+
+        self.tensor = limit_read(self.filename)
+        self.lib_idx = int(filename.split("/")[-1].split("_")[0]) # expects format: path/to/{LibraryIdx}_{protName}_{tp}.cpickle.zlib
+        self.name = self.library_info.iloc[self.lib_idx]['name']
+        self.max_peak_center = len(self.library_info.loc[self.library_info['name'] == self.name]['sequence'].values[0])
+        self.total_isotopes = self.max_peak_center+self.high_mass_margin 
+        self.total_mass_window = self.low_mass_margin+self.total_isotopes
+
+        self.est_peak_gaps = [0] + list(np.linspace(self.c13_mass_diff, self.hd_mass_diff, 7)) + [self.hd_mass_diff for x in range(self.total_isotopes - 8)]
+        self.cum_peak_gaps = np.cumsum(self.est_peak_gaps)
+
+        i = self.lib_idx
+        self.mz_centers = self.library_info['obs_mz'].values[i] + (self.cum_peak_gaps / self.library_info['charge'].values[i])
+        self.mz_lows = self.library_info['obs_mz'].values[i] - (self.low_mass_margin/self.library_info['charge'].values[i])
+        self.mz_highs = self.library_info['obs_mz'].values[i] + (self.total_isotopes/self.library_info['charge'].values[i])
+
+        self.low_lims = self.mz_centers * ((1000000.0 - self.ppm_radius)/1000000.0)
+        self.high_lims = self.mz_centers * ((1000000.0 + self.ppm_radius)/1000000.0)
+
+        #Instantitate DataTensor
+        self.DataTensor = DataTensor(
+                            source_file = self.filename,
+                            tensor_idx = self.lib_idx,
+                            timepoint_idx = self.timepoint_index, 
+                            name = self.name, 
+                            total_mass_window = self.total_mass_window,
+                            n_concatenated = 1,
+                            charge_states = [self.library_info["charge"].values[self.lib_idx]], 
+                            rts = self.tensor[0], 
+                            dts = self.tensor[1], 
+                            seq_out = self.tensor[2], 
+                            int_seq_out = None
+                            )
+
+        self.DataTensor.lows = np.searchsorted(self.DataTensor.mz_labels, self.low_lims)
+        self.DataTensor.highs = np.searchsorted(self.DataTensor.mz_labels, self.high_lims)
+        #Consider separating factorize from init
+        self.DataTensor.factorize(gauss_params=(3,1))
+
 
 ###
 ### Class - PathOptimizer:

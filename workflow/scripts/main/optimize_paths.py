@@ -8,9 +8,23 @@ import pandas as pd
 sys.path.append(os.getcwd()+"/workflow/scripts/auxiliary/")
 import LC_IM_MS_TensorAnalysis as hx
 
-library_info=pd.read_csv(snakemake.input[0])
+#open library_info
+library_info=pd.read_csv(snakemake.input.pop(0))
+
+#order files, pooling all replicates and charges by timepoint
 name = snakemake.wildcards['name']
-atc = hx.limit_read(snakemake.input[1])
+atc = []
+for tp in snakemake.config['timepoints']:
+	tp_buf = []
+	for fn in snakemake.config[tp]:
+		for file in snakemake.input:
+			if fn in file:
+				ics = hx.limit_read(file) #expects list of ics
+				for ic in ics:
+					tp_buf.append(ic)
+
+	atc.append(tp_buf)
+
 
 p1 = hx.PathOptimizer(name, atc, library_info, timepoints = snakemake.config['timepoints'], n_undeut_runs = len(snakemake.config[0]), old_data_dir = snakemake.config['old_data_dir'])
 p1.optimize_paths()
