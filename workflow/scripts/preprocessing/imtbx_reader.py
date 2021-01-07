@@ -118,7 +118,8 @@ def cluster_df_hq_signals(testq, ppm=50, intensity_threshold=1e4, cluster_correl
             near = getnear(mz, charge=charge, mix=2, ppm=ppm)
 
             if len(near) > 0:
-                sum_data.append([RT,
+                sum_data.append([near['name'].values[0],
+                                 RT,
                                  im,
                                  sum(cluster_df['ab_cluster_total']),
                                  near['MW'].values[0],
@@ -127,14 +128,11 @@ def cluster_df_hq_signals(testq, ppm=50, intensity_threshold=1e4, cluster_correl
                                  mz,
                                  near['ppm'].values[0],
                                  near['abs_ppm'].values[0],
-                                 near['sequence'].values[0],
-                                 near['pdb_fname'].values[0],
                                  c])
             if len(near) > 1:
                 display(near)
     sum_df = pd.DataFrame(sum_data)
-    sum_df.columns = ['RT', 'im_mono', 'ab_cluster_total', 'MW', 'charge', 'expect_mz', 'obs_mz', 'ppm', 'abs_ppm',
-                      'sequence', 'pdb_fname', 'cluster']
+    sum_df.columns=['name','RT','im_mono','ab_cluster_total','MW','charge','expect_mz','obs_mz','ppm','abs_ppm','cluster']
     sum_df['ppm'] = [float(x) for x in sum_df['ppm']]
     return sum_df
 
@@ -229,8 +227,8 @@ def gen_mz_error_calib_output(testq, calib_pk_fpath, polyfit_degree=1, ppm_tol=5
                                           cluster_correlation=cluster_corr_tol)
 
     # generate calibration dictionary
-    calib_dict = gen_mz_ppm_error_calib_polyfit(obs_mz=cluster_hq_df['obs_mz'],
-                                                thr_mz=cluster_hq_df['expect_mz'],
+    calib_dict = gen_mz_ppm_error_calib_polyfit(obs_mz=cluster_hq_df['obs_mz'].values,
+                                                thr_mz=cluster_hq_df['expect_mz'].values,
                                                 polyfit_deg=polyfit_degree)
 
     # save calibration dictionary for further use
@@ -240,7 +238,7 @@ def gen_mz_error_calib_output(testq, calib_pk_fpath, polyfit_degree=1, ppm_tol=5
 
 
 def save_pickle_object(object, fpath):
-    with open(fpath, 'w') as outfile:
+    with open(fpath, 'wb') as outfile:
         pk.dump(object, outfile)
 
 
@@ -433,6 +431,8 @@ if polyfit_calibration:
                                                 mz=df['mz_mono'])
     testq['mz_mono_fix_round'] = np.round(testq['mz_mono_fix'].values, 3)
 
+    ppm_refilter = snakemake.config["ppm_refilter"]
+
 else:
 
     # this is what is initially implemented for mz correction
@@ -450,6 +450,8 @@ else:
     calib_dict = gen_calib_dict()
     save_pickle_object(calib_dict, calib_pk_fpath)
 
+    ppm_refilter = math.ceil(offset_peak_width/2)
+
 
 #re-cluster on the adjusted MZ, same weights
 apply_cluster_weights(testq, dt_weight = 5.0, rt_weight = 0.6, mz_weight = 0.006)
@@ -460,7 +462,7 @@ clusters = db.fit_predict(testq[['cluster_im','cluster_RT','cluster_mz', 'charge
 testq['cluster'] = clusters
 
 #re-average clusters to single lines, check for duplicate RTs, save sum_df to outfile
-sum_df = cluster_df(testq, ppm=math.ceil(offset_peak_width/2), adjusted=True)
+sum_df = cluster_df(testq, ppm=ppm_refilter, adjusted=True)
 
 #plot adjusted_mz KDE
 kde_plot(sum_df, snakemake.output[2])
