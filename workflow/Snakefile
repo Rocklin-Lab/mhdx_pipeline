@@ -10,12 +10,12 @@ proc = glob.glob("resources/ic_time_series/*.zlib")
 #names = [fn.split('_')[:-3] for fn in proc]
 names =  list(set(library_info['name'].values))
 
-#all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
+#all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
 	input:expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name = names)#config['run_name']+"_plot_linker.html"
 
 
-def analyze_tensors_inputs(name, library_info):
+def optimize_paths_inputs(name, library_info):
 	#Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
 	name_inputs = []
 	idxs = library_info.index[library_info['name'] == name].tolist()
@@ -23,32 +23,32 @@ def analyze_tensors_inputs(name, library_info):
 		if len(config[key]) > 1:
 			for file in config[key]:
 				for idx in idxs:
-					name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
+					name_inputs.append("resources/subtensor_ics/"+str(idx)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
 		else:
 			file = config[key][0]
 			for idx in idxs:
-				name_inputs.append("resources/tensors/"+str(idx)+"_"+file+".gz.cpickle.zlib")
+				name_inputs.append("resources/subtensor_ics/"+str(idx)+"_"+file+".gz.cpickle.zlib")
 
 	return name_inputs
 
 
-rule generate_rt_group_ics:
+rule generate_subtensor_ics:
 	#TODO: docstring
 	input:
 		"resources/library_info/library_info.csv",
-		lambda wildcards: analyze_tensors_inputs(wildcards.name, library_info)
+		"resources/tensors/{lib_idx}_{file}.cpickle.zlib"
 	output:
-		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
+		"resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib"
 	benchmark:
-		"results/benchmarks/generate_rt_group_ics.{name}.benchmark.txt"
+		"results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
 	script:
-		"scripts/main/generate_rt_group_ics.py"
+		"scripts/main/generate_subtensor_ics.py"
 
 
 rule optimize_paths:
 	input:
 		"resources/library_info/library_info.csv",
-		"resources/ic_time_series/{name}_all_tp_clusters.cpickle.zlib"
+		lambda wildcards: optimize_paths_inputs(wildcards.name, library_info)
 	output:
 		"results/plots/ic_time_series/html/{name}_time_series.html",
 		"resources/ic_time_series/{name}_winner.cpickle.zlib",
