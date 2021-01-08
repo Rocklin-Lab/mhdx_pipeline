@@ -192,6 +192,6 @@ timepoints:
 "polyfit_calibration": False
 "polyfit_deg": 1
 "ppm_tolerance": 50
-"intensity_tolerance": 1e4
+"intensity_tolerance": 10000
 "cluster_corr_tolerance": 0.99
 "ppm_refilter": 20
