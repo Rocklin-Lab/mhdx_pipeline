@@ -79,12 +79,15 @@ def set_global_scan_bounds(mzml):
     n_scans = run.get_spectrum_count()
     lc_times = int(n_scans/200)
     last = 0
+    no_lo = True
     for spectrum in run:
         if spectrum.index%200 == 0:
             time = spectrum.scan_time_in_minutes()
-            if abs(time - last) > 0.05:
-                lo_time = spectrum.scan_time_in_minutes()
+            if abs(time - last) > 0.005:
+                if no_lo:
+                    lo_time = spectrum.scan_time_in_minutes()
                 lo_lc_tp = int(spectrum.index//200)
+                no_lo = False
             if int(spectrum.index//200) == lc_times-1:
                 hi_time = spectrum.scan_time_in_minutes()
             last = time
