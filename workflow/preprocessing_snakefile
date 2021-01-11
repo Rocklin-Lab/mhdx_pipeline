@@ -35,7 +35,7 @@ rule read_imtbx:
 	benchmark:
 		"results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
 	script:
-		"scripts/preprocessing/read_imtbx.py"
+		"scripts/preprocessing/imtbx_reader.py"
 
 
 rule gzip_mzmls:
