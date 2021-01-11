@@ -7,6 +7,13 @@ from collections import OrderedDict
 library_info = pd.read_csv("resources/library_info/library_info.csv")
 names =  list(set(library_info['name'].values))
 
+#mzml list
+mzml_list = []
+for tp in config["timepoints"]:
+    for fn in config[tp]:
+        mzml_list.append(fn)
+
+
 #all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
 rule all:
 	input:
@@ -16,12 +23,12 @@ rule all:
 rule extract_tensors:
 	input:
 		"resources/library_info/library_info.csv",
-		"resources/mzml_gz/{mzml_gz}"
-		"results/library_info/mz_calib_dict.pk"
+		"resources/mzml/{mzml}.gz",
+		expand("results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn = config[0][0])
 	output:
-		expand("resources/tensors/{idx}_{{mzml_gz}}.cpickle.zlib", idx = range(len(library_info))) #subset_indices)#
+		expand("resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib", idx = range(len(library_info)), mzml = mzml_list)
 	benchmark:
-		results/benchmarks/extract_tensors.{mzml_gz}.benchmark.txt
+		results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt
 	script:
 		"scripts/main/extract_tensors.py"
 
