@@ -194,4 +194,4 @@ timepoints:
 "ppm_tolerance": 50
 "intensity_tolerance": 10000
 "cluster_corr_tolerance": 0.99
-"ppm_refilter": 20
+"ppm_refilter": 10
