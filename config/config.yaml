@@ -21,7 +21,8 @@
 #Name for pipeline run:
 "run_name": "180604_Mix2_MES_nonlin_05_21_2020"
 
-
+#Path to .csv file where each row is a library protein name followed by its sequence
+"names_and_seqs": "resources/library_info/new_HX_order.csv"
 
 ########################################
 ###############TIMEPOINTS###############
