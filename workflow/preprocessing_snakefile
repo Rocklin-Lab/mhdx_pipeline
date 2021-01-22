@@ -40,9 +40,9 @@ rule read_imtbx:
 
 rule gzip_mzmls:
 	input:
-		expand("resources/mzml/{mzml}", mzml = all_timepoint_files)
+		"resources/mzml/{mzml}"
 	output:
-		expand("resources/mzml/{mzml}.gz", mzml = all_timepoint_files)
+		"resources/mzml/{mzml}.gz"
 	benchmark:
 		"results/benchmarks/gzip_mzml.{mzml}.benchmark.txt"
 	script:

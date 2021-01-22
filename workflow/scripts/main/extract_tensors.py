@@ -53,7 +53,7 @@ for i in range(len(snakemake.config[snakemake.config['timepoints'][tp]])):
 n_replicate = mask.index(True)
 
 library_info['n'] = range(len(library_info))
-library_info['Drift Time MS1'] = library_info['im_mono'] / 200.0 * 13.781163434903 #ASK GABE WHAT THIS IS TODO
+library_info['Drift Time MS1'] = library_info['im_mono'] / 200.0 * 13.781163434903 #13.78116 is a hardcoded average IMS pulse time
 
 ret_ubounds=library_info['rt_group_mean_RT_%d_%d' %(tp, n_replicate)].values+snakemake.config['rt_radius']
 ret_lbounds=library_info['rt_group_mean_RT_%d_%d' %(tp, n_replicate)].values-snakemake.config['rt_radius']
