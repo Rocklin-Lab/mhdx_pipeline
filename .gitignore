@@ -10,6 +10,7 @@ analysis/*
 !results/plots
 !results/tables
 !results/logs
+!results/benchmarks
 !notebooks
 !notebooks/**
 !workflow
