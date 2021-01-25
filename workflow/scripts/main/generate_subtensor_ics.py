@@ -16,6 +16,7 @@ for tp in snakemake.config['timepoints']:
 		if fn in my_fn:
 			my_tp = tp
 
+process = psutil.Process(os.getpid())
 
 #memory before init
 print("Pre-Initialization: "+str(process.memory_info().rss / (1024*1024*1024)))

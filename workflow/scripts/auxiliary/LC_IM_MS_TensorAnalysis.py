@@ -62,6 +62,7 @@ import copy
 import time
 import ipdb
 import pymzml
+import psutil
 import pickle
 import tensorly
 import peakutils
@@ -381,11 +382,11 @@ class DataTensor:
         pmem("3 Pre-Factorization")
         n_itr = 4
         while flag:
-            pmem(n_itr+" Start")
+            pmem(str(n_itr)+" Start")
             t1 = time.time()
             #print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
             nnp = non_negative_parafac(grid, nf)
-            pmem(n_itr+" End")
+            pmem(str(n_itr)+" End")
             n_itr += 1
             t2 = time.time()
             #print('Factorization Duration: '+str(t2-t1))
@@ -399,14 +400,14 @@ class DataTensor:
             else:
                 flag = False
                 print("All n-factors failed for Index: "+str(self.name)+", keeping 1 factor decomposition.")
-        pmem(n_itr+" Post-Factorization")   
+        pmem(str(n_itr)+" Post-Factorization")   
         n_itr+=1
         #Create Factor objects
         factors = []
         t = time.time()
         #print('Saving Factor Objects... T+'+str(t-t0))
         for i in range(nf):
-            pmem(n_itr+" Start Factor "+str(i))   
+            pmem(str(n_itr)+" Start Factor "+str(i))   
             n_itr+=1
             factors.append(
                 Factor(
@@ -428,12 +429,12 @@ class DataTensor:
                     total_mass_window = self.total_mass_window
                     )
                 )
-            pmem(n_itr+" End Factor "+str(i)) 
+            pmem(str(n_itr)+" End Factor "+str(i)) 
             n_itr += 1
-        pmem(n_itr+" Factor Initialization End") 
+        pmem(str(n_itr)+" Factor Initialization End") 
         n_itr += 1
         self.factors = factors
-        pmem(n_itr+" Script End") 
+        pmem(str(n_itr)+" Script End") 
         t = time.time()
         print('Done: T+'+str(t-t0))
     
