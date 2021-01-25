@@ -26,9 +26,9 @@ rule extract_tensors:
 		"resources/mzml/{mzml}.gz",
 		expand("results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn = config[0][0])
 	output:
-		expand("resources/tensors/{idx}_{mzml}.gz.cpickle.zlib", idx = range(len(library_info)), mzml = mzml_list)
+		expand("resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib", idx = range(len(library_info)))
 	benchmark:
-		results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt
+		"results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
 	script:
 		"scripts/main/extract_tensors.py"
 
