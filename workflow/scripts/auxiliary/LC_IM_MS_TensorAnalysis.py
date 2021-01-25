@@ -62,6 +62,7 @@ import copy
 import time
 import ipdb
 import pymzml
+import psutil
 import pickle
 import tensorly
 import peakutils
@@ -331,8 +332,6 @@ class DataTensor:
 
     def factorize(self, new_mz_len = None, gauss_params = None):
     #Test factorization starting at n_factors = 15 and counting down, keep factorization that has no factors with correlation greater than 0.2 in any dimension.
-        t0 = time.time()
-        print('Beginning Factorization...')
        
         def corr_check(factors, cutoff):
         #Checks scipy non_negatve_parafac output factors for inter-factor (off-diagonal) correlations > cutoff, returns True if all values are < cutoff
@@ -344,7 +343,12 @@ class DataTensor:
             else:
                 return True
 
+        def pmem(id_str):
+            process = psutil.Process(os.getpid())
+            print (id_str+" Process Memory (GB): "+str(process.memory_info().rss/1024/1024))
+
         t = time.time()
+        pmem("0 Start")
         #print('Filtering... T+'+str(t-t0))
         #handle concatenation and intetrpolfilter option
         if self.n_concatenated != 1: 
@@ -361,7 +365,7 @@ class DataTensor:
                     grid = self.gauss(self.full_grid_out, gauss_params[0], gauss_params[1])
                 else:
                     grid = self.full_grid_out
-                
+        pmem("1 Read Params")
         t = time.time()
         #print('Zeroing Non-POI M/z... T+'+str(t-t0))
         #Multiply all values outside of integration box boundaries by 0, TODO: demonstrate this against keeping the full tensor - obv faster, self-evidently better fac: quantify as support
@@ -369,16 +373,21 @@ class DataTensor:
         for lo, hi in zip(lows, highs):
             zero_mult[:,:,lo:hi] = 1
         grid *= zero_mult
-
+        pmem("2 Zeroing")
         #Count down from 15 and keep highest n_factors that satisfies corr_check
         nf = 14
         flag = True
         t = time.time()
         #print('Start Factorization Series... T+'+str(t-t0))
+        pmem("3 Pre-Factorization")
+        n_itr = 4
         while flag:
+            pmem(str(n_itr)+" Start")
             t1 = time.time()
             #print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
             nnp = non_negative_parafac(grid, nf)
+            pmem(str(n_itr)+" End")
+            n_itr += 1
             t2 = time.time()
             #print('Factorization Duration: '+str(t2-t1))
 
@@ -391,12 +400,15 @@ class DataTensor:
             else:
                 flag = False
                 print("All n-factors failed for Index: "+str(self.name)+", keeping 1 factor decomposition.")
-           
+        pmem(str(n_itr)+" Post-Factorization")   
+        n_itr+=1
         #Create Factor objects
         factors = []
         t = time.time()
         #print('Saving Factor Objects... T+'+str(t-t0))
         for i in range(nf):
+            pmem(str(n_itr)+" Start Factor "+str(i))   
+            n_itr+=1
             factors.append(
                 Factor(
                     source_file = self.source_file,
@@ -417,8 +429,12 @@ class DataTensor:
                     total_mass_window = self.total_mass_window
                     )
                 )
-
+            pmem(str(n_itr)+" End Factor "+str(i)) 
+            n_itr += 1
+        pmem(str(n_itr)+" Factor Initialization End") 
+        n_itr += 1
         self.factors = factors
+        pmem(str(n_itr)+" Script End") 
         t = time.time()
         print('Done: T+'+str(t-t0))
     
@@ -1261,7 +1277,7 @@ class TensorGenerator:
         self.DataTensor.lows = np.searchsorted(self.DataTensor.mz_labels, self.low_lims)
         self.DataTensor.highs = np.searchsorted(self.DataTensor.mz_labels, self.high_lims)
         #Consider separating factorize from init
-        self.DataTensor.factorize(gauss_params=(3,1))
+        #self.DataTensor.factorize(gauss_params=(3,1))
 
 
 ###

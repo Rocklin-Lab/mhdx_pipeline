@@ -40,9 +40,9 @@ rule read_imtbx:
 
 rule gzip_mzmls:
 	input:
-		expand("resources/mzml/{mzml}", mzml = all_timepoint_files)
+		"resources/mzml/{mzml}"
 	output:
-		expand("resources/mzml/{mzml}.gz", mzml = all_timepoint_files)
+		"resources/mzml/{mzml}.gz"
 	benchmark:
 		"results/benchmarks/gzip_mzml.{mzml}.benchmark.txt"
 	script:
@@ -63,7 +63,7 @@ rule make_ims_mz_tics:
 
 rule make_library_master_list:
 	input:
-		"resources/library_info/new_HX_order.csv",
+		config['names_and_seqs'],
 		expand("resources/mzml/{mzml}", mzml = all_timepoint_files[0]),
 		expand("resources/library_info/{undeut_fn}_intermediate.csv", undeut_fn = config[0]),
 		expand("resources/tics/{mzml}.ims.mz.tic", mzml = all_timepoint_files)

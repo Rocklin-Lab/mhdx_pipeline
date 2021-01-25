@@ -18,10 +18,7 @@ def main(mzml_path, out_path):
         mzml_path, out_path, max_idx = max_spec_no, idx_len = len(str(max_offset_len))
     )
 
-
-if __name__ == "__main__":
-    for fin, fout in zip(snakemake.input, snakemake.output):
-        try:
-            main(fin, fout)
-        except:
-            print(main.__doc__)
+try:
+    main(snakemake.input[0], snakamake.output[0])
+except:
+        print(main.__doc__)
