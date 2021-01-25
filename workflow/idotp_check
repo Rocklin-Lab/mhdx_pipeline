@@ -39,7 +39,8 @@ def idotp_check_inputs(i, library_info):
 		for file in config[0]:
 			idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
 	else:
-		file = config[key][0]
+		tp = config['timepoints'][i]
+		file = config[tp][0]
 		idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib")
 
 	return idx_inputs
