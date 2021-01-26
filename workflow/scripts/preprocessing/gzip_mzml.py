@@ -19,6 +19,6 @@ def main(mzml_path, out_path):
     )
 
 try:
-    main(snakemake.input[0], snakamake.output[0])
+    main(snakemake.input[0], snakemake.output[0])
 except:
         print(main.__doc__)
