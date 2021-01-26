@@ -68,7 +68,7 @@ rule make_library_master_list:
 		expand("resources/library_info/{undeut_fn}_intermediate.csv", undeut_fn = config[0]),
 		expand("resources/tics/{mzml}.ims.mz.tic", mzml = all_timepoint_files)
 	output:
-		"results/plots/preprocessing/stretched_times_plots.pdf",
+		"results/plots/preprocessing/stretched_times_plots.png",
 		"resources/library_info/library_info.csv"
 	benchmark:
 		"results/benchmarks/make_library_master_list.benchmark.txt"
