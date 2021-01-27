@@ -330,7 +330,7 @@ class DataTensor:
         return [interpolated_out, interpolated_low_lims, interpolated_high_lims]
         
 
-    def factorize(self, new_mz_len = None, gauss_params = None):
+    def factorize(self, n_factors=13, new_mz_len = None, gauss_params = None):
     #Test factorization starting at n_factors = 15 and counting down, keep factorization that has no factors with correlation greater than 0.2 in any dimension.
        
         def corr_check(factors, cutoff):
@@ -375,28 +375,27 @@ class DataTensor:
         grid *= zero_mult
         pmem("2 Zeroing")
         #Count down from 15 and keep highest n_factors that satisfies corr_check
-        nf = 14
         flag = True
         t = time.time()
         #print('Start Factorization Series... T+'+str(t-t0))
         pmem("3 Pre-Factorization")
         n_itr = 4
         while flag:
-            pmem(str(n_itr)+" Start")
+            pmem(str(n_itr)+" "+str(n_factors)+" Factors "+" Start")
             t1 = time.time()
             #print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
-            nnp = non_negative_parafac(grid, nf)
-            pmem(str(n_itr)+" End")
+            nnp = non_negative_parafac(grid, n_factors)
+            pmem(str(n_itr)+" "+str(n_factors)+" Factors "+" End")
             n_itr += 1
             t2 = time.time()
             #print('Factorization Duration: '+str(t2-t1))
 
-            if nf > 1:
+            if n_factors > 1:
                 if corr_check(nnp, 0.25):
                     flag = False
                     break
                 else:
-                    nf -= 1
+                    n_factors -= 1
             else:
                 flag = False
                 print("All n-factors failed for Index: "+str(self.name)+", keeping 1 factor decomposition.")
@@ -406,7 +405,7 @@ class DataTensor:
         factors = []
         t = time.time()
         #print('Saving Factor Objects... T+'+str(t-t0))
-        for i in range(nf):
+        for i in range(n_factors):
             pmem(str(n_itr)+" Start Factor "+str(i))   
             n_itr+=1
             factors.append(
@@ -420,7 +419,7 @@ class DataTensor:
                     dts = nnp[1][1].T[i], 
                     mz_data = nnp[1][2].T[i], 
                     factor_idx = i, 
-                    n_factors = nf, 
+                    n_factors = n_factors, 
                     lows = lows, 
                     highs = highs, 
                     abs_mz_low = self.min_mz, 
