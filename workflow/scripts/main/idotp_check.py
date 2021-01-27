@@ -55,8 +55,7 @@ mz_centers = library_info['obs_mz'].values[i] + (cum_peak_gaps/library_info['cha
 low_lims = mz_centers * ((1000000.0 - ppm_radius)/1000000.0)
 high_lims = mz_centers * ((1000000.0 + ppm_radius)/1000000.0)
 
-#find rt_group undeut tensors
-undeut_fns = [fn for fn in glob.glob("resources/tensors/"+str(i)+"_*") if "UN" in fn]
+
 
 print("Debug: Start undeut factorizations")
 count = 1
