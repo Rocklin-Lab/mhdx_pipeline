@@ -345,7 +345,7 @@ class DataTensor:
 
         def pmem(id_str):
             process = psutil.Process(os.getpid())
-            print (id_str+" Process Memory (GB): "+str(process.memory_info().rss/1024/1024))
+            print (id_str+" Process Memory (GB): "+str(process.memory_info().rss/1024/1024/1024))
 
         t = time.time()
         pmem("0 Start")
