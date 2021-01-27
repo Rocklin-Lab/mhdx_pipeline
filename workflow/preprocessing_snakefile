@@ -26,7 +26,7 @@ rule read_imtbx:
 	input:
 		#.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
 		"resources/isotopes/{undeut_fn}.peaks.isotopes",
-		"resources/library_info/new_HX_order.csv"
+		config['names_and_seqs']
 	output:
 		"resources/library_info/{undeut_fn}_intermediate.csv",
 		"results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
@@ -68,7 +68,7 @@ rule make_library_master_list:
 		expand("resources/library_info/{undeut_fn}_intermediate.csv", undeut_fn = config[0]),
 		expand("resources/tics/{mzml}.ims.mz.tic", mzml = all_timepoint_files)
 	output:
-		"results/plots/preprocessing/stretched_times_plots.pdf",
+		"results/plots/preprocessing/stretched_times_plots.png",
 		"resources/library_info/library_info.csv"
 	benchmark:
 		"results/benchmarks/make_library_master_list.benchmark.txt"
