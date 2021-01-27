@@ -33,14 +33,14 @@ rule extract_tensors:
 		"scripts/main/extract_tensors.py"
 
 
-def idotp_check_inputs(i, library_info):
+def idotp_check_inputs(i):
+	# Writes inputs for idotp_check rule based on library_info index 
 	idx_inputs = []
 	if len(config[0]) > 1:
 		for file in config[0]:
-			idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
+			idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib") 
 	else:
-		tp = int(config['timepoints'][i])
-		file = config[tp][0]
+		file = config[0][0]
 		idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib")
 
 	return idx_inputs
@@ -50,7 +50,7 @@ rule idotp_check:
 	#TODO: docstring
 	input:
 		"resources/library_info/library_info.csv",
-		lambda wildcards: idotp_check_inputs(wildcards.i, library_info)
+		lambda wildcards: idotp_check_inputs(wildcards.i)
 	output:
 		"resources/idotp_filter/{i}_idotp_check.csv"
 	benchmark:
