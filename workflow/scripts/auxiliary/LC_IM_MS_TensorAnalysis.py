@@ -435,8 +435,8 @@ class DataTensor:
         n_itr += 1
         self.factors = factors
         pmem(str(n_itr)+" Script End") 
-        t = time.time()
-        print('Done: T+'+str(t-t0))
+        #t = time.time()
+        #print('Done: T+'+str(t-t0))
     
 ###    
 ### Class - Factor:        
