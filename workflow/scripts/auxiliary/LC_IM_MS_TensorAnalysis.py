@@ -55,6 +55,9 @@ determines the set of residue exchange rates that produced the signal, and estim
 import re
 import os
 import sys
+#Determine this location by importing nn_fac in python line interpreter, call nn_fac and it will display its path
+#This absolutely must go away as fast as possible
+sys.path.append("envs/suggie/lib/python3.7/site-packages")
 import glob
 import math
 import zlib
@@ -64,7 +67,6 @@ import ipdb
 import pymzml
 import psutil
 import pickle
-import tensorly
 import peakutils
 import statistics
 import importlib.util
@@ -81,13 +83,13 @@ from collections import defaultdict as ddict
 
 ### FUNCTIONS ###
 from Bio.PDB import *
+from nn_fac import ntf
 from scipy.stats import gmean
 from scipy.fftpack import fft
 from scipy.signal import argrelmax
 from Bio.SeqUtils import ProtParam
 from IPython.display import display
 from mpl_toolkits.mplot3d import Axes3D
-from tensorly.decomposition import non_negative_parafac
 from scipy.spatial.distance import pdist, squareform
 from scipy.ndimage.filters import gaussian_filter
 
@@ -336,8 +338,8 @@ class DataTensor:
         def corr_check(factors, cutoff):
         #Checks scipy non_negatve_parafac output factors for inter-factor (off-diagonal) correlations > cutoff, returns True if all values are < cutoff
             
-            a = np.minimum(np.minimum(np.corrcoef(factors[1][0].T),np.corrcoef(factors[1][1].T)),np.corrcoef(factors[1][2].T))
-            
+            a = np.minimum(np.minimum(np.corrcoef(factors[0].T),np.corrcoef(factors[1].T)),np.corrcoef(factors[2].T))
+
             if any(a[np.where(~np.eye(a.shape[0],dtype=bool))] > cutoff):
                     return False
             else:
@@ -384,14 +386,14 @@ class DataTensor:
             pmem(str(n_itr)+" "+str(n_factors)+" Factors "+" Start")
             t1 = time.time()
             #print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
-            nnp = non_negative_parafac(grid, n_factors)
+            nnf1 = ntf(grid, n_factors)
             pmem(str(n_itr)+" "+str(n_factors)+" Factors "+" End")
             n_itr += 1
             t2 = time.time()
             #print('Factorization Duration: '+str(t2-t1))
 
             if n_factors > 1:
-                if corr_check(nnp, 0.25):
+                if corr_check(nnf1, 0.25):
                     flag = False
                     break
                 else:
@@ -415,9 +417,9 @@ class DataTensor:
                     timepoint_idx = self.timepoint_idx, 
                     name = self.name, 
                     charge_states = self.charge_states, 
-                    rts = nnp[1][0].T[i], 
-                    dts = nnp[1][1].T[i], 
-                    mz_data = nnp[1][2].T[i], 
+                    rts = nnf1[0].T[i], 
+                    dts = nnf1[1].T[i], 
+                    mz_data = nnf1[2].T[i], 
                     factor_idx = i, 
                     n_factors = n_factors, 
                     lows = lows, 
@@ -440,7 +442,7 @@ class DataTensor:
 ###    
 ### Class - Factor:        
 ### Holds data from a single component of a non_negative_parafac factorization
-### constructed as: (nnp[0].T[i], nnp[1].T[i], nnp[2].T[i], i, n, self.lows, self.highs, self.n_concatenated)
+### constructed as: (nnf1[0].T[i], nnf1[1].T[i], nnf1[2].T[i], i, n, self.lows, self.highs, self.n_concatenated)
 ###
 
 class Factor:
