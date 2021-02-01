@@ -386,7 +386,7 @@ class DataTensor:
             pmem(str(n_itr)+" "+str(n_factors)+" Factors "+" Start")
             t1 = time.time()
             #print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
-            nnf1 = ntf(grid, n_factors)
+            nnf1 = ntf.ntf(grid, n_factors)
             pmem(str(n_itr)+" "+str(n_factors)+" Factors "+" End")
             n_itr += 1
             t2 = time.time()
