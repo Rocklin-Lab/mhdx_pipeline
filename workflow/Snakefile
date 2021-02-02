@@ -1,111 +1,139 @@
-#Define config file and import libraries
+# Define config file and import libraries
 configfile: "config/config.yaml"
+
+
 import glob
 import pandas as pd
 from collections import OrderedDict
 
-#Read list of candidate POI charge states produced by preprocessing snakefile
+# Read list of candidate POI charge states produced by preprocessing snakefile
 library_info = pd.read_csv("resources/library_info/library_info.csv")
 proc = glob.glob("resources/ic_time_series/*.zlib")
-#names = [fn.split('_')[:-3] for fn in proc]
-names =  list(set(library_info['name'].values))
+# names = [fn.split('_')[:-3] for fn in proc]
+names = list(set(library_info["name"].values))
 
-#all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
+
+# all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
-	input:expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name = names)#config['run_name']+"_plot_linker.html"
+    input:
+        expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
 
 
 def optimize_paths_inputs(name, library_info):
-	#Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
-	name_inputs = []
-	idxs = library_info.index[library_info['name'] == name].tolist()
-	for key in config['timepoints']:
-		if len(config[key]) > 1:
-			for file in config[key]:
-				for idx in idxs:
-					name_inputs.append("resources/subtensor_ics/"+str(idx)+"_"+file+".gz.cpickle.zlib") #TODO: This may break when using .raw as first input, investigate
-		else:
-			file = config[key][0]
-			for idx in idxs:
-				name_inputs.append("resources/subtensor_ics/"+str(idx)+"_"+file+".gz.cpickle.zlib")
+    # Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
+    name_inputs = []
+    idxs = library_info.index[library_info["name"] == name].tolist()
+    for key in config["timepoints"]:
+        if len(config[key]) > 1:
+            for file in config[key]:
+                for idx in idxs:
+                    name_inputs.append(
+                        "resources/subtensor_ics/"
+                        + str(idx)
+                        + "_"
+                        + file
+                        + ".gz.cpickle.zlib"
+                    )  # TODO: This may break when using .raw as first input, investigate
+        else:
+            file = config[key][0]
+            for idx in idxs:
+                name_inputs.append(
+                    "resources/subtensor_ics/"
+                    + str(idx)
+                    + "_"
+                    + file
+                    + ".gz.cpickle.zlib"
+                )
 
-	return name_inputs
+    return name_inputs
+
+
+def generate_subtensor_ics_indices(library_info):
+    out = []
+    for i in range(len(library_info)):
+        idpc = pd.read_csv("resources/idotp_filter/" + str(i) + "_idotp_check.csv")
+        if idpc["idotp"] > config["idotp_cutoff"]:
+            out.append(i)
+    return out
 
 
 rule generate_subtensor_ics:
-	#TODO: docstring
-	input:
-		"resources/library_info/library_info.csv",
-		"resources/tensors/{lib_idx}_{file}.cpickle.zlib"
-	output:
-		"resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib"
-	benchmark:
-		"results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
-	script:
-		"scripts/main/generate_subtensor_ics.py"
+    # TODO: docstring
+    input:
+        "resources/library_info/library_info.csv",
+        "resources/tensors/{lib_idx}_{file}.cpickle.zlib",
+    output:
+        "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
+    benchmark:
+        "results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
+    script:
+        "scripts/main/generate_subtensor_ics.py"
 
 
 rule optimize_paths:
-	input:
-		"resources/library_info/library_info.csv",
-		lambda wildcards: optimize_paths_inputs(wildcards.name, library_info)
-	output:
-		"results/plots/ic_time_series/html/{name}_time_series.html",
-		"resources/ic_time_series/{name}_winner.cpickle.zlib",
-		"resources/ic_time_series/{name}_runners.cpickle.zlib",
-		"resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
-		"resources/ic_time_series/{name}_winner_scores.cpickle.zlib",
-		"resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib"
-	benchmark:
-		"results/benchmarks/optimize_paths.{name}.benchmark.txt"
-	script:
-		"scripts/main/optimize_paths.py"
+    input:
+        "resources/library_info/library_info.csv",
+        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info),
+    output:
+        "results/plots/ic_time_series/html/{name}_time_series.html",
+        "resources/ic_time_series/{name}_winner.cpickle.zlib",
+        "resources/ic_time_series/{name}_runners.cpickle.zlib",
+        "resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
+        "resources/ic_time_series/{name}_winner_scores.cpickle.zlib",
+        "resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib",
+    benchmark:
+        "results/benchmarks/optimize_paths.{name}.benchmark.txt"
+    script:
+        "scripts/main/optimize_paths.py"
 
 
 rule make_overview_plot:
-	input:
-		expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name = names), #subset_names),
-		expand("resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib", name = names), #subset_names),
-		expand("resources/ic_time_series/{name}_winner_scores.cpickle.zlib", name = names), #subset_names),
-		expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name = names), #subset_names)
-	output:
-		"results/plots/"+config['run_name']+"_overview.html"
-	benchmark:
-		"results/benchmarks/make_overview_plot.benchmark.txt"
-	script:
-		"scripts/main/overview_plotter.py"
+    input:
+        expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name=names),  #subset_names),
+        expand(
+            "resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib", name=names
+        ),  #subset_names),
+        expand("resources/ic_time_series/{name}_winner_scores.cpickle.zlib", name=names),  #subset_names),
+        expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name=names),  #subset_names)
+    output:
+        "results/plots/" + config["run_name"] + "_overview.html",
+    benchmark:
+        "results/benchmarks/make_overview_plot.benchmark.txt"
+    script:
+        "scripts/main/overview_plotter.py"
+
 
 rule gjr_plots:
-	input:
-		"resources/ic_time_series/{name}_winner.cpickle.zlib",
-		"resources/ic_time_series/{name}_runners.cpickle.zlib",
-		"resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib"
-	output:
-		"results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf"
-	benchmark:
-		"results/benchmarks/gjr_plot_{name}.benchmark.txt"
-	script:
-		"scripts/main/gjr_plot.py"
+    input:
+        "resources/ic_time_series/{name}_winner.cpickle.zlib",
+        "resources/ic_time_series/{name}_runners.cpickle.zlib",
+        "resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
+    output:
+        "results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf",
+    benchmark:
+        "results/benchmarks/gjr_plot_{name}.benchmark.txt"
+    script:
+        "scripts/main/gjr_plot.py"
 
 
 rule make_plot_linker:
-	input:
-		"results/plots/"+config['run_name']+"_overview.html",
-		expand("results/plots/ic_time_series/html/{name}_time_series.html", name = names), #subset_names)
-	output:
-		config['run_name']+"_plot_linker.html"
-	benchmark:
-		"results/benchmarks/make_plot_linker.benchmark.txt"
-	script:
-		"scripts/main/plot_linker.py"
+    input:
+        "results/plots/" + config["run_name"] + "_overview.html",
+        expand("results/plots/ic_time_series/html/{name}_time_series.html", name=names),  #subset_names)
+    output:
+        config["run_name"] + "_plot_linker.html",
+    benchmark:
+        "results/benchmarks/make_plot_linker.benchmark.txt"
+    script:
+        "scripts/main/plot_linker.py"
 
 
 rule calculate_hdx_rates:
-	input:
-		"resources/ic_time_series/{name}_winner.cpickle.zlib"
-	output:
-		"resources/rates/{name}_rates.ext" #idk ext atm
-	benchmark:
-		"results/benchmarks/calculate_hdx_rates.{name}.benchmark.txt"
-	script:
-		"scripts/main/hxrates.py"
+    input:
+        "resources/ic_time_series/{name}_winner.cpickle.zlib",
+    output:
+        "resources/rates/{name}_rates.ext",  #idk ext atm
+    benchmark:
+        "results/benchmarks/calculate_hdx_rates.{name}.benchmark.txt"
+    script:
+        "scripts/main/hxrates.py"

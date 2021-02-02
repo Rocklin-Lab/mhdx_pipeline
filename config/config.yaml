@@ -186,6 +186,13 @@ timepoints:
   - 3 
   - 1 
 
+#0 for false, 1 for true
+#Check 'isotopic dot product' of Undeuterated replicates for a charge,
+#do not include in downstream if idotp is lower than cutoff
+"idotp_filter": 1
+#idotp < cutoff will not be considered for rt_groups
+"idotp_cutoff": 0.95
+
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
 

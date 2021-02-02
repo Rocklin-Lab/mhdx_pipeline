@@ -2,50 +2,73 @@ import glob
 import os
 from collections import OrderedDict
 
-cwd=os.getcwd()
+cwd = os.getcwd()
 
-#class types are 'pName', 'rtName', 'dName', uses OrderedDict for dic
+# class types are 'pName', 'rtName', 'dName', uses OrderedDict for dic
 def write_nested_list(dic, class_type):
     out = ""
     count = 1
     for key in dic.keys():
-        if class_type == 'rtNames':
-            print_key = str(key)+"'"
+        if class_type == "rtNames":
+            print_key = str(key) + "'"
         else:
-            print_key = str(count)+'''&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'''+key
-            
-        out += '''                    <li>
+            print_key = str(count) + """&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;""" + key
 
-                                <a class="protName '''+class_type+'''">'''+str(print_key)+'''</a>
+        out += (
+            """                    <li>
 
-                            <ul class="nolist">'''
+                                <a class="protName """
+            + class_type
+            + """">"""
+            + str(print_key)
+            + """</a>
+
+                            <ul class="nolist">"""
+        )
 
         for path, species in dic[key]:
-            out += '''                            <li>
+            out += (
+                """                            <li>
 
-                                    <a class="speciesName" onClick="(function(){document.getElementById('myFrame').src='''+"'"+path+"'"+''';return false;})();return false;">'''+species+'''</a>
+                                    <a class="speciesName" onClick="(function(){document.getElementById('myFrame').src="""
+                + "'"
+                + path
+                + "'"
+                + """;return false;})();return false;">"""
+                + species
+                + """</a>
 
-                                </li>'''
-        out += '''
+                                </li>"""
+            )
+        out += """
         </ul>
         
         </li>
-        '''
+        """
         count += 1
     return out
 
-#prepare sets of protein names, species names, rt bins, and plot paths
+
+# prepare sets of protein names, species names, rt bins, and plot paths
 
 overview_plot_path = snakemake.input[0]
 all_files = snakemake.input[1:]
-stripped = [file.split('/')[-1] for file in all_files]
-names = sorted(set([('_').join(file.split('_')[:3]).split('.')[0] for file in stripped]))
-display_names = [str(i+1)+'''&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'''+names[i] for i in range(len(names))]
-rt_bins = sorted(set([int(float(file.split('_')[3])) for file in stripped]))
+stripped = [file.split("/")[-1] for file in all_files]
+names = sorted(
+    set([("_").join(file.split("_")[:3]).split(".")[0] for file in stripped])
+)
+display_names = [
+    str(i + 1) + """&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;""" + names[i]
+    for i in range(len(names))
+]
+rt_bins = sorted(set([int(float(file.split("_")[3])) for file in stripped]))
 species_names = sorted(set([("_").join(file.split("_")[:-2]) for file in stripped]))
-species_plot_paths = ["./plots/ic_time_series/html/"+species+"_time_series.html" for species in species_names]
+species_plot_paths = [
+    "./plots/ic_time_series/html/" + species + "_time_series.html"
+    for species in species_names
+]
 
-#make dicts of: rt minute to species list, name to charge species
+# make dicts of: rt minute to species list, name to charge species
 
 name_to_species = OrderedDict.fromkeys(names)
 for name in name_to_species.keys():
@@ -59,15 +82,24 @@ rt_to_species = OrderedDict.fromkeys(rt_bins)
 for rt_bin in rt_to_species.keys():
     rt_to_species[rt_bin] = []
     try:
-        sub_specs = sorted([species for species in species_names if str(rt_bin) in species.split('_')[3][:len(str(rt_bin))]], key = lambda x: float(x.split("_")[-1]))
+        sub_specs = sorted(
+            [
+                species
+                for species in species_names
+                if str(rt_bin) in species.split("_")[3][: len(str(rt_bin))]
+            ],
+            key=lambda x: float(x.split("_")[-1]),
+        )
         for spec in sub_specs:
             path = [path for path in species_plot_paths if spec in path][0]
             rt_to_species[rt_bin].append((path, spec))
     except:
         import ipdb
+
         ipdb.set_trace()
 
-up_to_pNames = '''
+up_to_pNames = (
+    '''
 <!-- HTML -->
 
 <html>
@@ -127,7 +159,9 @@ Layout of Sidebar nested-list:
 -->
 
 <main id="main">
-    <iframe id="myFrame" src="'''+overview_plot_path+'''" height=100% width=100%></iframe>
+    <iframe id="myFrame" src="'''
+    + overview_plot_path
+    + """" height=100% width=100%></iframe>
 </main>
 
 <aside class="side-menu">
@@ -138,7 +172,11 @@ Layout of Sidebar nested-list:
 
             <li>
 
-                <a class="mainHeader" id="ov" onClick="(function(){document.getElementById('myFrame').src='''+"'"+overview_plot_path+"'"+''';return false;})();return false;"><i class="material-icons">info</i><span class="icon-text">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overview</span></a>
+                <a class="mainHeader" id="ov" onClick="(function(){document.getElementById('myFrame').src="""
+    + "'"
+    + overview_plot_path
+    + "'"
+    + """;return false;})();return false;"><i class="material-icons">info</i><span class="icon-text">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overview</span></a>
             
             </li>
 
@@ -149,9 +187,10 @@ Layout of Sidebar nested-list:
                 <input type='text' id='nameSearch' class='searchBar' onKeyUp="search(this)" placeholder="Name Search">
                 
                 <ul class="nolist">
-'''
+"""
+)
 
-up_to_rtNames = '''                </ul>
+up_to_rtNames = """                </ul>
             
             </li>
 
@@ -159,11 +198,11 @@ up_to_rtNames = '''                </ul>
                 
                 <a class="mainHeader"><i class="material-icons">query_builder</i><span class="icon-text">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Chromatogram</span></a>
                 
-                <ul class="nolist">'''
+                <ul class="nolist">"""
 
 #                <input type='text' id='rtSearch' class='searchBar' onKeyUp="search(this)" placeholder="RT Search"> #
 
-up_to_dNames = '''                </ul>
+up_to_dNames = """                </ul>
             
             </li>
 
@@ -173,9 +212,9 @@ up_to_dNames = '''                </ul>
 
                 <input type='text' id='dataSearch' class='searchBar' onKeyUp="search(this)" placeholder="Name Search">
                 
-                <ul class="nolist">'''
+                <ul class="nolist">"""
 
-after_dNames = '''                </ul>
+after_dNames = """                </ul>
             
             </li>
 
@@ -459,18 +498,18 @@ aside nav.left-nav ul li ul li ul li a.speciesName:hover {
 <!-- /JavaScript -->
 
 </body>
-</html>'''
+</html>"""
 
-#make html file
+# make html file
 
 proc = ""
 proc += up_to_pNames
-proc += write_nested_list(name_to_species, 'pNames')
+proc += write_nested_list(name_to_species, "pNames")
 proc += up_to_rtNames
-proc += write_nested_list(rt_to_species, 'rtNames')
+proc += write_nested_list(rt_to_species, "rtNames")
 proc += after_dNames
 
-#save to output
+# save to output
 
-with open(snakemake.output[0], 'wt') as file:
+with open(snakemake.output[0], "wt") as file:
     file.write(proc)

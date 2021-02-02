@@ -15,10 +15,11 @@ def main(mzml_path, out_path):
         max_spec_no = Reader(mzml_path).get_spectrum_count() + 10
 
     index_gzip(
-        mzml_path, out_path, max_idx = max_spec_no, idx_len = len(str(max_offset_len))
+        mzml_path, out_path, max_idx=max_spec_no, idx_len=len(str(max_offset_len))
     )
+
 
 try:
     main(snakemake.input[0], snakemake.output[0])
 except:
-        print(main.__doc__)
+    print(main.__doc__)

@@ -13,12 +13,13 @@ from scipy.spatial.distance import euclidean
 
 import matplotlib
 
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 
 import ipdb
 
 
 ###Definitions###
+
 
 def path_to_stretch_times(path, to_stretch=0):
     # Applies transformation defined by minimum-cost path from fastdtw to timeseries data
@@ -33,16 +34,26 @@ def path_to_stretch_times(path, to_stretch=0):
 
 
 def pred_time(x, stretched_times, lo_time, hi_time, lc_timepoints):
-    time = int(((x - lo_time) / (
-            hi_time - lo_time)) * lc_timepoints)  ###previously hardcoded as lo=3, hi=17, diff=987 (987 not correct, but not really harmful, ~1-2% error)
+    time = int(
+        ((x - lo_time) / (hi_time - lo_time)) * lc_timepoints
+    )  ###previously hardcoded as lo=3, hi=17, diff=987 (987 not correct, but not really harmful, ~1-2% error)
     return ((stretched_times[time] / lc_timepoints) * (hi_time - lo_time)) + lo_time
 
 
 def cluster(df, name_dict, key, RT_cutoff):
-    n_df = df.loc[df['name'] == key]
-    clusters = [[j for j in n_df['idx'].values if abs(
-        n_df.loc[n_df['idx'] == i]['pred_RT'].values[0] - n_df.loc[n_df['idx'] == j]['pred_RT'].values[0]) < RT_cutoff]
-                for i in n_df['idx'].values]
+    n_df = df.loc[df["name"] == key]
+    clusters = [
+        [
+            j
+            for j in n_df["idx"].values
+            if abs(
+                n_df.loc[n_df["idx"] == i]["pred_RT"].values[0]
+                - n_df.loc[n_df["idx"] == j]["pred_RT"].values[0]
+            )
+            < RT_cutoff
+        ]
+        for i in n_df["idx"].values
+    ]
     no_dups = []
     [no_dups.append(lst) for lst in clusters if lst not in no_dups]
     name_dict[key] = subset_filter(no_dups, n_df)
@@ -76,14 +87,22 @@ def subset_filter(clusters, n_df):
 
 def intersection_filter(final, intersections, n_df):
     final_copy = copy.deepcopy(final)
-    [[final_copy[i].discard(j) for j in intersections] for i in range(
-        len(final_copy))]  # modifies final_copy in place, removing intersection values from each cluster in final_copy
-    means = [np.mean(n_df.loc[n_df['idx'].isin(list(st))]['pred_RT'].values) for st in
-             final_copy]  # generates mean pred_RT of each mutualy exclusive cluster, order maps to final_copy
-    dists = [[abs(n_df.loc[n_df['idx'] == i]['pred_RT'].values - mean) for mean in means] for i in
-             intersections]  # outer order maps to intersections, inner maps to final_copy
-    [final_copy[dists[i].index(min(dists[i]))].add(intersections[i]) for i in
-     range(len(intersections))]  # adds value from intersection to best-fitting cluster
+    [
+        [final_copy[i].discard(j) for j in intersections]
+        for i in range(len(final_copy))
+    ]  # modifies final_copy in place, removing intersection values from each cluster in final_copy
+    means = [
+        np.mean(n_df.loc[n_df["idx"].isin(list(st))]["pred_RT"].values)
+        for st in final_copy
+    ]  # generates mean pred_RT of each mutualy exclusive cluster, order maps to final_copy
+    dists = [
+        [abs(n_df.loc[n_df["idx"] == i]["pred_RT"].values - mean) for mean in means]
+        for i in intersections
+    ]  # outer order maps to intersections, inner maps to final_copy
+    [
+        final_copy[dists[i].index(min(dists[i]))].add(intersections[i])
+        for i in range(len(intersections))
+    ]  # adds value from intersection to best-fitting cluster
     return final_copy
 
 
@@ -142,9 +161,9 @@ def gen_stretched_times(tic_file_list):
         stretched_ts1_times.append(stretched_ts1)
         stretched_ts2_times.append(stretched_ts2)
 
-        ax.plot(stretched_ts1, label='tic_file_' + str(index))
-        ax.set_ylabel('stretched_ts1_times')
-        ax.set_xlabel('index')
+        ax.plot(stretched_ts1, label="tic_file_" + str(index))
+        ax.set_ylabel("stretched_ts1_times")
+        ax.set_xlabel("index")
 
     plt.legend()
     # save the plot
@@ -176,82 +195,107 @@ for file in csvs:
 
 # inputs the transformed test-pattern value for each undeuterated imtbx csv as pred_RT
 for i in range(len(undfs)):
-    undfs[i]['pred_RT'] = [pred_time(x, stretched_ts1_times[i], lo_time, hi_time, lc_timepoints) for x in
-                           undfs[i]['RT']]
-    undfs[i]['UN'] = [i for x in undfs[i]['RT']]
+    undfs[i]["pred_RT"] = [
+        pred_time(x, stretched_ts1_times[i], lo_time, hi_time, lc_timepoints)
+        for x in undfs[i]["RT"]
+    ]
+    undfs[i]["UN"] = [i for x in undfs[i]["RT"]]
 
 # combine undfs and sort
 catdf = pd.concat(undfs)
-catdf = catdf.sort_values(['name', 'charge', 'pred_RT'])
+catdf = catdf.sort_values(["name", "charge", "pred_RT"])
 catdf.index = range(len(catdf))
 
 # clear duplicate lines
 dups = [False]
 for i in range(1, len(catdf)):
-    if ((catdf['name'].values[i] == catdf['name'].values[i - 1]) and
-        (catdf['charge'].values[i] == catdf['charge'].values[i - 1]) and
-        (abs(catdf['pred_RT'].values[i] - catdf['pred_RT'].values[i - 1]) < snakemake.config[
-            'rt_group_cutoff'])):  # ensures no duplicate charge-states make it into same rt-group
+    if (
+        (catdf["name"].values[i] == catdf["name"].values[i - 1])
+        and (catdf["charge"].values[i] == catdf["charge"].values[i - 1])
+        and (
+            abs(catdf["pred_RT"].values[i] - catdf["pred_RT"].values[i - 1])
+            < snakemake.config["rt_group_cutoff"]
+        )
+    ):  # ensures no duplicate charge-states make it into same rt-group
         dups.append(True)
     else:
         dups.append(False)
-catdf['dup'] = dups
-catdf = catdf.query('dup == False')
-catdf['sequence'] = [list(name_and_seq.loc[name_and_seq['name'] == catdf.iloc[i]['name']]['sequence'].values)[0] for i
-                     in range(len(catdf))]  # adds sequences to output
-catdf['idx'] = [i for i in range(len(catdf))]
+catdf["dup"] = dups
+catdf = catdf.query("dup == False")
+catdf["sequence"] = [
+    list(
+        name_and_seq.loc[name_and_seq["name"] == catdf.iloc[i]["name"]][
+            "sequence"
+        ].values
+    )[0]
+    for i in range(len(catdf))
+]  # adds sequences to output
+catdf["idx"] = [i for i in range(len(catdf))]
 
 # cluster RT values and rename
-name_dict = OrderedDict.fromkeys(catdf['name'].values)
-[cluster(catdf, name_dict, key, snakemake.config['rt_group_cutoff']) for key in
- name_dict.keys()]  # TODO possibly automate rt_group cutoff determination in the future
+name_dict = OrderedDict.fromkeys(catdf["name"].values)
+[
+    cluster(catdf, name_dict, key, snakemake.config["rt_group_cutoff"])
+    for key in name_dict.keys()
+]  # TODO possibly automate rt_group cutoff determination in the future
 
 for key in name_dict.keys():
     for cluster in name_dict[key]:
-        mean = np.mean(catdf.iloc[list(cluster)]['pred_RT'].values)
+        mean = np.mean(catdf.iloc[list(cluster)]["pred_RT"].values)
         for line in list(cluster):
-            catdf.iat[line, 0] = catdf.iloc[line]['name'] + "_" + str(round(mean, 5))
+            catdf.iat[line, 0] = catdf.iloc[line]["name"] + "_" + str(round(mean, 5))
 
 # stick each 'rt_group' entry with a median RT
 med_RTs = {}
-for name in set(catdf['name'].values):
-    med_RTs[name] = np.median(catdf.query('name == "%s"' % name)['pred_RT'].values)
-catdf['med_RT'] = [med_RTs[x] for x in catdf['name'].values]
+for name in set(catdf["name"].values):
+    med_RTs[name] = np.median(catdf.query('name == "%s"' % name)["pred_RT"].values)
+catdf["med_RT"] = [med_RTs[x] for x in catdf["name"].values]
 
-catdf = catdf.sort_values(['med_RT', 'charge'])
+catdf = catdf.sort_values(["med_RT", "charge"])
 catdf.index = range(len(catdf))
 
 # Create RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint]
 rt_columns = []
-for i in range(len(snakemake.config['timepoints'])):
+for i in range(len(snakemake.config["timepoints"])):
     base = "RT_%s" % i
-    if len(snakemake.config[snakemake.config['timepoints'][i]]) > 1:
-        for j in range(len(snakemake.config[snakemake.config['timepoints'][i]])):
+    if len(snakemake.config[snakemake.config["timepoints"][i]]) > 1:
+        for j in range(len(snakemake.config[snakemake.config["timepoints"][i]])):
             rt_columns.append(base + "_%s" % j)
     else:
         rt_columns.append(base + "_0")
 
 for i, stretched in enumerate(stretched_ts2_times):
-    catdf[rt_columns[i]] = [pred_time(x, stretched, lo_time, hi_time, lc_timepoints) for x in catdf['pred_RT']]
+    catdf[rt_columns[i]] = [
+        pred_time(x, stretched, lo_time, hi_time, lc_timepoints)
+        for x in catdf["pred_RT"]
+    ]
 
 # determine rt-group average pred-RT-n times from above
 prev_name = None
 all_tp_mean_preds = [[] for i in range(len(rt_columns))]
-catdf = catdf.sort_values(['med_RT', 'name'])
+catdf = catdf.sort_values(["med_RT", "name"])
 for i in range(len(catdf)):
-    if catdf.iloc[i]['name'] != prev_name:
+    if catdf.iloc[i]["name"] != prev_name:
         # get sub frame of rt-group
-        subdf = catdf.loc[catdf['name'] == catdf.iloc[i]['name']]
+        subdf = catdf.loc[catdf["name"] == catdf.iloc[i]["name"]]
         # take means of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins
         if len(subdf) > 1:
-            name_rt_preds = [np.mean(subdf.iloc[:, i].values) for i in np.arange(-len(rt_columns), 0, 1)]
+            name_rt_preds = [
+                np.mean(subdf.iloc[:, i].values)
+                for i in np.arange(-len(rt_columns), 0, 1)
+            ]
         else:
-            name_rt_preds = subdf.iloc[0, -len(rt_columns):].values
+            name_rt_preds = subdf.iloc[0, -len(rt_columns) :].values
         # Set avg rt preds for all lines in rt-group
-        [[all_tp_mean_preds[i].append(name_rt_preds[i]) for i in range(len(all_tp_mean_preds))] for j in
-         range(len(subdf))]
+        [
+            [
+                all_tp_mean_preds[i].append(name_rt_preds[i])
+                for i in range(len(all_tp_mean_preds))
+            ]
+            for j in range(len(subdf))
+        ]
         # set prev_name to current name
-        prev_name = catdf.iloc[i]['name']
+        prev_name = catdf.iloc[i]["name"]
     else:
         pass
 # set new columns to give all lines their rt-group RT_n consensus rt-positions

@@ -1,59 +1,74 @@
-#Define config file and import libraries
+# Define config file and import libraries
 configfile: "config/config.yaml"
+import glob
+
 import pandas as pd
 from collections import OrderedDict
 
-#Read list of candidate POI charge states produced by preprocessing snakefile
+# Read list of candidate POI charge states produced by preprocessing snakefile
 library_info = pd.read_csv("resources/library_info/library_info.csv")
-names =  list(set(library_info['name'].values))
+names = list(set(library_info["name"].values))
 
-#mzml list
+# mzml list
 mzml_list = []
 for tp in config["timepoints"]:
     for fn in config[tp]:
         mzml_list.append(fn)
 
 
-#all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
+# all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
 rule all:
-	input:
-		expand("resources/idotp_filter/{i}_idotp_check.csv", i = range(len(library_info)))
+    input:
+        expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info))),
+        expand(
+            "resources/tensors/{idx}_{mzml}.gz.cpickle.zlib",
+            idx=range(len(library_info)), mzml=[fn[:-3] for fn in glob.glob("./resources/mzml/*") if ".gz" in fn]
+        )
 
 
 rule extract_tensors:
-	input:
-		"resources/library_info/library_info.csv",
-		"resources/mzml/{mzml}.gz",
-		expand("results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn = config[0][0])
-	output:
-		expand("resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib", idx = range(len(library_info)))
-	benchmark:
-		"results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
-	script:
-		"scripts/main/extract_tensors.py"
+    input:
+        "resources/library_info/library_info.csv",
+        "resources/mzml/{mzml}.gz",
+        expand(
+            "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
+        ),
+    output:
+        expand(
+            "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
+            idx=range(len(library_info)),
+        ),
+    benchmark:
+        "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+    script:
+        "scripts/main/extract_tensors.py"
 
 
 def idotp_check_inputs(i):
-	# Writes inputs for idotp_check rule based on library_info index 
-	idx_inputs = []
-	if len(config[0]) > 1:
-		for file in config[0]:
-			idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib") 
-	else:
-		file = config[0][0]
-		idx_inputs.append("resources/tensors/"+str(i)+"_"+file+".gz.cpickle.zlib")
+    # Writes inputs for idotp_check rule based on library_info index
+    idx_inputs = []
+    if len(config[0]) > 1:
+        for file in config[0]:
+            idx_inputs.append(
+                "resources/tensors/" + str(i) + "_" + file + ".gz.cpickle.zlib"
+            )
+    else:
+        file = config[0][0]
+        idx_inputs.append(
+            "resources/tensors/" + str(i) + "_" + file + ".gz.cpickle.zlib"
+        )
 
-	return idx_inputs
+    return idx_inputs
 
 
 rule idotp_check:
-	#TODO: docstring
-	input:
-		"resources/library_info/library_info.csv",
-		lambda wildcards: idotp_check_inputs(wildcards.i)
-	output:
-		"resources/idotp_filter/{i}_idotp_check.csv"
-	benchmark:
-		"results/benchmarks/idotp_check.{i}.benchmark.txt"
-	script:
-		"scripts/main/idotp_check.py"
+    # TODO: docstring
+    input:
+        "resources/library_info/library_info.csv",
+        lambda wildcards: idotp_check_inputs(wildcards.i),
+    output:
+        "resources/idotp_filter/{i}_idotp_check.csv",
+    benchmark:
+        "results/benchmarks/idotp_check.{i}.benchmark.txt"
+    script:
+        "scripts/main/idotp_check.py"
