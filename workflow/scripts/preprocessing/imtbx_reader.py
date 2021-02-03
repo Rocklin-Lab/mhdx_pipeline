@@ -89,9 +89,10 @@ def getnear(x, charge=None, mix=None, ppm=50):
     if mix != None:
         subdf = allseq[allseq["mix"] == mix]
     if charge != None:
-        low, high = ((x * charge) - (1.00727 * charge)) * ((1000000 - ppm) / 1000000), (
-            (x * charge) - (1.00727 * charge)
-        ) * ((1000000 + ppm) / 1000000)
+        low, high = (
+            ((x * charge) - (1.00727 * charge)) * ((1000000 - ppm) / 1000000),
+            ((x * charge) - (1.00727 * charge)) * ((1000000 + ppm) / 1000000),
+        )
         mlow, mhigh = allseq["MW"] > low, allseq["MW"] < high
         tempdf = allseq[mlow & mhigh].sort_values("MW")[
             ["MW", "mix", "name", "len", "sequence"]

@@ -3111,15 +3111,18 @@ def winner_rtdt_plot(ax, undeuts, winners, runners):
     winners = PO.winner (PO = instance of PathOptimizer)
     """
     # DT is now X axis, RT is Y
-    runner_tp_rts, runner_tp_dts = [[ic.rt_com for ic in tp] for tp in runners], [
-        [ic.dt_coms for ic in tp] for tp in runners
-    ]
-    win_rts, win_dts = [(ic.rt_com, ic.charge_states) for ic in winners], [
-        (ic.dt_coms, ic.charge_states) for ic in winners
-    ]
-    un_rts, un_dts = [undeuts[key].rt_com for key in undeuts.keys()], [
-        undeuts[key].dt_coms for key in undeuts.keys()
-    ]
+    runner_tp_rts, runner_tp_dts = (
+        [[ic.rt_com for ic in tp] for tp in runners],
+        [[ic.dt_coms for ic in tp] for tp in runners],
+    )
+    win_rts, win_dts = (
+        [(ic.rt_com, ic.charge_states) for ic in winners],
+        [(ic.dt_coms, ic.charge_states) for ic in winners],
+    )
+    un_rts, un_dts = (
+        [undeuts[key].rt_com for key in undeuts.keys()],
+        [undeuts[key].dt_coms for key in undeuts.keys()],
+    )
     diffs = []
     for rtup, dtup in zip(win_rts, win_dts):
         if rtup[1] == dtup[1]:
@@ -3152,12 +3155,14 @@ def winner_rtdt_plot(ax, undeuts, winners, runners):
 def runner_up_rtdt_plot(ax, undeuts, winners, runners):
     # DT is now X axis, RT is Y
     win_rts, win_dts = [ic.rt_com for ic in winners], [ic.dt_coms for ic in winners]
-    runner_tp_rts, runner_tp_dts = [
-        [(ic.rt_com, ic.charge_states) for ic in tp] for tp in runners
-    ], [[(ic.dt_coms, ic.charge_states) for ic in tp] for tp in runners]
-    un_rts, un_dts = [undeuts[key].rt_com for key in undeuts.keys()], [
-        undeuts[key].dt_coms for key in undeuts.keys()
-    ]
+    runner_tp_rts, runner_tp_dts = (
+        [[(ic.rt_com, ic.charge_states) for ic in tp] for tp in runners],
+        [[(ic.dt_coms, ic.charge_states) for ic in tp] for tp in runners],
+    )
+    un_rts, un_dts = (
+        [undeuts[key].rt_com for key in undeuts.keys()],
+        [undeuts[key].dt_coms for key in undeuts.keys()],
+    )
     diffs = []
     for rtp, dtp in zip(runner_tp_rts, runner_tp_dts):
         rt_tp_buffer = []
