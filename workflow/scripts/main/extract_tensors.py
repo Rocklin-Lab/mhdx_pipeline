@@ -118,9 +118,6 @@ isotope_totals = [
     for seq in library_info["sequence"].values
 ]
 
-with open("%s.proc4.progress" % mzml_gz, "w") as file:
-    file.write("%s start\n" % (time.time() - starttime))
-
 scan_to_lines = [[] for i in scan_times]
 scans_per_line = []
 output_scans = [[] for i in range(len(library_info))]
