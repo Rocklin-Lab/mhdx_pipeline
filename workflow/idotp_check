@@ -22,7 +22,7 @@ rule all:
         expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info))),
         expand(
             "resources/tensors/{idx}_{mzml}.gz.cpickle.zlib",
-            idx=range(len(library_info)), mzml=[fn[:-3] for fn in glob.glob("./resources/mzml/*") if ".gz" in fn]
+            idx=range(len(library_info)), mzml=[fn[:-3].split('/')[-1] for fn in glob.glob("./resources/mzml/*") if "mzML.gz" in fn]
         )
 
 
