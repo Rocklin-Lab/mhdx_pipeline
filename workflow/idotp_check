@@ -19,11 +19,14 @@ for tp in config["timepoints"]:
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
 rule all:
     input:
-        expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info))),
-        expand(
-            "resources/tensors/{idx}_{mzml}.gz.cpickle.zlib",
-            idx=range(len(library_info)), mzml=[fn[:-3].split('/')[-1] for fn in glob.glob("./resources/mzml/*") if "mzML.gz" in fn]
-        )
+        "resources/libary_info/filtered_library_info.csv"
+        #expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info))),
+        #Only allow undeuterated tensors to be extracted, check their idotps, then remake library_info with only passing charges
+        #expand(
+        #    "resources/tensors/{idx}_{mzml}.gz.cpickle.zlib",
+        #    idx=range(len(library_info)), mzml=[fn[:-3].split('/')[-1] for fn in glob.glob("./resources/mzml/*") if "mzML.gz" in fn]
+        #)
+
 
 
 rule extract_tensors:
@@ -72,3 +75,12 @@ rule idotp_check:
         "results/benchmarks/idotp_check.{i}.benchmark.txt"
     script:
         "scripts/main/idotp_check.py"
+
+rule idotp_filter:
+    input: 
+        "resources/library_info/library_info.csv",
+        expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info)))
+    output:
+        "resources/libary_info/filtered_library_info.csv"
+    script:
+        "scripts/main/idotp_filter.py"

@@ -7,7 +7,11 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
-library_info = pd.read_csv("resources/library_info/library_info.csv")
+if config["idotp_filter"] == 1:
+    library_info = pd.read_csv("resources/library_info/filtered_library_info.csv")
+else:
+    library_info = pd.read_csv("resources/library_info/library_info.csv")
+
 proc = glob.glob("resources/ic_time_series/*.zlib")
 # names = [fn.split('_')[:-3] for fn in proc]
 names = list(set(library_info["name"].values))
@@ -47,14 +51,22 @@ def optimize_paths_inputs(name, library_info):
 
     return name_inputs
 
-
-def generate_subtensor_ics_indices(library_info):
-    out = []
-    for i in range(len(library_info)):
-        idpc = pd.read_csv("resources/idotp_filter/" + str(i) + "_idotp_check.csv")
-        if idpc["idotp"] > config["idotp_cutoff"]:
-            out.append(i)
-    return out
+rule extract_tensors:
+    input:
+        "resources/library_info/library_info.csv",
+        "resources/mzml/{mzml}.gz",
+        expand(
+            "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
+        ),
+    output:
+        expand(
+            "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
+            idx=range(len(library_info))
+        ),
+    benchmark:
+        "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+    script:
+        "scripts/main/extract_tensors.py"
 
 
 rule generate_subtensor_ics:
@@ -95,7 +107,7 @@ rule make_overview_plot:
         ),
         #subset_names),
         expand("resources/ic_time_series/{name}_winner_scores.cpickle.zlib", name=names),  #subset_names),
-        expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name=names),  #subset_names)
+        expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name=names)  #subset_names)
     output:
         "results/plots/" + config["run_name"] + "_overview.html",
     benchmark:
