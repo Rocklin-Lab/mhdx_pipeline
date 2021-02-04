@@ -166,20 +166,16 @@ for scan_number in relevant_scans:
             if len(spectrum) == 0:
                 spectrum = scan.peaks("raw").astype(np.float32)
             spectrum = spectrum[spectrum[:, 1] > 10]
+            # apply calibration to mz values
+            if apply_polyfit_mz_calibration:
+                spectrum[:, 0] = apply_polyfit_cal_mz(polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=spectrum[:, 0])
         except:
             spectrum = np.array([[0, 0]])
 
     for i in scan_to_lines[scan_number]:
         # if len(output_scans[i]) == 0:
         print("Library Index: " + str(i) + " Len Output: " + str(len(output_scans[i])))
-        obs_mz_val = library_info["obs_mz"].values[i]
-        # applies polyfit mz calibration using the calibration dictionary from the pickle file
-        if apply_polyfit_mz_calibration:
-            obs_mz_values = apply_polyfit_cal_mz(
-                polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=obs_mz_val
-            )
-        else:
-            obs_mz_values = obs_mz_val
+        obs_mz_values = library_info["obs_mz"].values[i]
         mz_low = obs_mz_values - (
             snakemake.config["low_mass_margin"] / library_info["charge"].values[i]
         )
