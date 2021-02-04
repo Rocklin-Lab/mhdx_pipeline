@@ -101,8 +101,8 @@ def gen_tensors_factorize(library_info_fpath, undeut_tensor_fpath_list, timepoin
         new_data_tensor.DataTensor.factorize(n_factors=num_factors,
                                           gauss_params=factor_gauss_param)
 
-        for num2 in range(len(new_data_tensor.DataTensor.factors)):
-            for isotope_cluster in new_data_tensor.DataTensor.factors[num2].isotope_clusters:
+        for factor in new_data_tensor.DataTensor.factors:
+            for isotope_cluster in factor.isotope_clusters:
                 gauss_undeut_ics_list.append(isotope_cluster) #todo: check if the outer bracket creates a different list shape
         
         data_tensor_list.append(new_data_tensor)
