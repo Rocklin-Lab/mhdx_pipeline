@@ -124,7 +124,7 @@ def calc_dot_prod_for_isotope_clusters(sequence, gauss_undeut_isotope_clusters):
         integrated_mz_array = isotope_clusters.baseline_integrated_mz
         dot_product = calculate_isotope_dist_dot_product(sequence=sequence,
                                                       undeut_integrated_mz_array=integrated_mz_array)
-        dot_product_list.append((dot_product, isotope_clusters.charge_states, integrated_mz_array))
+        dot_product_list.append(dot_product)
         integrated_mz_list.append(integrated_mz_array)
 
     return dot_product_list, integrated_mz_list
@@ -132,4 +132,4 @@ def calc_dot_prod_for_isotope_clusters(sequence, gauss_undeut_isotope_clusters):
 
 ics, dts = gen_tensors_factorize(library_info_fpath, ins)
 idotps, imzs = calc_dot_prod_for_isotope_clusters(my_seq, ics)
-pd.DataFrame({'idotp': max(idotps)}).to_csv(snakemake.output[0])
+pd.DataFrame({'idotp': max(idotps)}, index=[0]).to_csv(snakemake.output[0])
