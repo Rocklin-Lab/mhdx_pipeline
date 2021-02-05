@@ -17,18 +17,16 @@ from collections import defaultdict as ddict
 from scipy.ndimage.filters import gaussian_filter
 from tensorly.decomposition import non_negative_parafac as nnp
 
-sys.path.append(os.getcwd()+"/workflow/scripts/auxiliary/")
-import hxtools
+sys.path.append('os.getcwd()+"/workflow/scripts/auxiliary/"')
+
+#the following sys path is for local debug
+# sys.path.append('../auxiliary/')
+
 import LC_IM_MS_TensorAnalysis as hx
 import molmass
-library_info_fpath = snakemake.input.pop(0)
-library_info = pd.read_csv(library_info_fpath)
-ins = snakemake.input
-lib_idx = int(ins[0].split('/')[-1].split('_')[0])
-my_seq = library_info.iloc[lib_idx]['sequence']
 
 
- #todo: later to use this function from hxtools(suggie version)
+#todo: later to use this function from hxtools(suggie version)
 def calculate_theoretical_isotope_dist_from_sequence(sequence, num_isotopes=None):
     """
     calculate theoretical isotope distribtuion from a given one letter sequence of protein chain
@@ -66,8 +64,8 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
     """
     calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array
     :param sequence: sequence of the protein
-    :param undeut_integrated_mz_array:
-    :return:
+    :param undeut_integrated_mz_array: integrated mz array
+    :return: dot product
     """
     theo_isotope_dist = calculate_theoretical_isotope_dist_from_sequence(sequence=sequence)
     emp_isotope_dist = calculate_empirical_isotope_dist_from_inegratedt_mz(integrated_mz_array=undeut_integrated_mz_array)
@@ -76,16 +74,16 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
     return dot_product
 
 
-def gen_tensors_factorize(library_info_fpath, undeut_tensor_fpath_list, timepoint_index=0, num_factors=13, factor_gauss_param=(3, 1)):
+def gen_tensors_factorize(library_info_df, undeut_tensor_fpath_list, timepoint_index=0, num_factors=13, factor_gauss_param=(3, 1)):
     """
-    generate data tensors for undeut lib info entries
-    :param library_info_fpath: library info file path
-    :param undeut_tensor_fpath_list: list of file path for undeut lib info tensors
-    :param timepoint_index: time point index of 0. This is only done for 0 timepoint
-    :return:
+    generate data tensor and factorizes
+    :param library_info_df: library info data france
+    :param undeut_tensor_fpath_list: undeuterated tensor file path list
+    :param timepoint_index: time point index
+    :param num_factors: number of factors for factorization
+    :param factor_gauss_param: gaussian paramters for factorization
+    :return: list of isotope_cluster and data_tensor
     """
-
-    lib_info = pd.read_csv(library_info_fpath)
 
     gauss_undeut_ics_list = []
     data_tensor_list = []
@@ -94,7 +92,7 @@ def gen_tensors_factorize(library_info_fpath, undeut_tensor_fpath_list, timepoin
 
         # generate new data tensor
         new_data_tensor = hx.TensorGenerator(filename=undeut_tensor_fpath,
-                                          library_info=lib_info,
+                                          library_info=library_info_df,
                                           timepoint_index=timepoint_index)
 
         # factorize
@@ -113,8 +111,10 @@ def gen_tensors_factorize(library_info_fpath, undeut_tensor_fpath_list, timepoin
 def calc_dot_prod_for_isotope_clusters(sequence, gauss_undeut_isotope_clusters):
     """
     calculate dot products for all the factorized isotope clusters
-    :param gauss_undeut_isotope_clusters:
-    :return:
+    :param sequence: sequence of the protein
+    :param gauss_undeut_isotope_clusters: isotope cluster from factorization
+    :return: dot product list between comparision of theoretical isotope distribution and isotope clusters from
+    factorization + list of integrated mz list
     """
 
     dot_product_list = []
@@ -130,6 +130,53 @@ def calc_dot_prod_for_isotope_clusters(sequence, gauss_undeut_isotope_clusters):
     return dot_product_list, integrated_mz_list
 
 
-ics, dts = gen_tensors_factorize(library_info_fpath, ins)
-idotps, imzs = calc_dot_prod_for_isotope_clusters(my_seq, ics)
-pd.DataFrame({'idotp': max(idotps)}, index=[0]).to_csv(snakemake.output[0])
+def gen_idotp_check_dataframe(library_info_fpath, undeut_tensor_fpath_list, output_fpath, timepoint_index=0, num_factors=13,
+                              factor_gauss_param=(3,1)):
+    """
+
+    :param library_info_fpath: library info file path
+    :param undeut_tensor_fpath_list: undeut tensor filepath list
+    :param output_fpath: idotp check output file path
+    :param timepoint_index: timepoint index
+    :param num_factors: number of factors for factorization
+    :param factor_gauss_param: gauss param for factorization
+    :return: iso_cluster_list, data_tensor_list, idotp_list, integrated_mz_list (for debugging / checking)
+    """
+
+    lib_idx = int(undeut_tensor_fpath_list[0].split('/')[-1].split('_')[0])
+    library_info = pd.read_csv(library_info_fpath)
+    my_seq = library_info.iloc[lib_idx]['sequence']
+
+    iso_clusters_list, data_tensor_list = gen_tensors_factorize(library_info_df=library_info,
+                                                                undeut_tensor_fpath_list=undeut_tensor_fpath_list,
+                                                                timepoint_index=timepoint_index,
+                                                                num_factors=num_factors,
+                                                                factor_gauss_param=factor_gauss_param)
+
+    idotp_list, integrated_mz_list = calc_dot_prod_for_isotope_clusters(sequence=my_seq,
+                                                                        gauss_undeut_isotope_clusters=iso_clusters_list)
+
+    pd.DataFrame({'idotp': max(idotp_list)}, index=[0]).to_csv(output_fpath)
+
+    return iso_clusters_list, data_tensor_list, idotp_list, integrated_mz_list
+
+
+if __name__ == '__main__':
+
+    # input and output paths determined here. You can replace the snakemake inputs to put your own filepaths
+    library_info_fpath = snakemake.input.pop(0)
+    ins = snakemake.input
+    idotp_output = snakemake.output[0]
+
+    #### example of user inputs rather than from snakemake ####
+    # library_info_fpath = '/Users/smd4193/Documents/MS_data/library_info.csv'
+    # ins = ['/Users/smd4193/Documents/MS_data/1_20200922_lib15_2_0sec_01.mzML.gz.cpickle.zlib']
+    # idotp_output = '/Users/smd4193/Documents/MS_data/1_idotp_check.csv'
+
+    # main operation
+    idotp_out = gen_idotp_check_dataframe(library_info_fpath=library_info_fpath,
+                              undeut_tensor_fpath_list=ins,
+                              output_fpath=idotp_output,
+                              timepoint_index=0,
+                              num_factors=13,
+                              factor_gauss_param=(3,1))
