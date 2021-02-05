@@ -46,7 +46,7 @@ def calculate_theoretical_isotope_dist_from_sequence(sequence, num_isotopes=None
     return isotope_dist
 
 #todo: later to use this function from hxtools (suggie version)
-def calculate_empirical_isotope_dist_from_inegratedt_mz(integrated_mz_array, num_isotopes=None):
+def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array, num_isotopes=None):
     """
     calculate the isotope distribution from the integrated mz intensitities
     :param integrated_mz_values: array of integrated mz intensitites
@@ -68,7 +68,7 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
     :return: dot product
     """
     theo_isotope_dist = calculate_theoretical_isotope_dist_from_sequence(sequence=sequence)
-    emp_isotope_dist = calculate_empirical_isotope_dist_from_inegratedt_mz(integrated_mz_array=undeut_integrated_mz_array)
+    emp_isotope_dist = calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array=undeut_integrated_mz_array)
     min_length = min([len(theo_isotope_dist), len(emp_isotope_dist)])
     dot_product = np.linalg.norm(np.dot(theo_isotope_dist[0:min_length], emp_isotope_dist[0:min_length])) / np.linalg.norm(theo_isotope_dist) / np.linalg.norm(emp_isotope_dist)
     return dot_product
