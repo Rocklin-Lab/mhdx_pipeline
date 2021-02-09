@@ -2342,7 +2342,7 @@ class PathOptimizer:
             "auc_ground_rmse": (self.auc_ground_rmse_weight, self.auc_ground_rmse(ics)),
         }
 
-    def bokeh_plot(self, outpath):
+    def bokeh_plot(self, outpath):    
         def manual_cmap(value, low, high, palette):
             interval = (high - low) / len(palette)
             n_colors = len(palette)
@@ -2363,8 +2363,7 @@ class PathOptimizer:
                 plot_width=1275,
                 background_fill_color="whitesmoke",
                 x_range=(-1, max([int(tp) for tp in source.data["timepoint"]]) + 1),
-                tools="pan,wheel_zoom,reset,help",
-                tooltips=tooltips,
+                tooltips=tooltips
             )
             err_mapper = linear_cmap(
                 field_name="rtxdt_err", palette=Spectral6, low=0, high=1
@@ -2437,11 +2436,10 @@ class PathOptimizer:
                 title="Winning Timeseries RT and DT Center-of-Mass Error to Undeuterated Isotopic Cluster",
                 plot_height=300,
                 plot_width=1275,
-                x_range=(-3.5, 70),
-                y_range=(-0.1, 2),
+                x_range=(-20, 20),
+                y_range=(-1, 1),
                 background_fill_color="whitesmoke",
-                tools="pan,wheel_zoom,box_zoom,hover,reset,help",
-                tooltips=tooltips,
+                tooltips=tooltips
             )
             p.x(
                 x="rt_ground_err",
@@ -2468,8 +2466,7 @@ class PathOptimizer:
                     plot_height=400,
                     plot_width=450,
                     y_range=(0, 1),
-                    background_fill_color="whitesmoke",
-                    tools="pan,wheel_zoom,hover,reset,help",
+                    background_fill_color="whitesmoke"
                 )
                 p.min_border_bottom = 100
             else:
@@ -2480,12 +2477,23 @@ class PathOptimizer:
                     plot_height=300,
                     plot_width=450,
                     y_range=(0, 1),
-                    background_fill_color="whitesmoke",
-                    tools="pan,wheel_zoom,hover,reset,help",
+                    background_fill_color="whitesmoke"
                 )
             p.title.text_font_size = "8pt"
+            index_view = CDSView(source=source, filters=[IndexFilter(indices=[i])])
+            p.multi_line(
+                xs="int_mz_x", 
+                ys="int_mz_rescale",
+                source=source,
+                view=index_view,
+                line_color="blue",
+                line_width=1.5,
+                hover_color='red'
+            )
+            p.add_tools(HoverTool(show_arrow=False, line_policy='next', tooltips=tooltips))
 
             # Have a figure by here, use glyph plotting from here
+            """
             new_hover = HoverTool(tooltips=tooltips, names=["new"])
             index_view = CDSView(source=source, filters=[IndexFilter(indices=[i])])
             new_ics = MultiLine(
@@ -2498,6 +2506,7 @@ class PathOptimizer:
                 source, new_ics, view=index_view, name="new", hover_glyph=new_ics_hover
             )
             p.add_tools(new_hover)
+            """
 
             if old_source is not None:  # plot ics matching the timepoint from old data
                 old_hover = HoverTool(
@@ -2548,9 +2557,7 @@ class PathOptimizer:
                     plot_height=400,
                     plot_width=375,
                     y_range=(0, 1),
-                    background_fill_color="whitesmoke",
-                    tools="pan,wheel_zoom,hover,reset,help",
-                    tooltips=tooltips,
+                    background_fill_color="whitesmoke"
                 )
                 p.min_border_bottom = 100
             else:
@@ -2561,14 +2568,13 @@ class PathOptimizer:
                     y_range=(0, 1),
                     background_fill_color="whitesmoke",
                     tools="pan,wheel_zoom,hover,reset,help",
-                    tooltips=tooltips,
+                    tooltips=tooltips
                 )
             p.title.text_font_size = "8pt"
             runner_timepoint_view = CDSView(
                 source=source,
                 filters=[
-                    GroupFilter(column_name="timepoint", group=str(i)),
-                    GroupFilter(column_name="winner_or_runner", group=str(1)),
+                    GroupFilter(column_name="timepoint", group=str(i))
                 ],
             )
             p.multi_line(
@@ -2582,6 +2588,7 @@ class PathOptimizer:
                 hover_alpha=1,
                 line_width=1.5,
             )
+            p.add_tools(HoverTool(show_arrow=False, line_policy='next', tooltips=tooltips))
             p.xaxis.axis_label = "Added-Mass Units"
             p.yaxis.axis_label = "Relative Intensity"
             return p
@@ -2593,10 +2600,9 @@ class PathOptimizer:
                     plot_height=400,
                     plot_width=450,
                     background_fill_color="whitesmoke",
-                    x_range=(-3.5, 70),
-                    y_range=(-0.1, 2),
-                    tools="pan,wheel_zoom,hover,reset,help",
-                    tooltips=tooltips,
+                    x_range=(-30, 30),
+                    y_range=(-2, 2),
+                    tooltips=tooltips
                 )
                 p.min_border_bottom = 100
             else:
@@ -2605,10 +2611,9 @@ class PathOptimizer:
                     plot_height=300,
                     plot_width=450,
                     background_fill_color="whitesmoke",
-                    x_range=(-3.5, 70),
-                    y_range=(-0.1, 2),
-                    tools="pan,wheel_zoom,hover,reset,help",
-                    tooltips=tooltips,
+                    x_range=(-30, 30),
+                    y_range=(-2, 2),
+                    tooltips=tooltips
                 )
             p.title.text_font_size = "8pt"
             timepoint_runner_view = CDSView(
@@ -2650,7 +2655,6 @@ class PathOptimizer:
             p.yaxis.axis_label = "DT COM Error from Ground (ms)"
             p.min_border_right = 100
             return p
-
         output_file(outpath, mode="inline")
 
         # Start old_data source creation
