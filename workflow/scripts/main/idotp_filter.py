@@ -5,4 +5,4 @@ for fn in snakemake.input:
 	idpc = pd.read_csv(fn)
 	if idpc["idotp"].values[0] < snakemake.config["idotp_cutoff"]:
 		filtered_library_info.drop(lib_idx)
-filtered_library_info.to_csv(snakemake.output)
+filtered_library_info.to_csv(snakemake.output[0])
