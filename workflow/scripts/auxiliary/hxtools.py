@@ -24,6 +24,10 @@ from scipy.optimize import fmin_powell, fmin_bfgs
 molmass_spec = importlib.util.spec_from_file_location(
     "molmass.py", "workflow/scripts/auxiliary/molmass.py"
 )
+### the following is for local debug
+# molmass_spec = importlib.util.spec_from_file_location(
+#     "molmass.py", "/Users/smd4193/PycharmProjects/HDX_LIMIT-Pipeline/workflow/scripts/auxiliary/molmass.py"
+# )
 molmass = importlib.util.module_from_spec(molmass_spec)
 molmass_spec.loader.exec_module(molmass)
 

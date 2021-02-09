@@ -101,6 +101,10 @@ import importlib.util
 elements_spec = importlib.util.spec_from_file_location(
     "elements.py", "workflow/scripts/auxiliary/elements.py"
 )
+####the following is for local debug
+# elements_spec = importlib.util.spec_from_file_location(
+#     "elements.py", "/Users/smd4193/PycharmProjects/HDX_LIMIT-Pipeline/workflow/scripts/auxiliary/elements.py"
+# )
 elements = importlib.util.module_from_spec(elements_spec)
 elements_spec.loader.exec_module(elements)
 

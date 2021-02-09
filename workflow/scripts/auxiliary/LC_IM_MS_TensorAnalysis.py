@@ -107,6 +107,10 @@ from bokeh.models.filters import Filter, GroupFilter, IndexFilter
 hxtools_spec = importlib.util.spec_from_file_location(
     "hxtools", "workflow/scripts/auxiliary/hxtools.py"
 )
+# the following is for local debug
+# hxtools_spec = importlib.util.spec_from_file_location(
+#     "hxtools", "/Users/smd4193/PycharmProjects/HDX_LIMIT-Pipeline/workflow/scripts/auxiliary/hxtools.py"
+# )
 hxtools = importlib.util.module_from_spec(hxtools_spec)
 hxtools_spec.loader.exec_module(hxtools)
 

@@ -89,27 +89,39 @@ for line in lines:
     ):
         dt = line.split('value="')[1].split('"')[0]  # replace('"/>',''))
         drift_times.append(float(dt))
-
-for line in lines:
-    if (
-        '<cvParam cvRef="MS" accession="MS:1000016" name="scan start time" value='
-        in line
-    ):
-        st = line.split('value="')[1].split('"')[0]  # replace('"/>',''))
-        scan_times.append(float(st))
-
 drift_times = np.array(drift_times)
-scan_times = np.array(scan_times)
-scan_numbers = np.arange(0, len(scan_times))
+
+#for line in lines:
+#    if (
+#        '<cvParam cvRef="MS" accession="MS:1000016" name="scan start time" value='
+#        in line
+#    ):
+#        st = line.split('value="')[1].split('"')[0]  # replace('"/>',''))
+#        scan_times.append(float(st))
+#scan_times = np.array(scan_times)
+#scan_numbers = np.arange(0, len(scan_times))
 
 process = psutil.Process(os.getpid())
 print(process.memory_info().rss)
 msrun = pymzml.run.Reader(mzml_gz)
 print(process.memory_info().rss)
-
 starttime = time.time()
-
 print(time.time() - starttime, mzml_gz)
+
+scan_functions = []
+scan_times = []
+
+
+for k in range(msrun.get_spectrum_count()):
+    nextscan = msrun.next()
+    scan_functions.append(nextscan.id_dict['function'])
+    scan_times.append(nextscan.scan_time_in_minutes())
+
+scan_times = np.array(scan_times)
+scan_numbers = np.arange(0, len(scan_times))
+scan_functions = np.array(scan_functions)
+
+
 
 hd_mass_diff = 1.006277
 c13_mass_diff = 1.00335
@@ -132,6 +144,7 @@ for i in range(len(library_info)):
             & (drift_times <= dt_ubounds[i])
             & (scan_times <= ret_ubounds[i])
             & (scan_times >= ret_lbounds[i])
+            & (scan_functions == 1)
         ]
         scans_per_line.append(len(keep_scans))
         for scan in keep_scans:
@@ -150,92 +163,100 @@ print("N Scans: " + str(len(relevant_scans)))
 apply_polyfit_mz_calibration = snakemake.config["polyfit_calibration"]
 calib_dict = load_pickle_file(snakemake.input[2])
 
-for scan_number in relevant_scans:
+print(process.memory_info().rss)
+msrun = pymzml.run.Reader(mzml_gz)
+print(process.memory_info().rss)
+print(time.time() - starttime, mzml_gz)
 
-    if scan_number % 1 == 0:
-        print(
-            scan_number,
-            process.memory_info().rss / (1024 * 1024 * 1024),
-            (len(library_info) - output_scans.count([])) / len(library_info),
-        )
-
-    if len(scan_to_lines[scan_number]) > 0:
-        try:
-            scan = msrun[scan_number]
-            spectrum = np.array(scan.peaks("raw")).astype(np.float32)
-            if len(spectrum) == 0:
-                spectrum = scan.peaks("raw").astype(np.float32)
-            spectrum = spectrum[spectrum[:, 1] > 10]
-            # apply calibration to mz values
-            if apply_polyfit_mz_calibration:
-                spectrum[:, 0] = apply_polyfit_cal_mz(polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=spectrum[:, 0])
-        except:
-            spectrum = np.array([[0, 0]])
-
-    for i in scan_to_lines[scan_number]:
-        # if len(output_scans[i]) == 0:
-        print("Library Index: " + str(i) + " Len Output: " + str(len(output_scans[i])))
-        obs_mz_values = library_info["obs_mz"].values[i]
-        mz_low = obs_mz_values - (
-            snakemake.config["low_mass_margin"] / library_info["charge"].values[i]
-        )
-        mz_high = obs_mz_values + (isotope_totals[i] / library_info["charge"].values[i])
-        try:
-            output_scans[i].append(
-                spectrum[(mz_low < spectrum[:, 0]) & (spectrum[:, 0] < mz_high)]
+for scan_number in range(msrun.get_spectrum_count()):
+    scan = msrun.next()
+    if scan_number in relevant_scans:
+    
+        if scan_number % 1 == 0:
+            print(
+                scan_number,
+                process.memory_info().rss / (1024 * 1024 * 1024),
+                (len(library_info) - output_scans.count([])) / len(library_info),
             )
-        except:
-            print(i, output_scans[i], mz_low, mz_high)
-            print(spectrum)
-            print(spectrum[(mz_low < spectrum[:, 0]) & (spectrum[:, 0] < mz_high)])
-            sys.exit(0)
-        try:
-            if len(output_scans[i]) == scans_per_line[i]:
-                keep_drift_times = drift_times[
-                    (drift_times >= dt_lbounds[i])
-                    & (drift_times <= dt_ubounds[i])
-                    & (scan_times <= ret_ubounds[i])
-                    & (scan_times >= ret_lbounds[i])
-                ]
-                keep_scan_times = scan_times[
-                    (drift_times >= dt_lbounds[i])
-                    & (drift_times <= dt_ubounds[i])
-                    & (scan_times <= ret_ubounds[i])
-                    & (scan_times >= ret_lbounds[i])
-                ]
-                output = [
-                    sorted(set(keep_scan_times)),
-                    sorted(set(keep_drift_times)),
-                    output_scans[i],
-                ]
-                # FIX FOR NEW FILE SCHEME TODO
-                my_out = [
-                    out
-                    for out in snakemake.output
-                    if out
-                    == "resources/tensors/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
-                ][0]
-                print("My_out: " + str(my_out))
-                with open(my_out, "wb") as file:
-                    file.write(zlib.compress(cpickle.dumps(output)))
-                print(
-                    scan_number,
-                    process.memory_info().rss / (1024 * 1024 * 1024),
-                    "presave",
-                )
-                output_scans[i] = []
-                print(
-                    scan_number,
-                    process.memory_info().rss / (1024 * 1024 * 1024),
-                    "savedisk",
-                )
-        except:
-            ipdb.set_trace()
 
-    if len(scan_to_lines[scan_number]) > 0:
-        cur_lengths = np.array(
-            [len(output_scans[i]) for i in scan_to_lines[scan_number]]
-        )
-        target_lengths = np.array(
-            [i for i in scan_to_lines[scan_number]]
-        )  # np.array([scans_per_line[i] for i in scan_to_lines[scan_number]])
+        if len(scan_to_lines[scan_number]) > 0:
+            try:
+                spectrum = np.array(scan.peaks("raw")).astype(np.float32)
+                if len(spectrum) == 0:
+                    spectrum = scan.peaks("raw").astype(np.float32)
+                spectrum = spectrum[spectrum[:, 1] > 10]
+                # apply calibration to mz values
+                if apply_polyfit_mz_calibration:
+                    spectrum[:, 0] = apply_polyfit_cal_mz(polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=spectrum[:, 0])
+            except:
+                spectrum = np.array([[0, 0]])
+
+        for i in scan_to_lines[scan_number]:
+            # if len(output_scans[i]) == 0:
+            print("Library Index: " + str(i) + " Len Output: " + str(len(output_scans[i])))
+            obs_mz_values = library_info["obs_mz"].values[i]
+            mz_low = obs_mz_values - (
+                snakemake.config["low_mass_margin"] / library_info["charge"].values[i]
+            )
+            mz_high = obs_mz_values + (isotope_totals[i] / library_info["charge"].values[i])
+            try:
+                output_scans[i].append(
+                    spectrum[(mz_low < spectrum[:, 0]) & (spectrum[:, 0] < mz_high)]
+                )
+            except:
+                print(i, output_scans[i], mz_low, mz_high)
+                print(spectrum)
+                print(spectrum[(mz_low < spectrum[:, 0]) & (spectrum[:, 0] < mz_high)])
+                sys.exit(0)
+            try:
+                if len(output_scans[i]) == scans_per_line[i]:
+                    keep_drift_times = drift_times[
+                        (drift_times >= dt_lbounds[i])
+                        & (drift_times <= dt_ubounds[i])
+                        & (scan_times <= ret_ubounds[i])
+                        & (scan_times >= ret_lbounds[i])
+                        & (scan_functions == 1)
+                    ]
+                    keep_scan_times = scan_times[
+                        (drift_times >= dt_lbounds[i])
+                        & (drift_times <= dt_ubounds[i])
+                        & (scan_times <= ret_ubounds[i])
+                        & (scan_times >= ret_lbounds[i])
+                        & (scan_functions == 1)
+                    ]
+                    output = [
+                        sorted(set(keep_scan_times)),
+                        sorted(set(keep_drift_times)),
+                        output_scans[i],
+                    ]
+                    # FIX FOR NEW FILE SCHEME TODO
+                    my_out = [
+                        out
+                        for out in snakemake.output
+                        if out
+                        == "resources/tensors/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
+                    ][0]
+                    print("My_out: " + str(my_out))
+                    with open(my_out, "wb") as file:
+                        file.write(zlib.compress(cpickle.dumps(output)))
+                    print(
+                        scan_number,
+                        process.memory_info().rss / (1024 * 1024 * 1024),
+                        "presave",
+                    )
+                    output_scans[i] = []
+                    print(
+                        scan_number,
+                        process.memory_info().rss / (1024 * 1024 * 1024),
+                        "savedisk",
+                    )
+            except:
+                ipdb.set_trace()
+
+        if len(scan_to_lines[scan_number]) > 0:
+            cur_lengths = np.array(
+                [len(output_scans[i]) for i in scan_to_lines[scan_number]]
+            )
+            target_lengths = np.array(
+                [i for i in scan_to_lines[scan_number]]
+            )  # np.array([scans_per_line[i] for i in scan_to_lines[scan_number]])
