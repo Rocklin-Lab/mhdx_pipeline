@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 from importlib import reload
 from collections import defaultdict as ddict
 from scipy.ndimage.filters import gaussian_filter
-from tensorly.decomposition import non_negative_parafac as nnp
 
 sys.path.append('os.getcwd()+"/workflow/scripts/auxiliary/"')
 
