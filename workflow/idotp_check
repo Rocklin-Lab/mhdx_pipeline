@@ -19,7 +19,7 @@ for tp in config["timepoints"]:
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
 rule all:
     input:
-        "resources/libary_info/filtered_library_info.csv"
+        "resources/library_info/filtered_library_info.csv"
         #expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info))),
         #Only allow undeuterated tensors to be extracted, check their idotps, then remake library_info with only passing charges
         #expand(
