@@ -8,8 +8,10 @@ from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
 if config["idotp_filter"] == 1:
+    library_info_fn = "resources/library_info/filtered_library_info.csv"
     library_info = pd.read_csv("resources/library_info/filtered_library_info.csv")
 else:
+    library_info_fn = "resources/library_info/library_info.csv"
     library_info = pd.read_csv("resources/library_info/library_info.csv")
 
 proc = glob.glob("resources/ic_time_series/*.zlib")
@@ -51,28 +53,43 @@ def optimize_paths_inputs(name, library_info):
 
     return name_inputs
 
-rule extract_tensors:
-    input:
-        "resources/library_info/library_info.csv",
-        "resources/mzml/{mzml}.gz",
-        expand(
-            "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
-        ),
-    output:
-        expand(
-            "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
-            idx=range(len(library_info))
-        ),
-    benchmark:
-        "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
-    script:
-        "scripts/main/extract_tensors.py"
+if config['polyfit_calibration']:
+    rule extract_tensors:
+        input:
+            library_info_fn,
+            "resources/mzml/{mzml}.gz",
+            expand(
+                "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
+            )
+        output:
+            expand(
+                "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
+                idx=range(len(library_info))
+            ),
+        benchmark:
+            "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+        script:
+            "scripts/main/extract_tensors.py"
+else:
+    rule extract_tensors:
+        input:
+            library_info_fn,
+            "resources/mzml/{mzml}.gz",
+        output:
+            expand(
+                "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
+                idx=range(len(library_info))
+            ),
+        benchmark:
+            "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+        script:
+            "scripts/main/extract_tensors.py"
 
 
 rule generate_subtensor_ics:
     # TODO: docstring
     input:
-        "resources/library_info/library_info.csv",
+        library_info_fn,
         "resources/tensors/{lib_idx}_{file}.cpickle.zlib",
     output:
         "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
@@ -84,7 +101,7 @@ rule generate_subtensor_ics:
 
 rule optimize_paths:
     input:
-        "resources/library_info/library_info.csv",
+        library_info_fn,
         lambda wildcards: optimize_paths_inputs(wildcards.name, library_info),
     output:
         "results/plots/ic_time_series/html/{name}_time_series.html",

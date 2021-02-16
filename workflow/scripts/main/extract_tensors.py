@@ -161,7 +161,12 @@ print("N Scans: " + str(len(relevant_scans)))
 
 # implement polyfit calibration if True in config file
 apply_polyfit_mz_calibration = snakemake.config["polyfit_calibration"]
-calib_dict = load_pickle_file(snakemake.input[2])
+if apply_polyfit_mz_calibration: 
+    if len(snakemake.input)>2:
+        calib_dict = load_pickle_file(snakemake.input[2])
+    else:
+        print("Calibration File Not Found")
+        apply_polyfit_mz_calibration = False
 
 print(process.memory_info().rss)
 msrun = pymzml.run.Reader(mzml_gz)

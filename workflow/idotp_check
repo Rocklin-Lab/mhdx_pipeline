@@ -37,10 +37,12 @@ rule extract_tensors:
             "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
         ),
     output:
-        expand(
-            "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
-            idx=range(len(library_info)),
-        ),
+        temp(
+            expand(
+                "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
+                idx=range(len(library_info))
+            )
+        )
     benchmark:
         "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
     script:
@@ -81,6 +83,6 @@ rule idotp_filter:
         "resources/library_info/library_info.csv",
         expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info)))
     output:
-        "resources/libary_info/filtered_library_info.csv"
+        "resources/library_info/filtered_library_info.csv"
     script:
         "scripts/main/idotp_filter.py"
