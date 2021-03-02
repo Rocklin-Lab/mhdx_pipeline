@@ -92,9 +92,9 @@ def main(mzml):
 if __name__ == "__main__":
 
     # set expected command line arguments
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="")
     parser.add_argument("mzML_path", help="path/to/file for one timepoint mzML")
-    parser.add_argument("tic_path", help="path/to/file output .ims.mz.tic")
+    parser.add_argument("tic_path", help="path/to/file for output .ims.mz.tic")
     # parse given arguments
     args = parser.parse_args()
     main(args)

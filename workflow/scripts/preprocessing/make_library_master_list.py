@@ -326,7 +326,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    # check for either option of the three required inputs
+    # check for either option of the three required flag inputs
     if (args.m is None and args.n is None) or (args.i is None and args.j is None) or (args.t is None and args.u is None):
         parser.print_help()
         sys.exit()

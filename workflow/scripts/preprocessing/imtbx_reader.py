@@ -1,10 +1,3 @@
-"""
-Usage:
-snakemake.input: <undeuterated_timepoint.isotopes> from imtbx
-
-Reads IMTBX formatted scans and outputs a .csv of M/z, retention times, and drift times associated with known proteins in sample mixture. 
-These values are used by the stg1.py script to identify relevent scans to include in a protein DataTensor.
-"""
 import importlib.util
 
 hxtools_spec = importlib.util.spec_from_file_location(
@@ -594,17 +587,17 @@ def main(args):
         print("DUPLICATES: " + hits)
 
     # send sum_df to main output
-    sum_df.to_csv(args.c, index=False)
+    sum_df.to_csv(args.intermediate_out_path, index=False)
 
 if __name__ == "__main__":
 
     # set expected command line arguments
 
     # positional arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("isotopes_path", help="path to .peaks.isotopes file from undeuterated mzml")
-    parser.add_argument("names_and_seqs_path", help="path to .csv with names and sequences of library proteins")
-    parser.add_argument("intermediate_out_path", help="path for main output file")
+    parser = argparse.ArgumentParser(description="Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by make_library_master_list.py")
+    parser.add_argument("isotopes_path", help="path/to/.peaks.isotopes file from undeuterated mzml")
+    parser.add_argument("names_and_seqs_path", help="path/to/.csv with names and sequences of library proteins")
+    parser.add_argument("intermediate_out_path", help="path/to/_intermediate.csv main output file")
 
     # optional arguments
     parser.add_argument("-p", "--plot", help="/path/to/directory/ to save original and adjusted mz-error kde plots, use instead of -o and -a")
@@ -620,50 +613,47 @@ if __name__ == "__main__":
     # parse given arguments
     args = parser.parse_args()    
     
-    # check required arguments
-    if (args.isotopes_path is not None and args.names_and_seqs_path is not None and args.intermediate_out_path is not None:
-
-        # check for any plotting argument
-        if args.p is not None or args.o is not None or args.a is not None:
-            # make explicit filenames if directory given
-            if args.p is not None:
-                args.o = args.p+"original_mz_kde_path.pdf"
-                args.a = args.p+"adjusted_mz_kde_path.pdf"
-            else:
-                # require both explicit filenames
-                if args.o is None or args.a is None:
-                    parser.print_help()
-                    print("Plotting with explicit paths requires both -o and -a to be set")
-                    sys.exit()
-
-                # continue, we have -o and -a
-
-        # if any polyfit flag is present, set other polyfit variables to defaults and perform calibration
-        if args.c is not None or args.d is not None or args.t is not None or args.i is not None or args.r is not None or args.f is not None:
-            # outpath can't be none if performing polyfit calibration
-            if args.c is None:
-                parser.print_help()
-                print(r"polyfit calibration requires an additional output filepath, eg '-c results/library_info/{undeut_fn}_mz_calib_dict.pk'")
-                sys.exit()
-            if args.d is None:
-                args.d = 1
-            if args.t is None:
-                args.t = 50
-            if args.i is None:
-                args.i = 10000
-            if args.r is None:
-                args.r = 0.99
-            if args.f is None:
-                args.f = 10
-            main(args)
-
-        else:
-            # run main
-            main(args)
     
-    # show usage if missing required arguments
+
+    # check for any plotting argument
+    if args.p is not None or args.o is not None or args.a is not None:
+        # make explicit filenames if directory given
+        if args.p is not None:
+            args.o = args.p+"original_mz_kde_path.pdf"
+            args.a = args.p+"adjusted_mz_kde_path.pdf"
+        else:
+            # require both explicit filenames
+            if args.o is None or args.a is None:
+                parser.print_help()
+                print("Plotting with explicit paths requires both -o and -a to be set")
+                sys.exit()
+
+            # continue, we have -o and -a
+
+    # if any polyfit flag is present, set other polyfit variables to defaults and perform calibration
+    if args.c is not None or args.d is not None or args.t is not None or args.i is not None or args.r is not None or args.f is not None:
+        # outpath can't be none if performing polyfit calibration
+        if args.c is None:
+            parser.print_help()
+            print(r"polyfit calibration requires an additional output filepath, eg '-c results/library_info/{undeut_fn}_mz_calib_dict.pk'")
+            sys.exit()
+        if args.d is None:
+            args.d = 1
+        if args.t is None:
+            args.t = 50
+        if args.i is None:
+            args.i = 10000
+        if args.r is None:
+            args.r = 0.99
+        if args.f is None:
+            args.f = 10
+        main(args)
+
+    # no polyfit calibration
     else:
-        parser.print_help()
+        # run main
+        main(args)
+    
 
 
 
