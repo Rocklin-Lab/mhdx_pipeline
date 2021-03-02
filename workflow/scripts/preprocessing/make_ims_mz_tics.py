@@ -1,14 +1,15 @@
+import os
 import sys
+import gzip
+import ipdb
 import pymzml
+import argparse
 import collections
 import numpy as np
 import pandas as pd
-import gzip
-import os
-import ipdb
 
 
-def make_ims_tic(mzml):
+def main(mzml):
 
     drift_times = []
     scan_times = []
@@ -85,10 +86,15 @@ def make_ims_tic(mzml):
                 if rtIndex % 20 == 0:
                     print(rtIndex)
 
-    np.savetxt(snakemake.output[0], ms1_ims_tic, fmt="%i")
+    np.savetxt(args.tic_path, ms1_ims_tic, fmt="%i")
 
 
-# Bring in single mzML path from snakemake input
-fn = snakemake.input[0]
-print(fn)
-make_ims_tic(fn)
+if __name__ == "__main__":
+
+    # set expected command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("mzML_path", help="path/to/file for one timepoint mzML")
+    parser.add_argument("tic_path", help="path/to/file output .ims.mz.tic")
+    # parse given arguments
+    args = parser.parse_args()
+    main(args)

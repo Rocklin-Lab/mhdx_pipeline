@@ -22,6 +22,7 @@ import sys
 import time
 import copy
 import math
+import argparse
 import Bio.PDB
 import numpy as np
 import pandas as pd
@@ -479,126 +480,192 @@ def apply_cluster_weights(dataframe, dt_weight, rt_weight, mz_weight):
 
 
 ### SCRIPT ###
+def main(args):
 
-# read IMTBX output file
-with open(snakemake.input[0]) as file:
-    lines = [x.strip() for x in file.readlines()]
-out = []
-for i, line in enumerate(lines):
-    if line == "SCAN_START":
-        RT = float(lines[i + 1].split()[2][3:-1])
-        j = i + 3
-        while lines[j] != "SCAN_END":
-            out.append([float(x) for x in lines[j].split()] + [RT])
-            j += 1
+    # read IMTBX output file
+    with open(args.isotopes_path) as file:
+        lines = [x.strip() for x in file.readlines()]
+    out = []
+    for i, line in enumerate(lines):
+        if line == "SCAN_START":
+            RT = float(lines[i + 1].split()[2][3:-1])
+            j = i + 3
+            while lines[j] != "SCAN_END":
+                out.append([float(x) for x in lines[j].split()] + [RT])
+                j += 1
 
-df = pd.DataFrame(out)
-df.columns = "mz_mono im_mono ab_mono_peak ab_mono_total mz_top im_top ab_top_peak ab_top_total cluster_peak_count idx_top charge mz_cluster_avg ab_cluster_peak ab_cluster_total cluster_corr noise RT".split()
+    df = pd.DataFrame(out)
+    df.columns = "mz_mono im_mono ab_mono_peak ab_mono_total mz_top im_top ab_top_peak ab_top_total cluster_peak_count idx_top charge mz_cluster_avg ab_cluster_peak ab_cluster_total cluster_corr noise RT".split()
 
-# buffer df
-testq = copy.deepcopy(df)
+    # buffer df
+    testq = copy.deepcopy(df)
 
-# read list of all proteins in sample
-allseq = pd.read_csv(snakemake.input[1])
-allseq["mix"] = [2 for x in range(len(allseq))]
-allseq["MW"] = [
-    ProtParam.ProteinAnalysis(seq, monoisotopic=True).molecular_weight()
-    for seq in allseq["sequence"]
-]
-allseq["len"] = [len(seq) for seq in allseq["sequence"]]
+    # read list of all proteins in sample
+    allseq = pd.read_csv(args.names_and_seqs_path)
+    allseq["mix"] = [2 for x in range(len(allseq))]
+    allseq["MW"] = [
+        ProtParam.ProteinAnalysis(seq, monoisotopic=True).molecular_weight()
+        for seq in allseq["sequence"]
+    ]
+    allseq["len"] = [len(seq) for seq in allseq["sequence"]]
 
-# cluster IMTBX lines corresponding to designed sequence estimates, hardcode values are heuristic weights for clustering, all weights are inverse
-apply_cluster_weights(testq, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006)
+    # cluster IMTBX lines corresponding to designed sequence estimates, hardcode values are heuristic weights for clustering, all weights are inverse
+    apply_cluster_weights(testq, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006)
 
-# create dbscan object, fit, and apply cluster ids to testq lines
-db = DBSCAN()
-db.fit(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
-clusters = db.fit_predict(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
-testq["cluster"] = clusters
+    # create dbscan object, fit, and apply cluster ids to testq lines
+    db = DBSCAN()
+    db.fit(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
+    clusters = db.fit_predict(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
+    testq["cluster"] = clusters
 
-# for z in range(3): For visualizing cluster characteristics
-#    plotcluster(z)
+    # for z in range(3): For visualizing cluster characteristics
+    #    plotcluster(z)
 
-# average clusters within a ppm window of their suspected proteins
-sum_df = cluster_df(testq, ppm=50)
+    # average clusters within a ppm window of their suspected proteins
+    sum_df = cluster_df(testq, ppm=50)
 
-# generate plot of KDE before ppm correction
-kde_plot(sum_df, snakemake.output[1])
+    #check mz_error kde plotting flags
+    if args.o is not None and args.a is not None:
+        # generate plot of KDE before ppm correction
+        kde_plot(sum_df, args.o)
 
+    if args.c is not None:
+        # apply polyfit mz calibration
 
-# apply polyfit mz calibration
+        calib_pk_fpath = args.c
+        polyfit_deg = args.d
+        ppm_tolerance = args.t
+        intensity_tolerance = args.i
+        cluster_corr_tolerance = args.r
+        ppm_refilter = args.f
 
-
-# config file dictionary
-# todo: make empty cal pk file if no polyfit calibration
-
-calib_pk_fpath = snakemake.output[3]
-
-polyfit_calibration = snakemake.config["polyfit_calibration"]
-polyfit_deg = snakemake.config["polyfit_deg"]
-ppm_tolerance = snakemake.config["ppm_tolerance"]
-intensity_tolerance = snakemake.config["intensity_tolerance"]
-cluster_corr_tolerance = snakemake.config["cluster_corr_tolerance"]
-
-if polyfit_calibration:
-    calib_dict = gen_mz_error_calib_output(
-        testq=testq,
-        calib_pk_fpath=calib_pk_fpath,
-        polyfit_degree=polyfit_deg,
-        ppm_tol=ppm_tolerance,
-        int_tol=intensity_tolerance,
-        cluster_corr_tol=cluster_corr_tolerance,
-    )
-    testq["mz_mono_fix"] = apply_polyfit_cal_mz(
-        polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=df["mz_mono"]
-    )
-    testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
-
-    ppm_refilter = snakemake.config["ppm_refilter"]
-
-else:
-
-    # this is what is initially implemented for mz correction
-
-    # identify major peak of abs_ppm_error clusters, apply correction to all monoisotopic mz values
-    offset, offset_peak_width = find_offset(sum_df)
-    if offset > 0:
-        testq["mz_mono_fix"] = [
-            x * (1000000 - offset) / (1000000) for x in df["mz_mono"]
-        ]
+        calib_dict = gen_mz_error_calib_output(
+            testq=testq,
+            calib_pk_fpath=calib_pk_fpath,
+            polyfit_degree=polyfit_deg,
+            ppm_tol=ppm_tolerance,
+            int_tol=intensity_tolerance,
+            cluster_corr_tol=cluster_corr_tolerance,
+        )
+        testq["mz_mono_fix"] = apply_polyfit_cal_mz(
+            polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=df["mz_mono"]
+        )
         testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
+
     else:
-        testq["mz_mono_fix"] = [
-            x * (1000000 + offset) / (1000000) for x in df["mz_mono"]
-        ]
-        testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
 
-    # create an empty calib dict pickle file for snakemake accounting
-    calib_dict = gen_calib_dict()
-    save_pickle_object(calib_dict, calib_pk_fpath)
+        # this is what is initially implemented for mz correction
 
-    ppm_refilter = math.ceil(offset_peak_width / 2)
+        # identify major peak of abs_ppm_error clusters, apply correction to all monoisotopic mz values
+        offset, offset_peak_width = find_offset(sum_df)
+        if offset > 0:
+            testq["mz_mono_fix"] = [
+                x * (1000000 - offset) / (1000000) for x in df["mz_mono"]
+            ]
+            testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
+        else:
+            testq["mz_mono_fix"] = [
+                x * (1000000 + offset) / (1000000) for x in df["mz_mono"]
+            ]
+            testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
+
+        ppm_refilter = math.ceil(offset_peak_width / 2)
 
 
-# re-cluster on the adjusted MZ, same weights
-apply_cluster_weights(testq, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006)
+    # re-cluster on the adjusted MZ, same weights
+    apply_cluster_weights(testq, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006)
 
-db = DBSCAN()
-db.fit(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
-clusters = db.fit_predict(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
-testq["cluster"] = clusters
+    db = DBSCAN()
+    db.fit(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
+    clusters = db.fit_predict(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
+    testq["cluster"] = clusters
 
-# re-average clusters to single lines, check for duplicate RTs, save sum_df to outfile
-sum_df = cluster_df(testq, ppm=ppm_refilter, adjusted=True)
+    # re-average clusters to single lines, check for duplicate RTs, save sum_df to outfile
+    sum_df = cluster_df(testq, ppm=ppm_refilter, adjusted=True)
 
-# plot adjusted_mz KDE
-kde_plot(sum_df, snakemake.output[2])
+    if args.o is not None and args.a is not None:
+        # plot adjusted_mz KDE
+        kde_plot(sum_df, args.a)
 
-# check for duplicate RT-groups THIS MAY BE USELESS TODO
-no_duplicates, hits = find_rt_duplicates(sum_df)
-print("No rt Duplicates: " + str(no_duplicates))
-if not no_duplicates:
-    print("DUPLICATES: " + hits)
+    # check for duplicate RT-groups THIS MAY BE USELESS TODO
+    no_duplicates, hits = find_rt_duplicates(sum_df)
+    print("No rt Duplicates: " + str(no_duplicates))
+    if not no_duplicates:
+        print("DUPLICATES: " + hits)
 
-# send sum_df to snakemake output
-sum_df.to_csv(snakemake.output[0], index=False)
+    # send sum_df to main output
+    sum_df.to_csv(args.c, index=False)
+
+if __name__ == "__main__":
+
+    # set expected command line arguments
+
+    # positional arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("isotopes_path", help="path to .peaks.isotopes file from undeuterated mzml")
+    parser.add_argument("names_and_seqs_path", help="path to .csv with names and sequences of library proteins")
+    parser.add_argument("intermediate_out_path", help="path for main output file")
+
+    # optional arguments
+    parser.add_argument("-p", "--plot", help="/path/to/directory/ to save original and adjusted mz-error kde plots, use instead of -o and -a")
+    parser.add_argument("-o", "--original_mz_kde_path", help="/path/to/file to save original mz-error kde plots, use with -a")
+    parser.add_argument("-a", "--adjusted_mz_kde_path", help="/path/to/file to save adjusted mz-error kde plots, use with -o")
+    parser.add_argument("-c", "--calibration_outpath", help="/path/to/file for polyfit-calibration output") 
+    parser.add_argument("-d", "--polyfit_deg", help="degree of polynomial curve to fit to mz data for non-linear correction, defualt 1", type=int)
+    parser.add_argument("-t", "--ppm_tolerance", help="ppm error tolerance of observed to expected mz, defualt 50 ppm", type=float)
+    parser.add_argument("-i", "--intensity_tolerance", help="minimum intensity to consider cluster, default 10E4", tyoe=float)
+    parser.add_argument("-r", "--cluster_corr_tolerance", help="minimum correlation between isotope clusters to consider them redundant, default 0.99", tyoe=float)
+    parser.add_argument("-f", "--ppm_refilter", help="ppm error tolerance for post-mz-adjustment clusters, default 10 ppm", tyoe=float)
+    
+    # parse given arguments
+    args = parser.parse_args()    
+    
+    # check required arguments
+    if (args.isotopes_path is not None and args.names_and_seqs_path is not None and args.intermediate_out_path is not None:
+
+        # check for any plotting argument
+        if args.p is not None or args.o is not None or args.a is not None:
+            # make explicit filenames if directory given
+            if args.p is not None:
+                args.o = args.p+"original_mz_kde_path.pdf"
+                args.a = args.p+"adjusted_mz_kde_path.pdf"
+            else:
+                # require both explicit filenames
+                if args.o is None or args.a is None:
+                    parser.print_help()
+                    print("Plotting with explicit paths requires both -o and -a to be set")
+                    sys.exit()
+
+                # continue, we have -o and -a
+
+        # if any polyfit flag is present, set other polyfit variables to defaults and perform calibration
+        if args.c is not None or args.d is not None or args.t is not None or args.i is not None or args.r is not None or args.f is not None:
+            # outpath can't be none if performing polyfit calibration
+            if args.c is None:
+                parser.print_help()
+                print(r"polyfit calibration requires an additional output filepath, eg '-c results/library_info/{undeut_fn}_mz_calib_dict.pk'")
+                sys.exit()
+            if args.d is None:
+                args.d = 1
+            if args.t is None:
+                args.t = 50
+            if args.i is None:
+                args.i = 10000
+            if args.r is None:
+                args.r = 0.99
+            if args.f is None:
+                args.f = 10
+            main(args)
+
+        else:
+            # run main
+            main(args)
+    
+    # show usage if missing required arguments
+    else:
+        parser.print_help()
+
+
+
+
+

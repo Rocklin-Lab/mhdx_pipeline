@@ -23,20 +23,36 @@ rule all:
         expand("resources/mzml/{mzml}.gz", mzml=all_timepoint_files),
 
 
-rule read_imtbx:
-    input:
-        #.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
-        "resources/isotopes/{undeut_fn}.peaks.isotopes",
-        config["names_and_seqs"],
-    output:
-        "resources/library_info/{undeut_fn}_intermediate.csv",
-        "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
-        "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
-        "results/library_info/{undeut_fn}_mz_calib_dict.pk",
-    benchmark:
-        "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
-    script:
-        "scripts/preprocessing/imtbx_reader.py"
+if config['polyfit_calibration']:
+    rule read_imtbx:
+        input:
+            # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
+            "resources/isotopes/{undeut_fn}.peaks.isotopes",
+            config["names_and_seqs"],
+        output:
+            "resources/imtbx/{undeut_fn}_intermediate.csv",
+            "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
+            "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
+            "results/imtbx/{undeut_fn}_mz_calib_dict.pk"
+        benchmark:
+            "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
+        shell:
+            "python scripts/preprocessing/imtbx_reader.py {input[0]} {input[1]} {output[0]} -o {output[1]} -a {output[2]} -c {output[3]}"
+
+else: 
+    rule read_imtbx:
+        input:
+            # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
+            "resources/isotopes/{undeut_fn}.peaks.isotopes",
+            config["names_and_seqs"],
+        output:
+            "resources/imtbx/{undeut_fn}_intermediate.csv",
+            "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
+            "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
+        benchmark:
+            "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
+        shell:
+            "python scripts/preprocessing/imtbx_reader.py {input[0]} {input[1]} {output[0]} -o {output[1]} -a {output[2]}"
 
 
 rule gzip_mzmls:
@@ -46,8 +62,8 @@ rule gzip_mzmls:
         "resources/mzml/{mzml}.gz",
     benchmark:
         "results/benchmarks/gzip_mzml.{mzml}.benchmark.txt"
-    script:
-        "scripts/preprocessing/gzip_mzml.py"
+    shell:
+        "python scripts/preprocessing/gzip_mzml.py {input} {output}"
 
 
 rule make_ims_mz_tics:
@@ -58,8 +74,8 @@ rule make_ims_mz_tics:
         "resources/tics/{mzml}.ims.mz.tic",
     benchmark:
         "results/benchmarks/make_ims_mz_tics.{mzml}.benchmark.txt"
-    script:
-        "scripts/preprocessing/make_ims_mz_tics.py"
+    shell:
+        "python scripts/preprocessing/make_ims_mz_tics.py {input} {output}"
 
 
 rule make_library_master_list:
@@ -67,13 +83,13 @@ rule make_library_master_list:
         config["names_and_seqs"],
         expand("resources/mzml/{mzml}", mzml=all_timepoint_files[0]),
         expand(
-            "resources/library_info/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
+            "resources/imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
         ),
-        expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files),
+        expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files)
     output:
         "results/plots/preprocessing/stretched_times_plots.png",
         "resources/library_info/library_info.csv",
     benchmark:
         "results/benchmarks/make_library_master_list.benchmark.txt"
-    script:
-        "scripts/preprocessing/make_library_master_list.py"
+    shell:
+        "python scripts/preprocessing/make_library_master_list.py {input[0]} -n {input[1]} -j {input[2]} -u {input[3]} -p {output[0]} -o {output[1]}"

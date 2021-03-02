@@ -1,5 +1,8 @@
+import sys
 import copy
+import glob
 import pymzml
+import argparse
 import peakutils
 import statistics
 import numpy as np
@@ -15,7 +18,6 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-import ipdb
 
 
 ###Definitions###
@@ -176,130 +178,174 @@ def gen_stretched_times(tic_file_list):
 ####################    Operation    s####################
 ##########################################################
 
-ins = snakemake.input
+def main():
+    ins = snakemake.input
 
-name_and_seq = pd.read_csv(ins.pop(0))  # name and seq list comes first
-mzml = ins.pop(0)
-csvs = [fn for fn in ins if ".csv" in fn]
+    name_and_seq = pd.read_csv(ins.pop(0))  # name and seq list comes first
+    mzml = ins.pop(0)
+    csvs = [fn for fn in ins if ".csv" in fn]
 
-tics_filelist = [fn for fn in ins if ".ims.mz.tic" in fn]
+    tics_filelist = [fn for fn in ins if ".ims.mz.tic" in fn]
 
-stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics_filelist)
+    stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics_filelist)
 
-lo_time, hi_time, lc_timepoints = set_global_scan_bounds(mzml)
+    lo_time, hi_time, lc_timepoints = set_global_scan_bounds(mzml)
 
-# merge UNs
-undfs = []
-for file in csvs:
-    undfs.append(pd.read_csv(file))
+    # merge UNs
+    undfs = []
+    for file in csvs:
+        undfs.append(pd.read_csv(file))
 
-# inputs the transformed test-pattern value for each undeuterated imtbx csv as pred_RT
-for i in range(len(undfs)):
-    undfs[i]["pred_RT"] = [
-        pred_time(x, stretched_ts1_times[i], lo_time, hi_time, lc_timepoints)
-        for x in undfs[i]["RT"]
-    ]
-    undfs[i]["UN"] = [i for x in undfs[i]["RT"]]
-
-# combine undfs and sort
-catdf = pd.concat(undfs)
-catdf = catdf.sort_values(["name", "charge", "pred_RT"])
-catdf.index = range(len(catdf))
-
-# clear duplicate lines
-dups = [False]
-for i in range(1, len(catdf)):
-    if (
-        (catdf["name"].values[i] == catdf["name"].values[i - 1])
-        and (catdf["charge"].values[i] == catdf["charge"].values[i - 1])
-        and (
-            abs(catdf["pred_RT"].values[i] - catdf["pred_RT"].values[i - 1])
-            < snakemake.config["rt_group_cutoff"]
-        )
-    ):  # ensures no duplicate charge-states make it into same rt-group
-        dups.append(True)
-    else:
-        dups.append(False)
-catdf["dup"] = dups
-catdf = catdf.query("dup == False")
-catdf["sequence"] = [
-    list(
-        name_and_seq.loc[name_and_seq["name"] == catdf.iloc[i]["name"]][
-            "sequence"
-        ].values
-    )[0]
-    for i in range(len(catdf))
-]  # adds sequences to output
-catdf["idx"] = [i for i in range(len(catdf))]
-
-# cluster RT values and rename
-name_dict = OrderedDict.fromkeys(catdf["name"].values)
-[
-    cluster(catdf, name_dict, key, snakemake.config["rt_group_cutoff"])
-    for key in name_dict.keys()
-]  # TODO possibly automate rt_group cutoff determination in the future
-
-for key in name_dict.keys():
-    for cluster in name_dict[key]:
-        mean = np.mean(catdf.iloc[list(cluster)]["pred_RT"].values)
-        for line in list(cluster):
-            catdf.iat[line, 0] = catdf.iloc[line]["name"] + "_" + str(round(mean, 5))
-
-# stick each 'rt_group' entry with a median RT
-med_RTs = {}
-for name in set(catdf["name"].values):
-    med_RTs[name] = np.median(catdf.query('name == "%s"' % name)["pred_RT"].values)
-catdf["med_RT"] = [med_RTs[x] for x in catdf["name"].values]
-
-catdf = catdf.sort_values(["med_RT", "charge"])
-catdf.index = range(len(catdf))
-
-# Create RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint]
-rt_columns = []
-for i in range(len(snakemake.config["timepoints"])):
-    base = "RT_%s" % i
-    if len(snakemake.config[snakemake.config["timepoints"][i]]) > 1:
-        for j in range(len(snakemake.config[snakemake.config["timepoints"][i]])):
-            rt_columns.append(base + "_%s" % j)
-    else:
-        rt_columns.append(base + "_0")
-
-for i, stretched in enumerate(stretched_ts2_times):
-    catdf[rt_columns[i]] = [
-        pred_time(x, stretched, lo_time, hi_time, lc_timepoints)
-        for x in catdf["pred_RT"]
-    ]
-
-# determine rt-group average pred-RT-n times from above
-prev_name = None
-all_tp_mean_preds = [[] for i in range(len(rt_columns))]
-catdf = catdf.sort_values(["med_RT", "name"])
-for i in range(len(catdf)):
-    if catdf.iloc[i]["name"] != prev_name:
-        # get sub frame of rt-group
-        subdf = catdf.loc[catdf["name"] == catdf.iloc[i]["name"]]
-        # take means of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins
-        if len(subdf) > 1:
-            name_rt_preds = [
-                np.mean(subdf.iloc[:, i].values)
-                for i in np.arange(-len(rt_columns), 0, 1)
-            ]
-        else:
-            name_rt_preds = subdf.iloc[0, -len(rt_columns) :].values
-        # Set avg rt preds for all lines in rt-group
-        [
-            [
-                all_tp_mean_preds[i].append(name_rt_preds[i])
-                for i in range(len(all_tp_mean_preds))
-            ]
-            for j in range(len(subdf))
+    # inputs the transformed test-pattern value for each undeuterated imtbx csv as pred_RT
+    for i in range(len(undfs)):
+        undfs[i]["pred_RT"] = [
+            pred_time(x, stretched_ts1_times[i], lo_time, hi_time, lc_timepoints)
+            for x in undfs[i]["RT"]
         ]
-        # set prev_name to current name
-        prev_name = catdf.iloc[i]["name"]
-    else:
-        pass
-# set new columns to give all lines their rt-group RT_n consensus rt-positions
-for i in range(len(all_tp_mean_preds)):
-    catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
+        undfs[i]["UN"] = [i for x in undfs[i]["RT"]]
 
-catdf.to_csv(snakemake.output[1])
+    # combine undfs and sort
+    catdf = pd.concat(undfs)
+    catdf = catdf.sort_values(["name", "charge", "pred_RT"])
+    catdf.index = range(len(catdf))
+
+    # clear duplicate lines
+    dups = [False]
+    for i in range(1, len(catdf)):
+        if (
+            (catdf["name"].values[i] == catdf["name"].values[i - 1])
+            and (catdf["charge"].values[i] == catdf["charge"].values[i - 1])
+            and (
+                abs(catdf["pred_RT"].values[i] - catdf["pred_RT"].values[i - 1])
+                < snakemake.config["rt_group_cutoff"]
+            )
+        ):  # ensures no duplicate charge-states make it into same rt-group
+            dups.append(True)
+        else:
+            dups.append(False)
+    catdf["dup"] = dups
+    catdf = catdf.query("dup == False")
+    catdf["sequence"] = [
+        list(
+            name_and_seq.loc[name_and_seq["name"] == catdf.iloc[i]["name"]][
+                "sequence"
+            ].values
+        )[0]
+        for i in range(len(catdf))
+    ]  # adds sequences to output
+    catdf["idx"] = [i for i in range(len(catdf))]
+
+    # cluster RT values and rename
+    name_dict = OrderedDict.fromkeys(catdf["name"].values)
+    [
+        cluster(catdf, name_dict, key, snakemake.config["rt_group_cutoff"])
+        for key in name_dict.keys()
+    ]  # TODO possibly automate rt_group cutoff determination in the future
+
+    for key in name_dict.keys():
+        for cluster in name_dict[key]:
+            mean = np.mean(catdf.iloc[list(cluster)]["pred_RT"].values)
+            for line in list(cluster):
+                catdf.iat[line, 0] = catdf.iloc[line]["name"] + "_" + str(round(mean, 5))
+
+    # stick each 'rt_group' entry with a median RT
+    med_RTs = {}
+    for name in set(catdf["name"].values):
+        med_RTs[name] = np.median(catdf.query('name == "%s"' % name)["pred_RT"].values)
+    catdf["med_RT"] = [med_RTs[x] for x in catdf["name"].values]
+
+    catdf = catdf.sort_values(["med_RT", "charge"])
+    catdf.index = range(len(catdf))
+
+    # Create RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint]
+    rt_columns = []
+    for i in range(len(snakemake.config["timepoints"])):
+        base = "RT_%s" % i
+        if len(snakemake.config[snakemake.config["timepoints"][i]]) > 1:
+            for j in range(len(snakemake.config[snakemake.config["timepoints"][i]])):
+                rt_columns.append(base + "_%s" % j)
+        else:
+            rt_columns.append(base + "_0")
+
+    for i, stretched in enumerate(stretched_ts2_times):
+        catdf[rt_columns[i]] = [
+            pred_time(x, stretched, lo_time, hi_time, lc_timepoints)
+            for x in catdf["pred_RT"]
+        ]
+
+    # determine rt-group average pred-RT-n times from above
+    prev_name = None
+    all_tp_mean_preds = [[] for i in range(len(rt_columns))]
+    catdf = catdf.sort_values(["med_RT", "name"])
+    for i in range(len(catdf)):
+        if catdf.iloc[i]["name"] != prev_name:
+            # get sub frame of rt-group
+            subdf = catdf.loc[catdf["name"] == catdf.iloc[i]["name"]]
+            # take means of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins
+            if len(subdf) > 1:
+                name_rt_preds = [
+                    np.mean(subdf.iloc[:, i].values)
+                    for i in np.arange(-len(rt_columns), 0, 1)
+                ]
+            else:
+                name_rt_preds = subdf.iloc[0, -len(rt_columns) :].values
+            # Set avg rt preds for all lines in rt-group
+            [
+                [
+                    all_tp_mean_preds[i].append(name_rt_preds[i])
+                    for i in range(len(all_tp_mean_preds))
+                ]
+                for j in range(len(subdf))
+            ]
+            # set prev_name to current name
+            prev_name = catdf.iloc[i]["name"]
+        else:
+            pass
+    # set new columns to give all lines their rt-group RT_n consensus rt-positions
+    for i in range(len(all_tp_mean_preds)):
+        catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
+
+    catdf.to_csv(snakemake.output[1])
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    # inputs
+    parser.add_argument("names_and_seqs_path", help="path/to/file .csv of protein library names and sequences")
+    parser.add_argument("-m", "--mzml_dir", help="path/to/dir/ containing undeuterated .mzML files")
+    parser.add_argument("-s", "--undeut_match_string", help="unique part of undeuterated mzML filename to be used in matching")
+    parser.add_argument("-i", "--intermediates_dir", help="path/to/dir/ containing intermediate imtbx files")
+    parser.add_argument("-t", "tics_dir", help="path/to/dir/ containing .ims.mz.tic files")
+    parser.add_argument("-n", "--undeut_mzMLs", nargs='*', help="used in snakemake, list of all undeuterated .mzML file paths")
+    parser.add_argument("-j", "--intermediates", nargs="*", help="used in snakemake, list of all imtbx intermediate file paths")
+    parser.add_argument("-u", "--tics", help="used in snakemake, list of all .imx.mz.tic file paths")
+    
+    # outputs
+    parser.add_argument("-p", "--plot", help="path/to/stretched_times_plots.png")
+    parser.add_argument("-o", "--outpath", help="path/to/library_info.csv main output file")
+    
+    args = parser.parse_args()
+
+    # check for either option of the three required inputs
+    if (args.m is None and args.n is None) or (args.i is None and args.j is None) or (args.t is None and args.u is None):
+        parser.print_help()
+        sys.exit()
+
+    # check for mzml_dir without search string
+    if args.m is not None and args.n is None and args.s is None:
+        parser.print_help()
+        sys.exit()
+
+    # check m^s^-n, glob undeut .mzML filenames
+    if args.m is not None and args.s is not None and args.n is None:
+        args.n = list(glob.glob(args.m+"*"+args.s+"*"+".mzML"))
+
+    # check i^-j, glob imtbx intermediates
+    if args.i is not None and args.j is None:
+        args.j = list(glob.glob(args.i+"*intermediate.csv"))
+
+    # check t^-u, glob .tic filenames
+    if args.t is not None and args.u is None:
+        args.u = list(glob.glob(args.t+"*.ims.mz.tic"))
+
+    main(args)
