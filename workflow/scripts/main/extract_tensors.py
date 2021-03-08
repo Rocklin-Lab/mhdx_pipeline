@@ -38,9 +38,9 @@ def apply_polyfit_cal_mz(polyfit_coeffs, mz):
     return mz_corr
 
 
-def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
+def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=10, high_mass_margin=17, rt_radius=0.4, dt_radius_scale=0.06, polyfit_calibration_dict=None, indices=None):
     library_info = pd.read_csv(library_info_path)
-    mzml = mzml_gz.split("/")[-1][:-3]
+    mzml = mzml_gz_path.split("/")[-1][:-3]
 
     # find number of mzml-source timepoint for extracting RT #TODO THIS WILL HAVE TO BE HANDLED WHEN MOVING FROM MZML TO RAW - files in config[int] will not have same extension
     mask = [False for i in timepoints["timepoints"]]
@@ -81,7 +81,7 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
     drift_times = []
     scan_times = []
 
-    lines = gzip.open(mzml_gz, "rt").readlines()
+    lines = gzip.open(mzml_gz_path, "rt").readlines()
     for line in lines:
         if (
             '<cvParam cvRef="MS" accession="MS:1002476" name="ion mobility drift time" value'
@@ -103,10 +103,10 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
 
     process = psutil.Process(os.getpid())
     print(process.memory_info().rss)
-    msrun = pymzml.run.Reader(mzml_gz)
+    msrun = pymzml.run.Reader(mzml_gz_path)
     print(process.memory_info().rss)
     starttime = time.time()
-    print(time.time() - starttime, mzml_gz)
+    print(time.time() - starttime, mzml_gz_path)
 
     scan_functions = []
     scan_times = []
@@ -135,10 +135,25 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
     output_scans = [[] for i in range(len(library_info))]
 
     for i in range(len(library_info)):
-        # print i
-        # sys.stdout.flush()
-        # TODO: This was a hack to limit pipeline runs to a subset, should be an organized feature
-        if i in range(len(library_info)):  # sample_indices:
+        # Check for subset indices
+        if indices is not None:
+            # only keep scans for relevant indices 
+            if i in indices:
+                keep_scans = scan_numbers[
+                    (drift_times >= dt_lbounds[i])
+                    & (drift_times <= dt_ubounds[i])
+                    & (scan_times <= ret_ubounds[i])
+                    & (scan_times >= ret_lbounds[i])
+                    & (scan_functions == 1)
+                ]
+                scans_per_line.append(len(keep_scans))
+                for scan in keep_scans:
+                    scan_to_lines[scan].append(i)
+            else:
+                scans_per_line.append(None)
+        
+        # extract for each line by default
+        else:
             keep_scans = scan_numbers[
                 (drift_times >= dt_lbounds[i])
                 & (drift_times <= dt_ubounds[i])
@@ -149,8 +164,6 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
             scans_per_line.append(len(keep_scans))
             for scan in keep_scans:
                 scan_to_lines[scan].append(i)
-        else:
-            scans_per_line.append(None)
 
         if i % 100 == 0:
             print(str(i) + " lines, time: " + str(time.time() - starttime))
@@ -160,18 +173,13 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
 
 
     # implement polyfit calibration if True in config file
-    apply_polyfit_mz_calibration = snakemake.config["polyfit_calibration"]
-    if apply_polyfit_mz_calibration: 
-        if len(snakemake.input)>2:
-            calib_dict = load_pickle_file(snakemake.input[2])
-        else:
-            print("Calibration File Not Found")
-            apply_polyfit_mz_calibration = False
+    if polyfit_calibration_dict is not None: 
+        calib_dict = load_pickle_file(polyfit_calibration_dict)
 
     print(process.memory_info().rss)
-    msrun = pymzml.run.Reader(mzml_gz)
+    msrun = pymzml.run.Reader(mzml_gz_path)
     print(process.memory_info().rss)
-    print(time.time() - starttime, mzml_gz)
+    print(time.time() - starttime, mzml_gz_path)
 
     for scan_number in range(msrun.get_spectrum_count()):
         scan = msrun.next()
@@ -201,7 +209,7 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
                 print("Library Index: " + str(i) + " Len Output: " + str(len(output_scans[i])))
                 obs_mz_values = library_info["obs_mz"].values[i]
                 mz_low = obs_mz_values - (
-                    snakemake.config["low_mass_margin"] / library_info["charge"].values[i]
+                    low_mass_margin / library_info["charge"].values[i]
                 )
                 mz_high = obs_mz_values + (isotope_totals[i] / library_info["charge"].values[i])
                 try:
@@ -237,9 +245,8 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
                         # FIX FOR NEW FILE SCHEME TODO
                         my_out = [
                             out
-                            for out in snakemake.output
-                            if out
-                            == "resources/tensors/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
+                            for out in outputs
+                            if "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib" in out
                         ][0]
                         print("My_out: " + str(my_out))
                         with open(my_out, "wb") as file:
@@ -270,22 +277,33 @@ if __name__ == "__main__":
 
     # set expected command line arguments
     parser = argparse.ArgumentParser()
+    # inputs
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
-    parser.add_argument("mzml_gz", help="path/to/file.mzML.gz")
-    parser.add_argument("timepoints", help="dictionary with 'timepoints' containing hdx times in seconds, and a key for each timepoint corresponding to a list of timepoint mzml filenames. Can pass opened snakemake.config object.")
+    parser.add_argument("mzml_gz_path", help="path/to/file.mzML.gz")
+    parser.add_argument("timepoints", help="dictionary with 'timepoints' containing hdx times in seconds, and a key for each timepoint corresponding to a list of timepoint mzml filenames. Can pass opened snakemake.config object")
     parser.add_argument("-u", "--high_mass_margin", default=17, help="radius around expected rt to extend extraction window in rt-dimension")
     parser.add_argument("-l", "--low_mass_margin", default=10, help="integrated-mz-bin magnitude of margin behind the POI monoisotopic mass, to avoid signal truncation")
     parser.add_argument("-r", "--rt_radius", defualt=0.4, help="integrated-m/z-bin magnitude of margin beyond estimated full-deuteration, to avoid signal truncation")
     parser.add_argument("-d", "--dt_radius_scale", default=0.06, help="scale factor for radius around expected dt to extend extraction window in dt-dimension")
-    parser.add_argument("-c", "--polyfit_calibration", action='store_true', help="scale factor for radius around expected dt to extend extraction window in dt-dimension")
+    parser.add_argument("-c", "--polyfit_calibration_dict", help="path/to/file_mz_calib_dict.pk, provide if using polyfit mz recalibration")
+    # outputs
     parser.add_argument("-o", "--outputs", nargs='*', help="explicit list of string outputs to be created")
-    parser.add_argument("-i", "--indices", nargs='*', type=int, help="subset of library_info to extract tensors for, use with ")
-
-
+    parser.add_argument("-i", "--indices", nargs='*', type=int, help="subset of library_info to extract tensors for, use with -o or -t")
+    parser.add_argument("-t", "--output_directory", help="path/to/output_dir/ to generate outputs automatically, using without -i will extract all charged species from library_info, overridden by -o")
     # parse given arguments
     args = parser.parse_args()
 
-    main(args.library_info_path, args.mzml_gz, args.timepoints, args.low_mass_margin, args.dt_radius_scale, args.rt_radius, args.dt_radius_scale, args.polyfit_calibration)
+    # generate explicit output paths if not given
+    if args.outputs is None:
+        if args.output_directory is None:
+            parser.print_help()
+            sys.exit()
+        else:
+            if args.indices is not None:
+                library_info = pd.read_csv(args.library_info_path)
+                mzml = args.mzml_gz_path.split("/")[-1][:-3]
+                args.outputs = [args.output_directory+str(i)+"_"+mzml for i in args.indices]
+    main(library_info_path=args.library_info_path, mzml_gz_path=args.mzml_gz_path, timepoints=args.timepoints, outputs=args.outputs, low_mass_margin=args.low_mass_margin, high_mass_margin=args.high_mass_margin, rt_radius=args.rt_radius, dt_radius_scale=args.dt_radius_scale, polyfit_calibration_dict=args.polyfit_calibration_dict, indices=args.indices)
 
 
 
