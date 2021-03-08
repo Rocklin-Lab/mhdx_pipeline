@@ -16,7 +16,7 @@ from importlib import reload
 from collections import defaultdict as ddict
 from scipy.ndimage.filters import gaussian_filter
 
-sys.path.append('os.getcwd()+"/workflow/scripts/auxiliary/"')
+sys.path.append(os.getcwd()+"/workflow/scripts/auxiliary/")
 
 #the following sys path is for local debug
 # sys.path.append('../auxiliary/')

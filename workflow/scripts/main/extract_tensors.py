@@ -126,7 +126,7 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
     hd_mass_diff = 1.006277
     c13_mass_diff = 1.00335
     isotope_totals = [
-        len(seq) + snakemake.config["high_mass_margin"]
+        len(seq) + high_mass_margin
         for seq in library_info["sequence"].values
     ]
 
@@ -267,18 +267,25 @@ def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
                 )  # np.array([scans_per_line[i] for i in scan_to_lines[scan_number]])
 
 if __name__ == "__main__":
+
+    # set expected command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
     parser.add_argument("mzml_gz", help="path/to/file.mzML.gz")
     parser.add_argument("timepoints", help="dictionary with 'timepoints' containing hdx times in seconds, and a key for each timepoint corresponding to a list of timepoint mzml filenames. Can pass opened snakemake.config object.")
-    parser.add_argument("high_mass_margin", help="radius around expected rt to extend extraction window in rt-dimension")
-    parser.add_argument("low_mass_margin", help="radius around expected rt to extend extraction window in rt-dimension")
-    parser.add_argument("rt_radius", help="radius around expected rt to extend extraction window in rt-dimension")
-    parser.add_argument("dt_radius_scale", help="scale factor for radius around expected dt to extend extraction window in dt-dimension")
+    parser.add_argument("-u", "--high_mass_margin", default=17, help="radius around expected rt to extend extraction window in rt-dimension")
+    parser.add_argument("-l", "--low_mass_margin", default=10, help="integrated-mz-bin magnitude of margin behind the POI monoisotopic mass, to avoid signal truncation")
+    parser.add_argument("-r", "--rt_radius", defualt=0.4, help="integrated-m/z-bin magnitude of margin beyond estimated full-deuteration, to avoid signal truncation")
+    parser.add_argument("-d", "--dt_radius_scale", default=0.06, help="scale factor for radius around expected dt to extend extraction window in dt-dimension")
+    parser.add_argument("-c", "--polyfit_calibration", action='store_true', help="scale factor for radius around expected dt to extend extraction window in dt-dimension")
+    parser.add_argument("-o", "--outputs", nargs='*', help="explicit list of string outputs to be created")
+    parser.add_argument("-i", "--indices", nargs='*', type=int, help="subset of library_info to extract tensors for, use with ")
 
+
+    # parse given arguments
     args = parser.parse_args()
 
-    main(args.library_info_path, args.mzml_gz, args.timepoints, args.rt_radius, args.dt_radius_scale)
+    main(args.library_info_path, args.mzml_gz, args.timepoints, args.low_mass_margin, args.dt_radius_scale, args.rt_radius, args.dt_radius_scale, args.polyfit_calibration)
 
 
 
