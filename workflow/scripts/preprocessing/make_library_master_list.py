@@ -1,6 +1,7 @@
 import sys
 import copy
 import glob
+import yaml
 import pymzml
 import argparse
 import peakutils
@@ -141,7 +142,7 @@ def norm_tics(tics):
     return tics
 
 
-def gen_stretched_times(tic_file_list):
+def gen_stretched_times(tic_file_list, plot_path=None):
     ref_tics = np.loadtxt(tic_file_list[0])
     ref_tics_norm = norm_tics(ref_tics)
 
@@ -162,14 +163,15 @@ def gen_stretched_times(tic_file_list):
 
         stretched_ts1_times.append(stretched_ts1)
         stretched_ts2_times.append(stretched_ts2)
+        if plot_path is not None:
+            ax.plot(stretched_ts1, label="tic_file_" + str(index))
+            ax.set_ylabel("stretched_ts1_times")
+            ax.set_xlabel("index")
 
-        ax.plot(stretched_ts1, label="tic_file_" + str(index))
-        ax.set_ylabel("stretched_ts1_times")
-        ax.set_xlabel("index")
-
-    plt.legend()
-    # save the plot
-    plt.savefig(snakemake.output[0])
+    if plot_path is not None:
+        plt.legend()
+        # save the plot
+        plt.savefig(plot_path)
 
     return stretched_ts1_times, stretched_ts2_times
 
@@ -178,22 +180,22 @@ def gen_stretched_times(tic_file_list):
 ####################    Operation    s####################
 ##########################################################
 
-def main():
-    ins = snakemake.input
+def main(names_and_seqs_path, outpath, undeut_mzml, intermediates, tics, timepoints, plot=None):
+    # If someone is exposing the main function they're in python and will have what they need to collect files manually,
+    # do not accept dirs as arguments to limit redundancy
 
-    name_and_seq = pd.read_csv(ins.pop(0))  # name and seq list comes first
-    mzml = ins.pop(0)
-    csvs = [fn for fn in ins if ".csv" in fn]
+    name_and_seq = pd.read_csv(names_and_seqs_path)
+    #take one mzml for 
+    mzml = undeut_mzmls[0]
 
-    tics_filelist = [fn for fn in ins if ".ims.mz.tic" in fn]
-
-    stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics_filelist)
+    #if plot is none, function runs without plotting
+    stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics, plot)
 
     lo_time, hi_time, lc_timepoints = set_global_scan_bounds(mzml)
 
     # merge UNs
     undfs = []
-    for file in csvs:
+    for file in intermediates:
         undfs.append(pd.read_csv(file))
 
     # inputs the transformed test-pattern value for each undeuterated imtbx csv as pred_RT
@@ -305,20 +307,22 @@ def main():
     for i in range(len(all_tp_mean_preds)):
         catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
 
-    catdf.to_csv(snakemake.output[1])
+    catdf.to_csv(outpath)
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Creates a list of library proteins observed in HDX-LC-IM-MS from imtbx .peaks.isotopes, undeuterated .mzML, and .ims.mz.tic files.")
     # inputs
     parser.add_argument("names_and_seqs_path", help="path/to/file .csv of protein library names and sequences")
     parser.add_argument("-m", "--mzml_dir", help="path/to/dir/ containing undeuterated .mzML files")
     parser.add_argument("-s", "--undeut_match_string", help="unique part of undeuterated mzML filename to be used in matching")
     parser.add_argument("-i", "--intermediates_dir", help="path/to/dir/ containing intermediate imtbx files")
-    parser.add_argument("-t", "tics_dir", help="path/to/dir/ containing .ims.mz.tic files")
-    parser.add_argument("-n", "--undeut_mzMLs", nargs='*', help="used in snakemake, list of all undeuterated .mzML file paths")
+    parser.add_argument("-t", "--tics_dir", help="path/to/dir/ containing .ims.mz.tic files")
+    parser.add_argument("-n", "--undeut_mzml", help="path/to/file, one undeuterated .mzML")
     parser.add_argument("-j", "--intermediates", nargs="*", help="used in snakemake, list of all imtbx intermediate file paths")
     parser.add_argument("-u", "--tics", help="used in snakemake, list of all .imx.mz.tic file paths")
+    parser.add_argument("-e", "--timepoints", required=True, help="path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint")
+    parser.add_argument("-c", "--rt_group_cutoff", default=, help="control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters")
     
     # outputs
     parser.add_argument("-p", "--plot", help="path/to/stretched_times_plots.png")
@@ -327,25 +331,28 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # check for either option of the three required flag inputs
-    if (args.m is None and args.n is None) or (args.i is None and args.j is None) or (args.t is None and args.u is None):
+    if (args.mzml_dir is None and args.undeut_mzmls is None) or (args.intermediates_dir is None and args.intermediates is None) or (args.tics_dir is None and args.tics is None):
         parser.print_help()
         sys.exit()
 
     # check for mzml_dir without search string
-    if args.m is not None and args.n is None and args.s is None:
+    if args.mzml_dir is not None and args.undeut_mzml is None and args.undeut_match_string is None:
         parser.print_help()
         sys.exit()
 
     # check m^s^-n, glob undeut .mzML filenames
-    if args.m is not None and args.s is not None and args.n is None:
-        args.n = list(glob.glob(args.m+"*"+args.s+"*"+".mzML"))
+    if args.mzml_dir is not None and args.undeut_match_string is not None and args.undeut_mzMLs is None:
+        args.undeut_mzml = list(glob.glob(args.mzml_dir+"*"+args.undeut_match_string+"*"+".mzML"))
 
     # check i^-j, glob imtbx intermediates
-    if args.i is not None and args.j is None:
-        args.j = list(glob.glob(args.i+"*intermediate.csv"))
+    if args.intermediates_dir is not None and args.intermediates is None:
+        args.intermediates = list(glob.glob(args.intermediates_dir+"*intermediate.csv"))
 
     # check t^-u, glob .tic filenames
-    if args.t is not None and args.u is None:
-        args.u = list(glob.glob(args.t+"*.ims.mz.tic"))
+    if args.tics_dir is not None and args.tics is None:
+        args.tics = list(glob.glob(args.tics_dir+"*.ims.mz.tic"))
 
-    main(args)
+    timepoints = yaml.load(args.timepoints, Loader=yaml.FullLoader) 
+
+
+    main(args.names_and_seqs_path, outpath=args.outpath, undeut_mzml=args.undeut_mzml, intermediates=args.intermediates, tics=args.tics, timepoints=timepoints, rt_group_cutoff=args.rt_group_cutoff, plot=args.plot)

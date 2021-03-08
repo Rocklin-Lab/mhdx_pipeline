@@ -9,13 +9,13 @@ import numpy as np
 import pandas as pd
 
 
-def main(mzml):
+def main(mzml_path, tic_path):
 
     drift_times = []
     scan_times = []
 
     # opens mzml
-    lines = open(mzml, "rt").readlines()
+    lines = open(mzml_path, "rt").readlines()
     for line in lines:
         if (
             '<cvParam cvRef="MS" accession="MS:1002476" name="ion mobility drift time" value'
@@ -36,8 +36,7 @@ def main(mzml):
     # scan_times = np.array(scan_times)
     # scan_numbers=np.arange(0,len(scan_times))
 
-    run = pymzml.run.Reader(mzml)
-    ###HARDCODED VALUEs### TODO (SEEMS INCONSEQUENTIAL)
+    run = pymzml.run.Reader(mzml_path)
     mz_bins = 70
     lims = np.arange(
         600, 2020, 20
@@ -61,7 +60,7 @@ def main(mzml):
         if id_appearance_count[spec_id] == 1:  # this replaces 'ms level'
             ims_bin = (
                 spec_id % 200
-            )  # Waters synapt-G2 has 200 IMS bins for each LC timepoint
+            )  # Waters synapt-G2 has 200 IMS bins for each LC timepoint, TODO - make main argument with default and config variable
             specpeaks = np.array(spectrum.peaks("raw")).T
 
             try:
@@ -86,15 +85,15 @@ def main(mzml):
                 if rtIndex % 20 == 0:
                     print(rtIndex)
 
-    np.savetxt(args.tic_path, ms1_ims_tic, fmt="%i")
+    np.savetxt(tic_path, ms1_ims_tic, fmt="%i")
 
 
 if __name__ == "__main__":
 
     # set expected command line arguments
-    parser = argparse.ArgumentParser(description="")
+    parser = argparse.ArgumentParser(description="Sum of Total Ionic Current over IMS and m/Z dimensions, yielding an LC-Chromatogram")
     parser.add_argument("mzML_path", help="path/to/file for one timepoint mzML")
     parser.add_argument("tic_path", help="path/to/file for output .ims.mz.tic")
     # parse given arguments
     args = parser.parse_args()
-    main(args)
+    main(args.mzML_path, args.tic_path)

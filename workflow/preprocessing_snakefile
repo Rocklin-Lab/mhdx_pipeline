@@ -83,7 +83,7 @@ rule make_library_master_list:
         config["names_and_seqs"],
         expand("resources/mzml/{mzml}", mzml=all_timepoint_files[0]),
         expand(
-            "resources/imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
+            "resources/imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0][0]
         ),
         expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files)
     output:

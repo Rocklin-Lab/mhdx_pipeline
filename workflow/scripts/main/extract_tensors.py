@@ -38,22 +38,20 @@ def apply_polyfit_cal_mz(polyfit_coeffs, mz):
     return mz_corr
 
 
-def main(args):
-    print("mzML.gz: " + str(snakemake.input[1]))
-    library_info = pd.read_csv(snakemake.input[0])
-    mzml_gz = snakemake.input[1]
+def main(library_info_path, mzml_gz, timepoints, rt_radius, dt_radius_scale):
+    library_info = pd.read_csv(library_info_path)
     mzml = mzml_gz.split("/")[-1][:-3]
 
     # find number of mzml-source timepoint for extracting RT #TODO THIS WILL HAVE TO BE HANDLED WHEN MOVING FROM MZML TO RAW - files in config[int] will not have same extension
-    mask = [False for i in snakemake.config["timepoints"]]
-    for i in range(len(snakemake.config["timepoints"])):
-        if mzml in snakemake.config[snakemake.config["timepoints"][i]]:
+    mask = [False for i in timepoints["timepoints"]]
+    for i in range(len(timepoints["timepoints"])):
+        if mzml in timepoints[timepoints["timepoints"][i]]:
             mask[i] = True
     tp = mask.index(True)  # index of timepoint in config['timepoints']
-    mask = [False for i in snakemake.config[snakemake.config["timepoints"][tp]]]
-    for i in range(len(snakemake.config[snakemake.config["timepoints"][tp]])):
+    mask = [False for i in timepoints[timepoints["timepoints"][tp]]]
+    for i in range(len(timepoints[timepoints["timepoints"][tp]])):
         if (
-            snakemake.config[snakemake.config["timepoints"][tp]][i] == mzml
+            timepoints[timepoints["timepoints"][tp]][i] == mzml
         ):  # find index of file within config[int(tp_in_seconds)]
             mask[i] = True
     n_replicate = mask.index(True)
@@ -61,22 +59,22 @@ def main(args):
     library_info["n"] = range(len(library_info))
     library_info["Drift Time MS1"] = (
         library_info["im_mono"] / 200.0 * 13.781163434903
-    )  # 13.78116 is a hardcoded average IMS pulse time
+    )  # 13.78116 is a hardcoded average IMS pulse time TODO: This should be exposed to argument layer with default as well
 
     ret_ubounds = (
         library_info["rt_group_mean_RT_%d_%d" % (tp, n_replicate)].values
-        + snakemake.config["rt_radius"]
+        + rt_radius
     )
     ret_lbounds = (
         library_info["rt_group_mean_RT_%d_%d" % (tp, n_replicate)].values
-        - snakemake.config["rt_radius"]
+        - rt_radius
     )
 
     dt_ubounds = library_info["Drift Time MS1"].values * (
-        1 + snakemake.config["dt_radius_scale"]
+        1 + dt_radius_scale
     )
     dt_lbounds = library_info["Drift Time MS1"].values * (
-        1 - snakemake.config["dt_radius_scale"]
+        1 - dt_radius_scale
     )
 
     output = []
@@ -270,12 +268,17 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("library_info", help="path/to/library_info.csv")
-    parser.add_argument("mzML_gz", help="path/to/mzML.gz")
-    parser.add_argument("", help="")
-    parser.add_argument("", help="")
+    parser.add_argument("library_info_path", help="path/to/library_info.csv")
+    parser.add_argument("mzml_gz", help="path/to/file.mzML.gz")
+    parser.add_argument("timepoints", help="dictionary with 'timepoints' containing hdx times in seconds, and a key for each timepoint corresponding to a list of timepoint mzml filenames. Can pass opened snakemake.config object.")
+    parser.add_argument("high_mass_margin", help="radius around expected rt to extend extraction window in rt-dimension")
+    parser.add_argument("low_mass_margin", help="radius around expected rt to extend extraction window in rt-dimension")
+    parser.add_argument("rt_radius", help="radius around expected rt to extend extraction window in rt-dimension")
+    parser.add_argument("dt_radius_scale", help="scale factor for radius around expected dt to extend extraction window in dt-dimension")
 
-    main(args)
+    args = parser.parse_args()
+
+    main(args.library_info_path, args.mzml_gz, args.timepoints, args.rt_radius, args.dt_radius_scale)
 
 
 

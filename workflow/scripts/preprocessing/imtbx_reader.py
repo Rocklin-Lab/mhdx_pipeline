@@ -473,10 +473,10 @@ def apply_cluster_weights(dataframe, dt_weight, rt_weight, mz_weight):
 
 
 ### SCRIPT ###
-def main(args):
+def main(isotopes_path, names_and_seqs_path, intermediate_out_path, plot=None, original_mz_kde_path=None, adjusted_mz_kde_path=None, calibration_outpath=None, polyfit_deg=None, ppm_tolerance=None, intensity_tolerance=None, cluster_corr_tolerance=None, ppm_refilter=None):
 
     # read IMTBX output file
-    with open(args.isotopes_path) as file:
+    with open(isotopes_path) as file:
         lines = [x.strip() for x in file.readlines()]
     out = []
     for i, line in enumerate(lines):
@@ -494,7 +494,7 @@ def main(args):
     testq = copy.deepcopy(df)
 
     # read list of all proteins in sample
-    allseq = pd.read_csv(args.names_and_seqs_path)
+    allseq = pd.read_csv(names_and_seqs_path)
     allseq["mix"] = [2 for x in range(len(allseq))]
     allseq["MW"] = [
         ProtParam.ProteinAnalysis(seq, monoisotopic=True).molecular_weight()
@@ -518,27 +518,20 @@ def main(args):
     sum_df = cluster_df(testq, ppm=50)
 
     #check mz_error kde plotting flags
-    if args.o is not None and args.a is not None:
+    if original_mz_kde_path is not None and adjusted_mz_kde_path is not None:
         # generate plot of KDE before ppm correction
-        kde_plot(sum_df, args.o)
+        kde_plot(sum_df, args.original_mz_kde_path)
 
-    if args.c is not None:
+    if calibration_outpath is not None:
         # apply polyfit mz calibration
-
-        calib_pk_fpath = args.c
-        polyfit_deg = args.d
-        ppm_tolerance = args.t
-        intensity_tolerance = args.i
-        cluster_corr_tolerance = args.r
-        ppm_refilter = args.f
 
         calib_dict = gen_mz_error_calib_output(
             testq=testq,
-            calib_pk_fpath=calib_pk_fpath,
+            calib_pk_fpath=calibration_outpath,
             polyfit_degree=polyfit_deg,
             ppm_tol=ppm_tolerance,
             int_tol=intensity_tolerance,
-            cluster_corr_tol=cluster_corr_tolerance,
+            cluster_corr_tol=cluster_corr_tolerance
         )
         testq["mz_mono_fix"] = apply_polyfit_cal_mz(
             polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=df["mz_mono"]
@@ -576,9 +569,9 @@ def main(args):
     # re-average clusters to single lines, check for duplicate RTs, save sum_df to outfile
     sum_df = cluster_df(testq, ppm=ppm_refilter, adjusted=True)
 
-    if args.o is not None and args.a is not None:
+    if original_mz_kde_path is not None and adjusted_mz_kde_path is not None:
         # plot adjusted_mz KDE
-        kde_plot(sum_df, args.a)
+        kde_plot(sum_df, adjusted_mz_kde_path)
 
     # check for duplicate RT-groups THIS MAY BE USELESS TODO
     no_duplicates, hits = find_rt_duplicates(sum_df)
@@ -587,7 +580,7 @@ def main(args):
         print("DUPLICATES: " + hits)
 
     # send sum_df to main output
-    sum_df.to_csv(args.intermediate_out_path, index=False)
+    sum_df.to_csv(intermediate_out_path, index=False)
 
 if __name__ == "__main__":
 
@@ -603,20 +596,18 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--plot", help="/path/to/directory/ to save original and adjusted mz-error kde plots, use instead of -o and -a")
     parser.add_argument("-o", "--original_mz_kde_path", help="/path/to/file to save original mz-error kde plots, use with -a")
     parser.add_argument("-a", "--adjusted_mz_kde_path", help="/path/to/file to save adjusted mz-error kde plots, use with -o")
-    parser.add_argument("-c", "--calibration_outpath", help="/path/to/file for polyfit-calibration output") 
-    parser.add_argument("-d", "--polyfit_deg", help="degree of polynomial curve to fit to mz data for non-linear correction, defualt 1", type=int)
-    parser.add_argument("-t", "--ppm_tolerance", help="ppm error tolerance of observed to expected mz, defualt 50 ppm", type=float)
-    parser.add_argument("-i", "--intensity_tolerance", help="minimum intensity to consider cluster, default 10E4", tyoe=float)
-    parser.add_argument("-r", "--cluster_corr_tolerance", help="minimum correlation between isotope clusters to consider them redundant, default 0.99", tyoe=float)
-    parser.add_argument("-f", "--ppm_refilter", help="ppm error tolerance for post-mz-adjustment clusters, default 10 ppm", tyoe=float)
+    parser.add_argument("-c", "--calibration_outpath", help="/path/to/file for polyfit-calibration output, determines use of polyfit calibration") 
+    parser.add_argument("-d", "--polyfit_deg", help="degree of polynomial curve to fit to mz data for non-linear correction", type=int, default=1)
+    parser.add_argument("-t", "--ppm_tolerance", help="ppm error tolerance of observed to expected mz, defualt 50 ppm", type=float, default=50)
+    parser.add_argument("-i", "--intensity_tolerance", help="minimum intensity to consider cluster, default 10E4", type=float, default=10000)
+    parser.add_argument("-r", "--cluster_corr_tolerance", help="minimum correlation between isotope clusters to consider them redundant, default 0.99", type=float, default=0.99)
+    parser.add_argument("-f", "--ppm_refilter", help="ppm error tolerance for post-mz-adjustment clusters, default 10 ppm", type=float, default=10)
     
     # parse given arguments
     args = parser.parse_args()    
     
-    
-
     # check for any plotting argument
-    if args.p is not None or args.o is not None or args.a is not None:
+    if args.plot is not None or args.original_mz_kde_path is not None or args.adjusted_mz_kde_path is not None:
         # make explicit filenames if directory given
         if args.p is not None:
             args.o = args.p+"original_mz_kde_path.pdf"
@@ -630,32 +621,4 @@ if __name__ == "__main__":
 
             # continue, we have -o and -a
 
-    # if any polyfit flag is present, set other polyfit variables to defaults and perform calibration
-    if args.c is not None or args.d is not None or args.t is not None or args.i is not None or args.r is not None or args.f is not None:
-        # outpath can't be none if performing polyfit calibration
-        if args.c is None:
-            parser.print_help()
-            print(r"polyfit calibration requires an additional output filepath, eg '-c results/library_info/{undeut_fn}_mz_calib_dict.pk'")
-            sys.exit()
-        if args.d is None:
-            args.d = 1
-        if args.t is None:
-            args.t = 50
-        if args.i is None:
-            args.i = 10000
-        if args.r is None:
-            args.r = 0.99
-        if args.f is None:
-            args.f = 10
-        main(args)
-
-    # no polyfit calibration
-    else:
-        # run main
-        main(args)
-    
-
-
-
-
-
+    main(args.isotopes_path, args.names_and_seqs_path, args.intermediate_out_path, plot=args.plot, original_mz_kde_path=args.original_mz_kde_path, adjusted_mz_kde_path=args.adjusted_mz_kde_path, calibration_outpath=args.calibration_outpath, polyfit_deg=args.polyfit_deg, ppm_tolerance=args.ppm_tolerance, intensity_tolerance=args.intensity_tolerance, cluster_corr_tolerance=args.cluster_corr_tolerance, ppm_refilter=args.ppm_refilter)
