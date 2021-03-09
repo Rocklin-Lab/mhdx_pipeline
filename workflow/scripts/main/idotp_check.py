@@ -6,6 +6,7 @@ import math
 import copy
 import pickle
 import pymzml
+import argparse
 import importlib.util
 import numpy as np
 import pandas as pd
@@ -73,11 +74,11 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
     return dot_product
 
 
-def gen_tensors_factorize(library_info_df, undeut_tensor_fpath_list, timepoint_index=0, num_factors=13, factor_gauss_param=(3, 1)):
+def gen_tensors_factorize(library_info_df, undeut_tensor_path_list, timepoint_index=0, num_factors=15, factor_gauss_param=(3, 1)):
     """
     generate data tensor and factorizes
     :param library_info_df: library info data france
-    :param undeut_tensor_fpath_list: undeuterated tensor file path list
+    :param undeut_tensor_path_list: undeuterated tensor file path list
     :param timepoint_index: time point index
     :param num_factors: number of factors for factorization
     :param factor_gauss_param: gaussian paramters for factorization
@@ -87,10 +88,10 @@ def gen_tensors_factorize(library_info_df, undeut_tensor_fpath_list, timepoint_i
     gauss_undeut_ics_list = []
     data_tensor_list = []
 
-    for num, undeut_tensor_fpath in enumerate(undeut_tensor_fpath_list):
+    for num, undeut_tensor_path in enumerate(undeut_tensor_path_list):
 
         # generate new data tensor
-        new_data_tensor = hx.TensorGenerator(filename=undeut_tensor_fpath,
+        new_data_tensor = hx.TensorGenerator(filename=undeut_tensor_path,
                                           library_info=library_info_df,
                                           timepoint_index=timepoint_index)
 
@@ -129,53 +130,48 @@ def calc_dot_prod_for_isotope_clusters(sequence, gauss_undeut_isotope_clusters):
     return dot_product_list, integrated_mz_list
 
 
-def gen_idotp_check_dataframe(library_info_fpath, undeut_tensor_fpath_list, output_fpath, timepoint_index=0, num_factors=13,
-                              factor_gauss_param=(3,1)):
+def main(library_info_path, undeut_tensor_path_list, output_path, num_factors=15, factor_gauss_param=(3,1)):
     """
-
-    :param library_info_fpath: library info file path
-    :param undeut_tensor_fpath_list: undeut tensor filepath list
-    :param output_fpath: idotp check output file path
-    :param timepoint_index: timepoint index
+    :param library_info_path: library info file path
+    :param undeut_tensor_path_list: undeut tensor filepath list
+    :param output_path: idotp check output file path
     :param num_factors: number of factors for factorization
     :param factor_gauss_param: gauss param for factorization
     :return: iso_cluster_list, data_tensor_list, idotp_list, integrated_mz_list (for debugging / checking)
     """
 
-    lib_idx = int(undeut_tensor_fpath_list[0].split('/')[-1].split('_')[0])
-    library_info = pd.read_csv(library_info_fpath)
+    lib_idx = int(undeut_tensor_path_list[0].split('/')[-1].split('_')[0])
+    library_info = pd.read_csv(library_info_path)
     my_seq = library_info.iloc[lib_idx]['sequence']
 
     iso_clusters_list, data_tensor_list = gen_tensors_factorize(library_info_df=library_info,
-                                                                undeut_tensor_fpath_list=undeut_tensor_fpath_list,
-                                                                timepoint_index=timepoint_index,
+                                                                undeut_tensor_path_list=undeut_tensor_path_list,
                                                                 num_factors=num_factors,
                                                                 factor_gauss_param=factor_gauss_param)
 
     idotp_list, integrated_mz_list = calc_dot_prod_for_isotope_clusters(sequence=my_seq,
                                                                         gauss_undeut_isotope_clusters=iso_clusters_list)
 
-    pd.DataFrame({'idotp': max(idotp_list)}, index=[0]).to_csv(output_fpath)
+    pd.DataFrame({'idotp': max(idotp_list)}, index=[0]).to_csv(output_path)
 
     return iso_clusters_list, data_tensor_list, idotp_list, integrated_mz_list
 
 
 if __name__ == '__main__':
 
-    # input and output paths determined here. You can replace the snakemake inputs to put your own filepaths
-    library_info_fpath = snakemake.input.pop(0)
-    ins = snakemake.input
-    idotp_output = snakemake.output[0]
+    parser = argparse.ArgumentParser(description="Checks observed undeuterated signal against theoretical isotopic distribution, returns dataframe with highest idotp of all undeut")
+    parser.add_argument("library_info_path", help="path/to/library_info.csv")
+    parser.add_argument("undeut_tensor_path_list", help="list of paths to undeuterated tensor outputs from extract_tensors.py")    
+    parser.add_argument("output_path", help="path/to/file for main .csv output")
+    parser.add_argument("--num_factors", default=15, help="high number of factors to use in non_negative_parafac decomposition, counts down until correlation constraint is reached - see DataTensor.factorize()")
+    parser.add_argument("--factor_gauss_param", type=tuple, default=(3,1), help="parameters for smoothing rt and dt dimensions")
 
     #### example of user inputs rather than from snakemake ####
-    # library_info_fpath = '/Users/smd4193/Documents/MS_data/library_info.csv'
+    # library_info_path = '/Users/smd4193/Documents/MS_data/library_info.csv'
     # ins = ['/Users/smd4193/Documents/MS_data/1_20200922_lib15_2_0sec_01.mzML.gz.cpickle.zlib']
     # idotp_output = '/Users/smd4193/Documents/MS_data/1_idotp_check.csv'
 
     # main operation
-    idotp_out = gen_idotp_check_dataframe(library_info_fpath=library_info_fpath,
-                              undeut_tensor_fpath_list=ins,
-                              output_fpath=idotp_output,
-                              timepoint_index=0,
-                              num_factors=13,
-                              factor_gauss_param=(3,1))
+    idotp_check = main(library_info_path=args.library_info_path, 
+                       undeut_tensor_path_list=args.undeut_tensor_path_list, 
+                       output_path=args.output_path)
