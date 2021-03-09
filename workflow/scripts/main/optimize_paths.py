@@ -38,7 +38,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name
 
     return name_inputs
 
-def main():
+def main(library_info_path=None, all_tensor_input_paths=None, input_directory_path=None, rt_group_name=None, timepoints=None, old_data_dir=None, html_plot_outpath=None, winner_out_path=None, runner_out_path=None, undeut_ground_out_path=None, winner_scores_out_path=None, rtdt_com_cvs_out_path=None):
     # open library_info
     library_info = pd.read_csv(library_info_path)
 

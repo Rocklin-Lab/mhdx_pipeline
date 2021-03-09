@@ -303,6 +303,7 @@ if __name__ == "__main__":
                 library_info = pd.read_csv(args.library_info_path)
                 mzml = args.mzml_gz_path.split("/")[-1][:-3]
                 args.outputs = [args.output_directory+str(i)+"_"+mzml for i in args.indices]
+                
     main(library_info_path=args.library_info_path, mzml_gz_path=args.mzml_gz_path, timepoints=args.timepoints, outputs=args.outputs, low_mass_margin=args.low_mass_margin, high_mass_margin=args.high_mass_margin, rt_radius=args.rt_radius, dt_radius_scale=args.dt_radius_scale, polyfit_calibration_dict=args.polyfit_calibration_dict, indices=args.indices)
 
 
