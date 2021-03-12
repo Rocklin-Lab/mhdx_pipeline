@@ -38,7 +38,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name
 
     return name_inputs
 
-def main(library_info_path=None, all_tensor_input_paths=None, input_directory_path=None, rt_group_name=None, timepoints=None, old_data_dir=None, html_plot_outpath=None, winner_out_path=None, runner_out_path=None, undeut_ground_out_path=None, winner_scores_out_path=None, rtdt_com_cvs_out_path=None):
+def main(library_info_path=None, all_tensor_input_paths=None, input_directory_path=None, rt_group_name=None, timepoints=None, old_data_dir=None, html_plot_out_path=None, winner_out_path=None, runner_out_path=None, undeut_ground_out_path=None, winner_scores_out_path=None, rtdt_com_cvs_out_path=None):
     # open library_info
     library_info = pd.read_csv(library_info_path)
 
@@ -69,8 +69,8 @@ def main(library_info_path=None, all_tensor_input_paths=None, input_directory_pa
     p1.optimize_paths()
     
     # Save by options
-    if html_plot_outpath is not None:
-        p1.bokeh_plot(html_plot_outpath)
+    if html_plot_out_path is not None:
+        p1.bokeh_plot(html_plot_out_path)
     if winner_out_path is not None:
         hx.limit_write(p1.winner, winner_out_path)
     if runner_out_path is not None:
@@ -84,7 +84,7 @@ def main(library_info_path=None, all_tensor_input_paths=None, input_directory_pa
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="")
     # inputs
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
     parser.add_argument("-i", "--all_tensor_input_paths", nargs='*', help="structured 2D list of extracted tensor file paths by HDX timepoint, include all charges and all timepoint replicates in each timepoint list.")
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--timepoints", help="dictionary with 'timepoints' containing hdx times in seconds, and a key for each timepoint corresponding to a list of timepoint mzml filenames. Can pass opened snakemake.config object")
     parser.add_argument("-g", "--old_data_dir", help="directory containing Gabe's pickled output files, using this option prints old data on plots")
     # outputs
-    parser.add_argument("-o", "--html_plot_outpath", help="path/to/file for .html plot of results")
+    parser.add_argument("-o", "--html_plot_out_path", help="path/to/file for .html plot of results")
     parser.add_argument("-w", "--winner_out_path", help="path/to/file to save winning IsotopeCluster objects")
     parser.add_argument("-r", "--runner_out_path", help="path/to/file to save runner-up IsotopeClusters")
     parser.add_argument("-p", "--undeut_ground_out_path", help="path/to/file to save selected highest-confidence undeuterated IsotopeClusters")
@@ -110,8 +110,5 @@ if __name__ == '__main__':
             parser.print_help()
             sys.exit()
 
-    main(library_info_path=args.library_info_path, all_tensor_input_paths=args.all_tensor_input_paths, input_directory_path=args.input_directory_path, rt_group_name=args.rt_group_name, timepoints=args.timepoints, old_data_dir=args.old_data_dir, html_plot_outpath=args.html_plot_outpath, winner_out_path=args.winner_out_path, runner_out_path=args.runner_out_path, undeut_ground_out_path=args.undeut_ground_out_path, winner_scores_out_path=args.winner_scores_out_path, rtdt_com_cvs_out_path=args.rtdt_com_cvs_out_path)
-
-
-
-
+    main(library_info_path=args.library_info_path, all_tensor_input_paths=args.all_tensor_input_paths, input_directory_path=args.input_directory_path, rt_group_name=args.rt_group_name, timepoints=args.timepoints, old_data_dir=args.old_data_dir, html_plot_out_path=args.html_plot_out_path, winner_out_path=args.winner_out_path, runner_out_path=args.runner_out_path, undeut_ground_out_path=args.undeut_ground_out_path, winner_scores_out_path=args.winner_scores_out_path, rtdt_com_cvs_out_path=args.rtdt_com_cvs_out_path)
+    
