@@ -51,3 +51,5 @@ if __name__=='__main__':
 	parser.add_argument("isotope_clusters_output_path", help="path/to/output.cpickle.zlib, list of IsotopeClusters")
 	parser.add_argument("timepoints", help="dictionary with 'timepoints' containing hdx times in seconds, and a key for each timepoint corresponding to a list of timepoint mzml filenames. Can pass opened snakemake.config object")
 	parser.add_argument("-g", "--gauss_params", type=tuple, default=(3,1), help="determines intensity of gaussian smoothing in rt, and dt dimensions")
+
+	main(library_info_path=args.library_info_path, tensor_input_path=args.tensor_input_path, isotope_clusters_output_path=args.isotope_clusters_output_path, timepoints=args.timepoints, gauss_params=args.gauss_params)
