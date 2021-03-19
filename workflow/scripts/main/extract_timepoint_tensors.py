@@ -47,7 +47,7 @@ def apply_polyfit_cal_mz(polyfit_coeffs, mz):
 
 def main(library_info_path, 
          mzml_gz_path, 
-         timepoints, 
+         timepoints_dict, 
          outputs=None, 
          return_flag=False, 
          low_mass_margin=10, 
@@ -60,10 +60,20 @@ def main(library_info_path,
     Reads through .mzML file and extracts subtensors whose dimensions are defined in library_info.csv, optionally saves individual tensors or returns all as a dictionary
 
     Parameters:
-    argument1 (int): Description of arg1
+    library_info_path (str): path/to/library_info.csv
+    mzml_gz_path (str): path/to/timepoint.mzML.gz
+    timepoints_dict (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
+    outputs (list of strings): list of filename strings for writing extracted outputs. 
+    return_flag (bool): option to return main output in python, for notebook context
+    low_mass_margin (int): number of m/Z bins to extend the lower bound of extraction from base-peak m/Z, helps capture incompletely centered data and makes plots more readable
+    high_mass_margin (int): number of m/Z bins to extend the upper bound of extraction from (base-peak + possible mass addition by number residues), helps capture incompletely centered data and makes plots more readable
+    rt_radius (float): radius around signal center of mass to extract in LC - retention time
+    dt_radius_scale (float): scale of radius around signal center of mass to extract in IMS - drift time
+    polyfit_calibration_dict (dict): dictionary of mz-adjustment terms optionally calculated in make_library_master_list.py
+    indices (list of ints): subset of library_info indices to extract
 
     Returns:
-    int:Returning value
+    out_dict (dict): dictionary containing every extracted tensor with library_info indices as keys
 
    """
 
@@ -121,6 +131,7 @@ def main(library_info_path,
             drift_times.append(float(dt))
     drift_times = np.array(drift_times)
 
+    #TODO review for deletion
     #for line in lines:
     #    if (
     #        '<cvParam cvRef="MS" accession="MS:1000016" name="scan start time" value='
@@ -141,18 +152,16 @@ def main(library_info_path,
     scan_functions = []
     scan_times = []
 
-    # annotate
+    # Read scan info from msrun 
     for k in range(msrun.get_spectrum_count()):
         nextscan = msrun.next()
         scan_functions.append(nextscan.id_dict['function'])
         scan_times.append(nextscan.scan_time_in_minutes())
-
-    # what do?
     scan_times = np.array(scan_times)
     scan_numbers = np.arange(0, len(scan_times))
     scan_functions = np.array(scan_functions)
 
-    # what do?
+    # set upper m/Z bounds for each sequence
     isotope_totals = [
         len(seq) + high_mass_margin
         for seq in library_info["sequence"].values
@@ -356,9 +365,3 @@ if __name__ == "__main__":
                 args.outputs = [args.output_directory+str(i)+"_"+mzml for i in args.indices]
                 
     main(library_info_path=args.library_info_path, mzml_gz_path=args.mzml_gz_path, timepoints=open_timepoints, outputs=args.outputs, low_mass_margin=args.low_mass_margin, high_mass_margin=args.high_mass_margin, rt_radius=args.rt_radius, dt_radius_scale=args.dt_radius_scale, polyfit_calibration_dict=args.polyfit_calibration_dict, indices=args.indices)
-
-
-
-
-
-
