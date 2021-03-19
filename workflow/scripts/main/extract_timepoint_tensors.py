@@ -6,6 +6,7 @@ import copy
 import zlib
 import ipdb
 import time
+import yaml
 import psutil
 import pymzml
 import argparse
@@ -17,10 +18,13 @@ from collections import Counter
 
 
 def load_pickle_file(pickle_fpath):
-    """
-    loads the pickle file (without any dependence on other classes or objects or functions)
-    :param pickle_fpath: file path
-    :return: pickle_object
+    """Loads a pickle file (without any dependence on other classes or objects or functions)
+
+    Parameters:
+    pickle_fpath (str): path/to/file.pickle
+
+    Returns:
+    pk_object: unpickled object
     """
     with open(pickle_fpath, "rb") as file:
         pk_object = pk.load(file)
@@ -28,17 +32,43 @@ def load_pickle_file(pickle_fpath):
 
 
 def apply_polyfit_cal_mz(polyfit_coeffs, mz):
+    """Apply mz calibration determined in make_master_list.py to an extracted tensor
+
+    Parameters:
+    polyfit_coeffs: polyfit coefficients
+    mz: mz values
+
+    Returns:
+    corrected_mz (ndarray): transformed mz values
     """
-    apply polyfit coeff to transform the mz values
-    :param polyfit_coeffs: polyfit coefficients
-    :param mz: mz values
-    :return: transformed mz values
-    """
-    mz_corr = np.polyval(polyfit_coeffs, mz)
-    return mz_corr
+    corrected_mz = np.polyval(polyfit_coeffs, mz)
+    return corrected_mz
 
 
-def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=10, high_mass_margin=17, rt_radius=0.4, dt_radius_scale=0.06, polyfit_calibration_dict=None, indices=None):
+def main(library_info_path, 
+         mzml_gz_path, 
+         timepoints, 
+         outputs=None, 
+         return_flag=False, 
+         low_mass_margin=10, 
+         high_mass_margin=17, 
+         rt_radius=0.4, 
+         dt_radius_scale=0.06, 
+         polyfit_calibration_dict=None, 
+         indices=None):
+    """
+    Reads through .mzML file and extracts subtensors whose dimensions are defined in library_info.csv, optionally saves individual tensors or returns all as a dictionary
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
+
+    out_dict = {}
+
     library_info = pd.read_csv(library_info_path)
     mzml = mzml_gz_path.split("/")[-1][:-3]
 
@@ -57,10 +87,11 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
     n_replicate = mask.index(True)
 
     library_info["n"] = range(len(library_info))
+
+    # 13.78116 is a hardcoded average IMS pulse time TODO: This should be exposed to argument layer with default as well
     library_info["Drift Time MS1"] = (
         library_info["im_mono"] / 200.0 * 13.781163434903
-    )  # 13.78116 is a hardcoded average IMS pulse time TODO: This should be exposed to argument layer with default as well
-
+    )  
     ret_ubounds = (
         library_info["rt_group_mean_RT_%d_%d" % (tp, n_replicate)].values
         + rt_radius
@@ -69,7 +100,6 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
         library_info["rt_group_mean_RT_%d_%d" % (tp, n_replicate)].values
         - rt_radius
     )
-
     dt_ubounds = library_info["Drift Time MS1"].values * (
         1 + dt_radius_scale
     )
@@ -77,10 +107,10 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
         1 - dt_radius_scale
     )
 
-    output = []
     drift_times = []
     scan_times = []
 
+    #TODO replace this hardcoded search string with an optional search string parameter with this value as defualt?
     lines = gzip.open(mzml_gz_path, "rt").readlines()
     for line in lines:
         if (
@@ -111,29 +141,29 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
     scan_functions = []
     scan_times = []
 
-
+    # annotate
     for k in range(msrun.get_spectrum_count()):
         nextscan = msrun.next()
         scan_functions.append(nextscan.id_dict['function'])
         scan_times.append(nextscan.scan_time_in_minutes())
 
+    # what do?
     scan_times = np.array(scan_times)
     scan_numbers = np.arange(0, len(scan_times))
     scan_functions = np.array(scan_functions)
 
-
-
-    hd_mass_diff = 1.006277
-    c13_mass_diff = 1.00335
+    # what do?
     isotope_totals = [
         len(seq) + high_mass_margin
         for seq in library_info["sequence"].values
     ]
 
+    # instantiate mapping lists
     scan_to_lines = [[] for i in scan_times]
     scans_per_line = []
     output_scans = [[] for i in range(len(library_info))]
 
+    # use mapping lists to get scan numbers for each POI
     for i in range(len(library_info)):
         # Check for subset indices
         if indices is not None:
@@ -168,11 +198,12 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
         if i % 100 == 0:
             print(str(i) + " lines, time: " + str(time.time() - starttime))
 
+    # filter scans that don't need to be read
     relevant_scans = [i for i in scan_numbers if len(scan_to_lines[i]) > 0]
     print("N Scans: " + str(len(relevant_scans)))
 
 
-    # implement polyfit calibration if True in config file
+    # implement polyfit calibration if given adjustment dict
     if polyfit_calibration_dict is not None: 
         calib_dict = load_pickle_file(polyfit_calibration_dict)
 
@@ -181,10 +212,13 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
     print(process.memory_info().rss)
     print(time.time() - starttime, mzml_gz_path)
 
-    for scan_number in range(msrun.get_spectrum_count()):
+
+    for scan_number in range(msrun.get_spectrum_count()): #iterate over each scan
         scan = msrun.next()
+
         if scan_number in relevant_scans:
-        
+
+            #print progress at interval
             if scan_number % 1 == 0:
                 print(
                     scan_number,
@@ -192,20 +226,19 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
                     (len(library_info) - output_scans.count([])) / len(library_info),
                 )
 
-            if len(scan_to_lines[scan_number]) > 0:
-                try:
-                    spectrum = np.array(scan.peaks("raw")).astype(np.float32)
-                    if len(spectrum) == 0:
-                        spectrum = scan.peaks("raw").astype(np.float32)
-                    spectrum = spectrum[spectrum[:, 1] > 10]
-                    # apply calibration to mz values
-                    if apply_polyfit_mz_calibration:
-                        spectrum[:, 0] = apply_polyfit_cal_mz(polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=spectrum[:, 0])
-                except:
-                    spectrum = np.array([[0, 0]])
+            try:
+                spectrum = np.array(scan.peaks("raw")).astype(np.float32)
+                if len(spectrum) == 0:
+                    spectrum = scan.peaks("raw").astype(np.float32)
+                spectrum = spectrum[spectrum[:, 1] > 10]
+                # apply calibration to mz values
+                if apply_polyfit_mz_calibration:
+                    spectrum[:, 0] = apply_polyfit_cal_mz(polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=spectrum[:, 0])
+            except:
+                print("scan read error: "+str(scan_number))
+                spectrum = np.array([[0, 0]])
 
-            for i in scan_to_lines[scan_number]:
-                # if len(output_scans[i]) == 0:
+            for i in scan_to_lines[scan_number]: #iterate over each library_info index that needs to read the scan
                 print("Library Index: " + str(i) + " Len Output: " + str(len(output_scans[i])))
                 obs_mz_values = library_info["obs_mz"].values[i]
                 mz_low = obs_mz_values - (
@@ -217,11 +250,13 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
                         spectrum[(mz_low < spectrum[:, 0]) & (spectrum[:, 0] < mz_high)]
                     )
                 except:
+                    print("spectrum read error, scan: "+str(scan_number)+" , line: "+str(i))
                     print(i, output_scans[i], mz_low, mz_high)
                     print(spectrum)
                     print(spectrum[(mz_low < spectrum[:, 0]) & (spectrum[:, 0] < mz_high)])
                     sys.exit(0)
                 try:
+                    #check if this is the last scan the line needed
                     if len(output_scans[i]) == scans_per_line[i]:
                         keep_drift_times = drift_times[
                             (drift_times >= dt_lbounds[i])
@@ -242,29 +277,39 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
                             sorted(set(keep_drift_times)),
                             output_scans[i],
                         ]
-                        # FIX FOR NEW FILE SCHEME TODO
-                        my_out = [
-                            out
-                            for out in outputs
-                            if "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib" in out
-                        ][0]
-                        print("My_out: " + str(my_out))
-                        with open(my_out, "wb") as file:
-                            file.write(zlib.compress(cpickle.dumps(output)))
-                        print(
-                            scan_number,
-                            process.memory_info().rss / (1024 * 1024 * 1024),
-                            "presave",
-                        )
-                        output_scans[i] = []
-                        print(
-                            scan_number,
-                            process.memory_info().rss / (1024 * 1024 * 1024),
-                            "savedisk",
-                        )
-                except:
-                    ipdb.set_trace()
+                        
+                        # only build out_dict if returning
+                        if return_flag:
+                            out_dict[i] = output
 
+                        # save to file if outputs provided
+                        if outputs is not None:
+                            my_out = [
+                                out
+                                for out in outputs
+                                if "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib" in out
+                            ][0]
+                            print("My_out: " + str(my_out))
+                            with open(my_out, "wb") as file:
+                                file.write(zlib.compress(cpickle.dumps(output)))
+                            print(
+                                scan_number,
+                                process.memory_info().rss / (1024 * 1024 * 1024),
+                                "presave",
+                            )
+                            output_scans[i] = []
+                            print(
+                                scan_number,
+                                process.memory_info().rss / (1024 * 1024 * 1024),
+                                "savedisk",
+                            )
+                        else:
+                            output_scans[i] = [] # to avoid duplication of tensors in return-only state
+                except:
+                    print("error in output block on scan: "+str(scan_number)+" , for line: "+str(i))
+                    sys.exit(0)
+
+            """ TODO: Review Deletion
             if len(scan_to_lines[scan_number]) > 0:
                 cur_lengths = np.array(
                     [len(output_scans[i]) for i in scan_to_lines[scan_number]]
@@ -272,6 +317,9 @@ def main(library_info_path, mzml_gz_path, timepoints, outputs, low_mass_margin=1
                 target_lengths = np.array(
                     [i for i in scan_to_lines[scan_number]]
                 )  # np.array([scans_per_line[i] for i in scan_to_lines[scan_number]])
+            """ 
+    if return_flag:
+        return out_dict
 
 if __name__ == "__main__":
 
@@ -280,7 +328,7 @@ if __name__ == "__main__":
     # inputs
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
     parser.add_argument("mzml_gz_path", help="path/to/file.mzML.gz")
-    parser.add_argument("timepoints", help="dictionary with 'timepoints' containing hdx times in seconds, and a key for each timepoint corresponding to a list of timepoint mzml filenames. Can pass opened snakemake.config object")
+    parser.add_argument("timepoints_yaml", help="path/to/file.yaml containing list of hdx timepoints in integer seconds which are also keys mapping to lists of each timepoint's .mzML file, can pass config/config.yaml - for Snakemake context")
     parser.add_argument("-u", "--high_mass_margin", default=17, help="radius around expected rt to extend extraction window in rt-dimension")
     parser.add_argument("-l", "--low_mass_margin", default=10, help="integrated-mz-bin magnitude of margin behind the POI monoisotopic mass, to avoid signal truncation")
     parser.add_argument("-r", "--rt_radius", defualt=0.4, help="integrated-m/z-bin magnitude of margin beyond estimated full-deuteration, to avoid signal truncation")
@@ -293,6 +341,9 @@ if __name__ == "__main__":
     # parse given arguments
     args = parser.parse_args()
 
+    #open .yaml into dict for main()
+    open_timepoints = yaml.load(open(args.timepoints_yaml, 'rb').read())
+
     # generate explicit output paths if not given
     if args.outputs is None:
         if args.output_directory is None:
@@ -304,7 +355,7 @@ if __name__ == "__main__":
                 mzml = args.mzml_gz_path.split("/")[-1][:-3]
                 args.outputs = [args.output_directory+str(i)+"_"+mzml for i in args.indices]
                 
-    main(library_info_path=args.library_info_path, mzml_gz_path=args.mzml_gz_path, timepoints=args.timepoints, outputs=args.outputs, low_mass_margin=args.low_mass_margin, high_mass_margin=args.high_mass_margin, rt_radius=args.rt_radius, dt_radius_scale=args.dt_radius_scale, polyfit_calibration_dict=args.polyfit_calibration_dict, indices=args.indices)
+    main(library_info_path=args.library_info_path, mzml_gz_path=args.mzml_gz_path, timepoints=open_timepoints, outputs=args.outputs, low_mass_margin=args.low_mass_margin, high_mass_margin=args.high_mass_margin, rt_radius=args.rt_radius, dt_radius_scale=args.dt_radius_scale, polyfit_calibration_dict=args.polyfit_calibration_dict, indices=args.indices)
 
 
 

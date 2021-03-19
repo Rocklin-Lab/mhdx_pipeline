@@ -9,6 +9,16 @@ sys.path.append(os.getcwd() + "/workflow/scripts/auxiliary/")
 from HDX_LIMIT import TensorGenerator, limit_write
 
 def main(library_info_path, tensor_input_path, timepoints_dict, isotope_clusters_output_path=None, return_flag=False, gauss_params=(3,1)):
+	"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
+
 	out = {}
 
 	# open library_info

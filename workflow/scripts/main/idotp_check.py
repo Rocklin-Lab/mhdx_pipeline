@@ -27,35 +27,35 @@ import molmass
 
 
 #todo: later to use this function from hxtools(suggie version)
-def calculate_theoretical_isotope_dist_from_sequence(sequence, num_isotopes=None):
+def calculate_theoretical_isotope_dist_from_sequence(sequence, n_isotopes=None):
     """
     calculate theoretical isotope distribtuion from a given one letter sequence of protein chain
     :param sequence: sequence in one letter code
-    :param num_isotopes: number of isotopes to include. If none, includes all
+    :param n_isotopes: number of isotopes to include. If none, includes all
     :return: isotope distribution
     """
     seq_formula = molmass.Formula(sequence)
     isotope_dist = np.array([x[1] for x in seq_formula.spectrum().values()])
     isotope_dist = isotope_dist/max(isotope_dist)
-    if num_isotopes:
-        if num_isotopes < len(isotope_dist):
-            isotope_dist = isotope_dist[:num_isotopes]
+    if n_isotopes:
+        if n_isotopes < len(isotope_dist):
+            isotope_dist = isotope_dist[:n_isotopes]
         else:
-            fill_arr = np.zeros(num_isotopes - len(isotope_dist))
+            fill_arr = np.zeros(n_isotopes - len(isotope_dist))
             isotope_dist = np.append(isotope_dist, fill_arr)
     return isotope_dist
 
 #todo: later to use this function from hxtools (suggie version)
-def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array, num_isotopes=None):
+def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array, n_isotopes=None):
     """
     calculate the isotope distribution from the integrated mz intensitities
     :param integrated_mz_values: array of integrated mz intensitites
-    :param num_isotopes: number of isotopes to include. If none, includes all
+    :param n_isotopes: number of isotopes to include. If none, includes all
     :return: isotope distribution
     """
     isotope_dist = integrated_mz_array/max(integrated_mz_array)
-    if num_isotopes:
-        isotope_dist = isotope_dist[:num_isotopes]
+    if n_isotopes:
+        isotope_dist = isotope_dist[:n_isotopes]
     return isotope_dist
 
 
@@ -74,19 +74,19 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
     return dot_product
 
 
-def gen_tensors_factorize(library_info_df, undeut_tensor_path_list, timepoint_index=0, num_factors=15, factor_gauss_param=(3, 1)):
+def gen_tensors_factorize(library_info_df, undeut_tensor_path_list, timepoint_index=0, n_factors=15, gauss_params=(3, 1)):
     """
     generate data tensor and factorizes
     :param library_info_df: library info data france
     :param undeut_tensor_path_list: undeuterated tensor file path list
     :param timepoint_index: time point index
-    :param num_factors: number of factors for factorization
+    :param n_factors: number of factors for factorization
     :param factor_gauss_param: gaussian paramters for factorization
     :return: list of isotope_cluster and data_tensor
     """
 
-    gauss_undeut_ics_list = []
     data_tensor_list = []
+    undeut_ics_list = []
 
     for num, undeut_tensor_path in enumerate(undeut_tensor_path_list):
 
@@ -96,47 +96,51 @@ def gen_tensors_factorize(library_info_df, undeut_tensor_path_list, timepoint_in
                                           timepoint_index=timepoint_index)
 
         # factorize
-        new_data_tensor.DataTensor.factorize(n_factors=num_factors,
-                                          gauss_params=factor_gauss_param)
+        new_data_tensor.DataTensor.factorize(n_factors=n_factors,
+                                          gauss_params=gauss_params)
 
         for factor in new_data_tensor.DataTensor.factors:
             for isotope_cluster in factor.isotope_clusters:
-                gauss_undeut_ics_list.append(isotope_cluster) #todo: check if the outer bracket creates a different list shape
+                undeut_ics_list.append(isotope_cluster) #todo: check if the outer bracket creates a different list shape
         
         data_tensor_list.append(new_data_tensor)
 
-    return gauss_undeut_ics_list, data_tensor_list
+    return undeut_ics_list, data_tensor_list
 
 
-def calc_dot_prod_for_isotope_clusters(sequence, gauss_undeut_isotope_clusters):
+def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
     """
-    calculate dot products for all the factorized isotope clusters
-    :param sequence: sequence of the protein
-    :param gauss_undeut_isotope_clusters: isotope cluster from factorization
-    :return: dot product list between comparision of theoretical isotope distribution and isotope clusters from
-    factorization + list of integrated mz list
+    Calculate normalized dot product [0-1] of undeuterated IsotopeCluster.baseline_subtracted_int_mz to sequence determined theoretical distribution
+    
+    Parameters:
+    sequence (str): sequence of the protein
+    undeut_isotope_clusters : list of factorized IsotopeCluster objects 
+
+    Returns:
+    dot_product_list (list): list of dot product results, index matched to integrated_mz_list
+    integrated_mz_list (list): list of integrated m/Z arrays, index matched to dot_product_list
     """
 
     dot_product_list = []
     integrated_mz_list = []
 
-    for index, isotope_clusters in enumerate(gauss_undeut_isotope_clusters):
+    for index, isotope_clusters in enumerate(undeut_isotope_clusters):
         integrated_mz_array = isotope_clusters.baseline_integrated_mz
-        dot_product = calculate_isotope_dist_dot_product(sequence=sequence,
-                                                      undeut_integrated_mz_array=integrated_mz_array)
+        dot_product = calculate_isotope_dist_dot_product(sequence=sequence, undeut_integrated_mz_array=integrated_mz_array)
         dot_product_list.append(dot_product)
         integrated_mz_list.append(integrated_mz_array)
 
     return dot_product_list, integrated_mz_list
 
 
-def main(library_info_path, undeut_tensor_path_list, output_path, num_factors=15, factor_gauss_param=(3,1)):
+def main(library_info_path, undeut_tensor_path_list, output_path, n_factors=15, factor_gauss_param=(3,1)):
     """
+    Compares each undeuterated charge state of an rt-group to its theoretical distribution to determine signal quality
     :param library_info_path: library info file path
     :param undeut_tensor_path_list: undeut tensor filepath list
     :param output_path: idotp check output file path
-    :param num_factors: number of factors for factorization
-    :param factor_gauss_param: gauss param for factorization
+    :param n_factors: high number of factors to start factorization with
+    :param factor_gauss_param: gaussian smoothing parameters in tuple (rt-sigma, dt-sigma), default (3,1)
     :return: iso_cluster_list, data_tensor_list, idotp_list, integrated_mz_list (for debugging / checking)
     """
 
@@ -146,7 +150,7 @@ def main(library_info_path, undeut_tensor_path_list, output_path, num_factors=15
 
     iso_clusters_list, data_tensor_list = gen_tensors_factorize(library_info_df=library_info,
                                                                 undeut_tensor_path_list=undeut_tensor_path_list,
-                                                                num_factors=num_factors,
+                                                                n_factors=n_factors,
                                                                 factor_gauss_param=factor_gauss_param)
 
     idotp_list, integrated_mz_list = calc_dot_prod_for_isotope_clusters(sequence=my_seq,
@@ -163,7 +167,7 @@ if __name__ == '__main__':
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
     parser.add_argument("undeut_tensor_path_list", help="list of paths to undeuterated tensor outputs from extract_tensors.py")    
     parser.add_argument("output_path", help="path/to/file for main .csv output")
-    parser.add_argument("--num_factors", default=15, help="high number of factors to use in non_negative_parafac decomposition, counts down until correlation constraint is reached - see DataTensor.factorize()")
+    parser.add_argument("--n_factors", default=15, help="high number of factors to use in non_negative_parafac decomposition, counts down until correlation constraint is reached - see DataTensor.factorize()")
     parser.add_argument("--factor_gauss_param", type=tuple, default=(3,1), help="parameters for smoothing rt and dt dimensions")
 
     #### example of user inputs rather than from snakemake ####

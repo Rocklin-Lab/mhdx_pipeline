@@ -10,6 +10,16 @@ sys.path.append(os.getcwd() + "/workflow/scripts/auxiliary/")
 import LC_IM_MS_TensorAnalysis as hx
 
 def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name, timepoints):
+    """Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
+
     # Pass inputs as fxn of rt-group name. Creates _tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
     name_inputs = []
     library_info = pd.read_csv(library_info_path)
@@ -39,6 +49,16 @@ def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name
     return name_inputs
 
 def main(library_info_path=None, all_tensor_input_paths=None, input_directory_path=None, rt_group_name=None, timepoints=None, old_data_dir=None, html_plot_out_path=None, winner_out_path=None, runner_out_path=None, undeut_ground_out_path=None, winner_scores_out_path=None, rtdt_com_cvs_out_path=None):
+    """Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
+
     # open library_info
     library_info = pd.read_csv(library_info_path)
 

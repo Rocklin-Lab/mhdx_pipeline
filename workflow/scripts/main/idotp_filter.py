@@ -2,7 +2,19 @@ import argparse
 import pandas as pd
 
 def main(all_idotp_csv_inputs, outpath=None, return_flag=False, cutoff=0.95):
+	"""
+	Reads rt-group idotp
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+    """
+
 	out_dict = {}
+
 	filter_passing_indices = []
 	for fn in all_idotp_csv_inputs:
 		lib_idx = int(fn.split('/')[-1].split('_')[0])
