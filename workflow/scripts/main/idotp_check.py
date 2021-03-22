@@ -28,8 +28,7 @@ import molmass
 
 #todo: later to use this function from hxtools(suggie version)
 def calculate_theoretical_isotope_dist_from_sequence(sequence, n_isotopes=None):
-    """
-    calculate theoretical isotope distribtuion from a given one letter sequence of protein chain
+""" Calculate theoretical isotope distribtuion from a given one letter sequence of protein chain
     :param sequence: sequence in one letter code
     :param n_isotopes: number of isotopes to include. If none, includes all
     :return: isotope distribution
@@ -47,8 +46,7 @@ def calculate_theoretical_isotope_dist_from_sequence(sequence, n_isotopes=None):
 
 #todo: later to use this function from hxtools (suggie version)
 def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array, n_isotopes=None):
-    """
-    calculate the isotope distribution from the integrated mz intensitities
+""" Calculate the isotope distribution from the integrated mz intensitities
     :param integrated_mz_values: array of integrated mz intensitites
     :param n_isotopes: number of isotopes to include. If none, includes all
     :return: isotope distribution
@@ -61,8 +59,7 @@ def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array, n_i
 
 #todo: reminder! keep this function in this script rather than coming from hxtools
 def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
-    """
-    calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array
+""" Calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array
     :param sequence: sequence of the protein
     :param undeut_integrated_mz_array: integrated mz array
     :return: dot product
@@ -75,8 +72,7 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
 
 
 def gen_tensors_factorize(library_info_df, undeut_tensor_path_list, timepoint_index=0, n_factors=15, gauss_params=(3, 1)):
-    """
-    generate data tensor and factorizes
+""" Instantiates TensorGenerator and factorizes
     :param library_info_df: library info data france
     :param undeut_tensor_path_list: undeuterated tensor file path list
     :param timepoint_index: time point index
@@ -109,8 +105,7 @@ def gen_tensors_factorize(library_info_df, undeut_tensor_path_list, timepoint_in
 
 
 def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
-    """
-    Calculate normalized dot product [0-1] of undeuterated IsotopeCluster.baseline_subtracted_int_mz to sequence determined theoretical distribution
+""" Calculate normalized dot product [0-1] of undeuterated IsotopeCluster.baseline_subtracted_int_mz to sequence determined theoretical distribution
     
     Parameters:
     sequence (str): sequence of the protein
@@ -133,9 +128,8 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
     return dot_product_list, integrated_mz_list
 
 
-def main(library_info_path, undeut_tensor_path_list, output_path, n_factors=15, factor_gauss_param=(3,1)):
-    """
-    Compares each undeuterated charge state of an rt-group to its theoretical distribution to determine signal quality
+def main(library_info_path, undeut_tensor_path_list, output_path=None, return_flag=None, n_factors=15, factor_gauss_param=(3,1)):
+""" Compares each undeuterated charge state of an rt-group to its theoretical distribution to determine signal quality
     :param library_info_path: library info file path
     :param undeut_tensor_path_list: undeut tensor filepath list
     :param output_path: idotp check output file path
@@ -156,9 +150,11 @@ def main(library_info_path, undeut_tensor_path_list, output_path, n_factors=15, 
     idotp_list, integrated_mz_list = calc_dot_prod_for_isotope_clusters(sequence=my_seq,
                                                                         gauss_undeut_isotope_clusters=iso_clusters_list)
 
-    pd.DataFrame({'idotp': max(idotp_list)}, index=[0]).to_csv(output_path)
+    if output_path is not None:
+        pd.DataFrame({'idotp': max(idotp_list)}, index=[0]).to_csv(output_path)
 
-    return iso_clusters_list, data_tensor_list, idotp_list, integrated_mz_list
+    if return_flag is not None:
+        return {"":iso_clusters_list, "":data_tensor_list, "":idotp_list, "":integrated_mz_list}
 
 
 if __name__ == '__main__':

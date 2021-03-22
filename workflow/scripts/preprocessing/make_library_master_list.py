@@ -25,6 +25,16 @@ matplotlib.use("Agg")
 
 
 def path_to_stretch_times(path, to_stretch=0):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
+
     # Applies transformation defined by minimum-cost path from fastdtw to timeseries data
     alt = 1 if to_stretch == 0 else 0
 
@@ -37,13 +47,31 @@ def path_to_stretch_times(path, to_stretch=0):
 
 
 def pred_time(x, stretched_times, lo_time, hi_time, lc_timepoints):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     time = int(
         ((x - lo_time) / (hi_time - lo_time)) * lc_timepoints
-    )  ###previously hardcoded as lo=3, hi=17, diff=987 (987 not correct, but not really harmful, ~1-2% error)
+    )
     return ((stretched_times[time] / lc_timepoints) * (hi_time - lo_time)) + lo_time
 
 
 def cluster(df, name_dict, key, RT_cutoff):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     n_df = df.loc[df["name"] == key]
     clusters = [
         [
@@ -63,6 +91,15 @@ def cluster(df, name_dict, key, RT_cutoff):
 
 
 def subset_filter(clusters, n_df):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     sets = [set(cluster) for cluster in clusters]
     final = []
     for i in range(len(sets)):
@@ -89,6 +126,15 @@ def subset_filter(clusters, n_df):
 
 
 def intersection_filter(final, intersections, n_df):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     final_copy = copy.deepcopy(final)
     [
         [final_copy[i].discard(j) for j in intersections]
@@ -110,6 +156,15 @@ def intersection_filter(final, intersections, n_df):
 
 
 def set_global_scan_bounds(mzml):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     run = pymzml.run.Reader(mzml)
     n_scans = run.get_spectrum_count()
     lc_times = int(n_scans / 200)
@@ -133,16 +188,43 @@ def set_global_scan_bounds(mzml):
 
 
 def gen_warp_path_for_timepoints(reference_tics, tics):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     distance, path = fastdtw(reference_tics.T, tics.T, dist=euclidean, radius=20)
     return distance, path
 
 
 def norm_tics(tics):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     tics = tics / (np.sum(tics, axis=0) + 1)
     return tics
 
 
 def gen_stretched_times(tic_file_list, plot_path=None):
+"""Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     ref_tics = np.loadtxt(tic_file_list[0])
     ref_tics_norm = norm_tics(ref_tics)
 
@@ -180,13 +262,17 @@ def gen_stretched_times(tic_file_list, plot_path=None):
 ####################    Operation    s####################
 ##########################################################
 
-def main(names_and_seqs_path, outpath, undeut_mzml, intermediates, tics, timepoints, plot=None):
-    # If someone is exposing the main function they're in python and will have what they need to collect files manually,
-    # do not accept dirs as arguments to limit redundancy
+def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, return_flag=None, outpath=None, plot=None):
+""" Summary or Description of the Function
 
-    name_and_seq = pd.read_csv(names_and_seqs_path)
-    #take one mzml for 
-    mzml = undeut_mzmls[0]
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+    """
+    name_and_seq = pd.read_csv(names_and_seqs_path) 
+    mzml = undeut_mzml
 
     #if plot is none, function runs without plotting
     stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics, plot)
@@ -307,7 +393,11 @@ def main(names_and_seqs_path, outpath, undeut_mzml, intermediates, tics, timepoi
     for i in range(len(all_tp_mean_preds)):
         catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
 
-    catdf.to_csv(outpath)
+    if outpath is not None:
+        catdf.to_csv(outpath)
+
+    if return_flag is not None:
+        return catdf.to_dict()
 
 if __name__ == "__main__":
 
@@ -323,36 +413,19 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--tics", help="used in snakemake, list of all .imx.mz.tic file paths")
     parser.add_argument("-e", "--timepoints", required=True, help="path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint")
     parser.add_argument("-c", "--rt_group_cutoff", default=, help="control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters")
-    
     # outputs
     parser.add_argument("-p", "--plot", help="path/to/stretched_times_plots.png")
     parser.add_argument("-o", "--outpath", help="path/to/library_info.csv main output file")
     
     args = parser.parse_args()
 
-    # check for either option of the three required flag inputs
-    if (args.mzml_dir is None and args.undeut_mzmls is None) or (args.intermediates_dir is None and args.intermediates is None) or (args.tics_dir is None and args.tics is None):
-        parser.print_help()
-        sys.exit()
-
-    # check for mzml_dir without search string
-    if args.mzml_dir is not None and args.undeut_mzml is None and args.undeut_match_string is None:
-        parser.print_help()
-        sys.exit()
-
-    # check m^s^-n, glob undeut .mzML filenames
+    #Generate explicit filenames and open timepoints .yaml
     if args.mzml_dir is not None and args.undeut_match_string is not None and args.undeut_mzMLs is None:
         args.undeut_mzml = list(glob.glob(args.mzml_dir+"*"+args.undeut_match_string+"*"+".mzML"))
-
-    # check i^-j, glob imtbx intermediates
     if args.intermediates_dir is not None and args.intermediates is None:
         args.intermediates = list(glob.glob(args.intermediates_dir+"*intermediate.csv"))
-
-    # check t^-u, glob .tic filenames
     if args.tics_dir is not None and args.tics is None:
         args.tics = list(glob.glob(args.tics_dir+"*.ims.mz.tic"))
+    open_timepoints = yaml.load(args.timepoints, Loader=yaml.FullLoader) 
 
-    timepoints = yaml.load(args.timepoints, Loader=yaml.FullLoader) 
-
-
-    main(args.names_and_seqs_path, outpath=args.outpath, undeut_mzml=args.undeut_mzml, intermediates=args.intermediates, tics=args.tics, timepoints=timepoints, rt_group_cutoff=args.rt_group_cutoff, plot=args.plot)
+    main(args.names_and_seqs_path, outpath=args.outpath, undeut_mzml=args.undeut_mzml, intermediates=args.intermediates, tics=args.tics, timepoints=open_timepoints, rt_group_cutoff=args.rt_group_cutoff, plot=args.plot)

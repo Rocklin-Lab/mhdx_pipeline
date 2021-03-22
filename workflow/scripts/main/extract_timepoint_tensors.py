@@ -18,7 +18,7 @@ from collections import Counter
 
 
 def load_pickle_file(pickle_fpath):
-    """Loads a pickle file (without any dependence on other classes or objects or functions)
+""" Loads a pickle file (without any dependence on other classes or objects or functions)
 
     Parameters:
     pickle_fpath (str): path/to/file.pickle
@@ -32,7 +32,7 @@ def load_pickle_file(pickle_fpath):
 
 
 def apply_polyfit_cal_mz(polyfit_coeffs, mz):
-    """Apply mz calibration determined in make_master_list.py to an extracted tensor
+""" Apply mz calibration determined in make_master_list.py to an extracted tensor
 
     Parameters:
     polyfit_coeffs: polyfit coefficients
@@ -56,8 +56,7 @@ def main(library_info_path,
          dt_radius_scale=0.06, 
          polyfit_calibration_dict=None, 
          indices=None):
-    """
-    Reads through .mzML file and extracts subtensors whose dimensions are defined in library_info.csv, optionally saves individual tensors or returns all as a dictionary
+""" Reads through .mzML file and extracts subtensors whose dimensions are defined in library_info.csv, optionally saves individual tensors or returns all as a dictionary
 
     Parameters:
     library_info_path (str): path/to/library_info.csv
@@ -74,8 +73,7 @@ def main(library_info_path,
 
     Returns:
     out_dict (dict): dictionary containing every extracted tensor with library_info indices as keys
-
-   """
+    """
 
     out_dict = {}
 
@@ -120,7 +118,7 @@ def main(library_info_path,
     drift_times = []
     scan_times = []
 
-    #TODO replace this hardcoded search string with an optional search string parameter with this value as defualt?
+    # TODO replace this hardcoded search string with an optional search string parameter with this value as defualt?
     lines = gzip.open(mzml_gz_path, "rt").readlines()
     for line in lines:
         if (
@@ -174,7 +172,7 @@ def main(library_info_path,
 
     # use mapping lists to get scan numbers for each POI
     for i in range(len(library_info)):
-        # Check for subset indices
+        # check for subset indices
         if indices is not None:
             # only keep scans for relevant indices 
             if i in indices:
@@ -222,12 +220,12 @@ def main(library_info_path,
     print(time.time() - starttime, mzml_gz_path)
 
 
-    for scan_number in range(msrun.get_spectrum_count()): #iterate over each scan
+    for scan_number in range(msrun.get_spectrum_count()): # iterate over each scan
         scan = msrun.next()
 
         if scan_number in relevant_scans:
 
-            #print progress at interval
+            # print progress at interval
             if scan_number % 1 == 0:
                 print(
                     scan_number,
@@ -247,7 +245,7 @@ def main(library_info_path,
                 print("scan read error: "+str(scan_number))
                 spectrum = np.array([[0, 0]])
 
-            for i in scan_to_lines[scan_number]: #iterate over each library_info index that needs to read the scan
+            for i in scan_to_lines[scan_number]: # iterate over each library_info index that needs to read the scan
                 print("Library Index: " + str(i) + " Len Output: " + str(len(output_scans[i])))
                 obs_mz_values = library_info["obs_mz"].values[i]
                 mz_low = obs_mz_values - (
@@ -265,7 +263,7 @@ def main(library_info_path,
                     print(spectrum[(mz_low < spectrum[:, 0]) & (spectrum[:, 0] < mz_high)])
                     sys.exit(0)
                 try:
-                    #check if this is the last scan the line needed
+                    # check if this is the last scan the line needed
                     if len(output_scans[i]) == scans_per_line[i]:
                         keep_drift_times = drift_times[
                             (drift_times >= dt_lbounds[i])
@@ -350,10 +348,7 @@ if __name__ == "__main__":
     # parse given arguments
     args = parser.parse_args()
 
-    #open .yaml into dict for main()
-    open_timepoints = yaml.load(open(args.timepoints_yaml, 'rb').read())
-
-    # generate explicit output paths if not given
+    # generate explicit output paths and open timepoints .yaml
     if args.outputs is None:
         if args.output_directory is None:
             parser.print_help()
@@ -363,5 +358,6 @@ if __name__ == "__main__":
                 library_info = pd.read_csv(args.library_info_path)
                 mzml = args.mzml_gz_path.split("/")[-1][:-3]
                 args.outputs = [args.output_directory+str(i)+"_"+mzml for i in args.indices]
+    open_timepoints = yaml.load(open(args.timepoints_yaml, 'rb').read())
                 
     main(library_info_path=args.library_info_path, mzml_gz_path=args.mzml_gz_path, timepoints=open_timepoints, outputs=args.outputs, low_mass_margin=args.low_mass_margin, high_mass_margin=args.high_mass_margin, rt_radius=args.rt_radius, dt_radius_scale=args.dt_radius_scale, polyfit_calibration_dict=args.polyfit_calibration_dict, indices=args.indices)

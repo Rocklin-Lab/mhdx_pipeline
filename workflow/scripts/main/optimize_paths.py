@@ -10,7 +10,7 @@ sys.path.append(os.getcwd() + "/workflow/scripts/auxiliary/")
 from HDX_LIMIT import limit_read, limit_write, PathOptimizer
 
 def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name, timepoints):
-    """Generate explicit PathOptimizer input paths for one rt_group
+""" Generate explicit PathOptimizer input paths for one rt_group
 
     Parameters:
     library_info_path (str): path/to/library_info.csv
@@ -21,7 +21,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name
     Returns:
     name_inputs (list of strings): flat list of all IsotopeCluster inputs to PathOptimizer
 
-   """
+    """
 
     name_inputs = []
     library_info = pd.read_csv(library_info_path)
@@ -51,7 +51,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name
     return name_inputs
 
 def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=False, rt_group_name=None, old_data_dir=None, html_plot_out_path=None, winner_out_path=None, runner_out_path=None, undeut_ground_out_path=None, winner_scores_out_path=None, rtdt_com_cvs_out_path=None):
-    """Uses PathOptimzier class to generate best-estimate of hdx-timeseries of IsotopeClusters for a given library protein
+""" Uses PathOptimzier class to generate best-estimate of hdx-timeseries of IsotopeClusters for a given library protein
 
     Parameters:
     library_info_path (str): path/to/library_info.csv
@@ -69,8 +69,7 @@ def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=Fals
 
     Returns:
     out_dict (dict): dictionary containing 'path_optimizer': PathOptimizer instance
-
-   """
+    """
 
    out_dict = {}
 
@@ -123,6 +122,7 @@ def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=Fals
 
 if __name__ == '__main__':
 
+    # set expected command line arguments
     parser = argparse.ArgumentParser(description="Generate a best-estimate HDX-timeseries of IsotopeClusters for a given library protein")
     # inputs
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
@@ -138,19 +138,15 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--undeut_ground_out_path", help="path/to/file to save selected highest-confidence undeuterated IsotopeClusters")
     parser.add_argument("-s", "--winner_scores_out_path", help="path/to/file to save winning path IC scores")
     parser.add_argument("-c", "--rtdt_com_cvs_out_path", help="path/to/file to save rt/dt error measurement")
-
     args = parser.parse_args()
 
-    #open .yaml into dict for main()
-    open_timepoints = yaml.load(open(args.timepoints_yaml, 'rb').read())
-
-    #check for explicit inputs
+    # generate explicit inputs and open timpoints .yaml
     if args.all_tensor_input_paths is None:
         if args.input_directory_path is not None and args.rt_group_name is not None:
             args.all_tensor_input_paths = optimize_paths_inputs(args.library_info_path, args.input_directory_path, args.rt_group_name, args.timepoints)
         else:
             parser.print_help()
             sys.exit()
+    open_timepoints = yaml.load(open(args.timepoints_yaml, 'rb').read())
 
     main(library_info_path=args.library_info_path, all_tensor_input_paths=args.all_tensor_input_paths, timepoints=open_timepoints, rt_group_name=args.rt_group_name, old_data_dir=args.old_data_dir, html_plot_out_path=args.html_plot_out_path, winner_out_path=args.winner_out_path, runner_out_path=args.runner_out_path, undeut_ground_out_path=args.undeut_ground_out_path, winner_scores_out_path=args.winner_scores_out_path, rtdt_com_cvs_out_path=args.rtdt_com_cvs_out_path)
-    
