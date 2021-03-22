@@ -36,7 +36,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name
                         + "_"
                         + file
                         + ".gz.cpickle.zlib"
-                    )  # TODO: This may break when using .raw as first input, investigate
+                    )  # TODO: This won't work if we go to .mzML .RAW interoperability, 
         else:
             file = timepoints[key][0]
             for idx in idxs:
@@ -51,13 +51,13 @@ def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name
     return name_inputs
 
 def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=False, rt_group_name=None, old_data_dir=None, html_plot_out_path=None, winner_out_path=None, runner_out_path=None, undeut_ground_out_path=None, winner_scores_out_path=None, rtdt_com_cvs_out_path=None):
-    """Uses PathOptimzier class to generate best-estimate of hdx-timeseries of IsotopeClusters 
+    """Uses PathOptimzier class to generate best-estimate of hdx-timeseries of IsotopeClusters for a given library protein
 
     Parameters:
     library_info_path (str): path/to/library_info.csv
     all_tensor_input_paths (list of strings): list of paths/to/file for all lists of IsotopeClusters from generate_tensor_ics.py
     timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
-    return_flag=False: option to return main output in python, for notebook context
+    return_flag: option to return main output in python, for notebook context
     rt_group_name (str): library_info['name'] value
     old_data_dir (str): path/to/dir to provide comparison to GJR formatted results
     html_plot_out_path (str): path/to/file.html for interactive bokeh plot
@@ -85,7 +85,7 @@ def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=Fals
         for fn in timepoints[tp]:
             for file in all_tensor_input_paths:
                 if fn in file:
-                    ics = hx.limit_read(file)  # expects list of ics
+                    ics = limit_read(file)  # expects list of ics
                     for ic in ics:
                         tp_buf.append(ic)
 
@@ -107,15 +107,15 @@ def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=Fals
     if html_plot_out_path is not None:
         p1.bokeh_plot(html_plot_out_path)
     if winner_out_path is not None:
-        hx.limit_write(p1.winner, winner_out_path)
+        limit_write(p1.winner, winner_out_path)
     if runner_out_path is not None:
-        hx.limit_write(p1.runners, runner_out_path)
+        limit_write(p1.runners, runner_out_path)
     if undeut_ground_out_path is not None:
-        hx.limit_write([p1.undeut_grounds, p1.undeut_ground_dot_products], undeut_ground_out_path)
+        limit_write([p1.undeut_grounds, p1.undeut_ground_dot_products], undeut_ground_out_path)
     if winner_scores_out_path is not None:
-        hx.limit_write(p1.winner_scores, winner_scores_out_path)
+        limit_write(p1.winner_scores, winner_scores_out_path)
     if rtdt_com_cvs_out_path is not None:
-        hx.limit_write([p1.rt_com_cv, p1.dt_com_cv], rtdt_com_cvs_out_path)
+        limit_write([p1.rt_com_cv, p1.dt_com_cv], rtdt_com_cvs_out_path)
 
     if return_flag:
         out_dict['path_optimizer'] = p1
@@ -123,7 +123,7 @@ def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=Fals
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description="")
+    parser = argparse.ArgumentParser(description="Generate a best-estimate HDX-timeseries of IsotopeClusters for a given library protein")
     # inputs
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
     parser.add_argument("timepoints_yaml", help="path/to/file.yaml containing list of hdx timepoints in integer seconds which are also keys mapping to lists of each timepoint's .mzML file, can pass config/config.yaml - for Snakemake context")
