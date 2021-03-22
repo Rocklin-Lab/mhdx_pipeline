@@ -40,6 +40,15 @@ import ipdb
 
 
 def plotcluster(i=0):
+    """ Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     plt.figure(figsize=(16, 3))
     plt.subplot(141)
     plt.plot(testq[clusters == i]["RT"], testq[clusters == i]["mz_mono"])
@@ -67,6 +76,15 @@ def plotcluster(i=0):
 
 
 def kde_plot(sum_df, outpath):
+    """ Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+
+   """
     mykde = gaussian_kde(sum_df["ppm"])
     xs = np.linspace(-50, 50, 10000)
     xs[np.argmax(mykde.evaluate(xs))]
@@ -79,6 +97,14 @@ def kde_plot(sum_df, outpath):
 
 # mix doesn't serve any purpose in the pipeline TODO
 def getnear(x, charge=None, mix=None, ppm=50):
+""" Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+    """
     subdf = allseq
     if mix != None:
         subdf = allseq[allseq["mix"] == mix]
@@ -124,8 +150,7 @@ def getnear(x, charge=None, mix=None, ppm=50):
 def cluster_df_hq_signals(
     testq, ppm=50, intensity_threshold=1e4, cluster_correlation=0.99, adjusted=False
 ):
-    """
-    cluster high quality mz signals based on intensities and cluster correlation
+""" Cluster high quality mz signals based on intensities and cluster correlation
     :param testq: dataframe from imtbx
     :param ppm: ppm error to include for mz signals
     :param intensity_threshold: minimum intensity value required for mz signals
@@ -202,8 +227,7 @@ def cluster_df_hq_signals(
 
 
 def calc_mz_ppm_error(obs_mz, thr_mz):
-    """
-    calculate mz ppm error
+""" Calculate mz ppm error
     :param obs_mz: observed mz values from the experiment
     :param thr_mz: theoreteical or expected mz values based on chemical composition
     :return: ppm error
@@ -213,8 +237,7 @@ def calc_mz_ppm_error(obs_mz, thr_mz):
 
 
 def gen_calib_dict(polyfit_bool=False, **args):
-    """
-    generate calibration dictionary with keywords.
+""" Generate calibration dictionary with keywords.
     :param polyfit_bool: True or False
     :param args: arguements
     :return: calibration dictionary
@@ -232,8 +255,7 @@ def gen_calib_dict(polyfit_bool=False, **args):
 
 
 def gen_mz_ppm_error_calib_polyfit(obs_mz, thr_mz, polyfit_deg=1):
-    """
-    use polyfit to generate a function to correlate observed and theoretical mz values. The function is used as calibration
+""" Use polyfit to generate a function to correlate observed and theoretical mz values. The function is used as calibration
     for the mz values. User can specify the degree of the polyfit
     :param obs_mz: observed mz values
     :param thr_mz: theoretical mz values
@@ -263,8 +285,7 @@ def gen_mz_ppm_error_calib_polyfit(obs_mz, thr_mz, polyfit_deg=1):
 
 
 def apply_polyfit_cal_mz(polyfit_coeffs, mz):
-    """
-    apply polyfit coeff to transform the mz values
+""" Apply polyfit coeff to transform the mz values
     :param polyfit_coeffs: polyfit coefficients
     :param mz: mz values
     :return: transformed mz values
@@ -281,8 +302,7 @@ def gen_mz_error_calib_output(
     int_tol=1e4,
     cluster_corr_tol=0.99,
 ):
-    """
-    generate calibration using the dataframe from imtbx
+""" Generate calibration using the dataframe from imtbx
     :param testq: dataframe from imtbx
     :param calib_pk_fpath: pickle filepath to save calibration information
     :param polyfit_degree: polyfit degree
@@ -314,6 +334,14 @@ def gen_mz_error_calib_output(
 
 
 def save_pickle_object(object, fpath):
+""" Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+    """
     with open(fpath, "wb") as outfile:
         pk.dump(object, outfile)
 
@@ -373,8 +401,7 @@ def cluster_df(testq, ppm=50, adjusted=False):
 
 
 def find_offset(sum_df):
-    """
-    Returns suspected systemic ppm error and width of poi peak of run data from sum_df.
+""" Returns suspected systemic ppm error and width of poi peak of run data from sum_df.
     Assumes protein of interest within +/- 50ppm of 0ppm.
     Selects closest peak to 0 if sufficiently prominent.
     """
@@ -416,6 +443,14 @@ def find_offset(sum_df):
 
 
 def find_rt_duplicates(sum_df):
+""" Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+    """
     proteins = []
     for name in set(sum_df["name"].values):
         proteins.append(sum_df[sum_df["name"] == name])
@@ -466,6 +501,15 @@ def find_rt_duplicates(sum_df):
 
 
 def apply_cluster_weights(dataframe, dt_weight, rt_weight, mz_weight):
+""" Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+    """
+    # TODO This is not great style, this should accept 3 lists and 3 weights and return 3 new lists
     # applies scoring weights to clustering columns in-place, doesn't return
     dataframe["cluster_im"] = dataframe["im_mono"] / dt_weight
     dataframe["cluster_RT"] = dataframe["RT"] / rt_weight
@@ -474,7 +518,15 @@ def apply_cluster_weights(dataframe, dt_weight, rt_weight, mz_weight):
 
 ### SCRIPT ###
 def main(isotopes_path, names_and_seqs_path, intermediate_out_path, plot=None, original_mz_kde_path=None, adjusted_mz_kde_path=None, calibration_outpath=None, polyfit_deg=None, ppm_tolerance=None, intensity_tolerance=None, cluster_corr_tolerance=None, ppm_refilter=None):
+""" Summary or Description of the Function
 
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+    """
+    
     # read IMTBX output file
     with open(isotopes_path) as file:
         lines = [x.strip() for x in file.readlines()]

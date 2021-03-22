@@ -25,15 +25,14 @@ matplotlib.use("Agg")
 
 
 def path_to_stretch_times(path, to_stretch=0):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
 
     # Applies transformation defined by minimum-cost path from fastdtw to timeseries data
     alt = 1 if to_stretch == 0 else 0
@@ -47,15 +46,14 @@ def path_to_stretch_times(path, to_stretch=0):
 
 
 def pred_time(x, stretched_times, lo_time, hi_time, lc_timepoints):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     time = int(
         ((x - lo_time) / (hi_time - lo_time)) * lc_timepoints
     )
@@ -63,15 +61,14 @@ def pred_time(x, stretched_times, lo_time, hi_time, lc_timepoints):
 
 
 def cluster(df, name_dict, key, RT_cutoff):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     n_df = df.loc[df["name"] == key]
     clusters = [
         [
@@ -91,15 +88,14 @@ def cluster(df, name_dict, key, RT_cutoff):
 
 
 def subset_filter(clusters, n_df):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     sets = [set(cluster) for cluster in clusters]
     final = []
     for i in range(len(sets)):
@@ -126,15 +122,14 @@ def subset_filter(clusters, n_df):
 
 
 def intersection_filter(final, intersections, n_df):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     final_copy = copy.deepcopy(final)
     [
         [final_copy[i].discard(j) for j in intersections]
@@ -156,15 +151,14 @@ def intersection_filter(final, intersections, n_df):
 
 
 def set_global_scan_bounds(mzml):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     run = pymzml.run.Reader(mzml)
     n_scans = run.get_spectrum_count()
     lc_times = int(n_scans / 200)
@@ -188,43 +182,40 @@ def set_global_scan_bounds(mzml):
 
 
 def gen_warp_path_for_timepoints(reference_tics, tics):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     distance, path = fastdtw(reference_tics.T, tics.T, dist=euclidean, radius=20)
     return distance, path
 
 
 def norm_tics(tics):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     tics = tics / (np.sum(tics, axis=0) + 1)
     return tics
 
 
 def gen_stretched_times(tic_file_list, plot_path=None):
-"""Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     ref_tics = np.loadtxt(tic_file_list[0])
     ref_tics_norm = norm_tics(ref_tics)
 

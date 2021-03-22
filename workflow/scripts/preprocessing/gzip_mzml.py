@@ -5,9 +5,9 @@ from pymzml.utils.utils import index_gzip
 from pymzml.run import Reader
 
 
-def main(args):
+def main(mzml_path, out_path=None):
     """
-    Create an indexed gzip mzML file from a plain mzML.
+    Create an indexed, gzipped mzML.gz file from a .mzML
     Usage: python3 gzip_mzml.py <path/to/mzml> <path/to/output>
     """
     with open(args.inpath) as fin:
@@ -22,13 +22,9 @@ def main(args):
 if __name__ == "__main__":
 
     # set expected command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('inpath', help='path to .mzML input file, resources/mzml/*.mzML in pipeline context')
-    parser.add_argument('outpath', help='path to .mzML.gz output file')
-    # parse given arguments
+    parser = argparse.ArgumentParser(description="Create an indexed gzip mzML file from a plain .mzML")
+    parser.add_argument("mzml_path", help="path to .mzML input file, resources/mzml/*.mzML in pipeline context")
+    parser.add_argument("", "--out_path", help="path to .mzML.gz output file")
     args = parser.parse_args()
       
-    main(args)
-    
-
-
+    main(mzml_path=args.mzml_path, out_path=args.out_path)

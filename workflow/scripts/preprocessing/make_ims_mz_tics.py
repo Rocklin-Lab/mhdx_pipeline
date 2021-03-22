@@ -9,7 +9,15 @@ import numpy as np
 import pandas as pd
 
 
-def main(mzml_path, tic_path):
+def main(mzml_path, return_flag=None, out_path=None):
+""" Summary or Description of the Function
+
+    Parameters:
+    argument1 (int): Description of arg1
+
+    Returns:
+    int:Returning value
+    """
 
     drift_times = []
     scan_times = []
@@ -85,15 +93,19 @@ def main(mzml_path, tic_path):
                 if rtIndex % 20 == 0:
                     print(rtIndex)
 
-    np.savetxt(tic_path, ms1_ims_tic, fmt="%i")
+    if out_path is not None:
+        np.savetxt(out_path, ms1_ims_tic, fmt="%i")
+
+    if return_flag is not None:
+        return ms1_ims_tic
 
 
 if __name__ == "__main__":
 
     # set expected command line arguments
     parser = argparse.ArgumentParser(description="Sum of Total Ionic Current over IMS and m/Z dimensions, yielding an LC-Chromatogram")
-    parser.add_argument("mzML_path", help="path/to/file for one timepoint mzML")
-    parser.add_argument("tic_path", help="path/to/file for output .ims.mz.tic")
-    # parse given arguments
+    parser.add_argument("mzml_path", help="path/to/file for one timepoint .mzML")
+    parser.add_argument("-o", "--out_path", help="path/to/file for output .ims.mz.tic")
     args = parser.parse_args()
-    main(args.mzML_path, args.tic_path)
+
+    main(args.mzml_path, out_path=args.out_path)
