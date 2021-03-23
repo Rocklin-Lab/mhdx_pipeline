@@ -172,6 +172,6 @@ if __name__ == '__main__':
     # idotp_output = '/Users/smd4193/Documents/MS_data/1_idotp_check.csv'
 
     # main operation
-    idotp_check = main(library_info_path=args.library_info_path, 
-                       undeut_tensor_path_list=args.undeut_tensor_path_list, 
-                       output_path=args.output_path)
+    main(library_info_path=args.library_info_path, 
+         undeut_tensor_path_list=args.undeut_tensor_path_list, 
+         output_path=args.output_path)

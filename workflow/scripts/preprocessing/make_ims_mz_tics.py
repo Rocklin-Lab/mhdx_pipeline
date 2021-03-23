@@ -10,13 +10,15 @@ import pandas as pd
 
 
 def main(mzml_path, return_flag=None, out_path=None):
-""" Summary or Description of the Function
+""" Generate LC Chromatogram by summing ionic current over IMS and m/Z dimensions
 
     Parameters:
-    argument1 (int): Description of arg1
+    mzml_path (string): 
+    return_flag: option to return main output in python, for notebook context
+    out_path (string): option to save main output, path/to/file.tic
 
     Returns:
-    int:Returning value
+    ms1_ims_tic (np_array): LC Chromatogram as numpy ndarray. Contains sum of ionic current for every LC-RT bin
     """
 
     drift_times = []

@@ -25,13 +25,14 @@ matplotlib.use("Agg")
 
 
 def path_to_stretch_times(path, to_stretch=0):
-""" Summary or Description of the Function
+""" Applies timewarp to one of the two tics represented in path, 0 to warp the undeuterated-reference to the target, and 1 for the reverse. 
 
     Parameters:
-    argument1 (int): Description of arg1
+    path (list): Dynamic Time Warping least-cost path between two chromatograms
+    to_stretch (int): Indicates which path is stretched to the other, in practice 0 is the undeuterated and 1 is a target timepoint.
 
     Returns:
-    int:Returning value
+    out_times (list): List of stretched rt-times mapping one tic to the other
     """
 
     # Applies transformation defined by minimum-cost path from fastdtw to timeseries data
@@ -39,35 +40,41 @@ def path_to_stretch_times(path, to_stretch=0):
 
     path = np.array(path)
     out_times = []
+    # take the average of the test-equivalent values corresponding to the value at the reference pattern
     for i in range(max(path[:, to_stretch])):
-        # take the average of the test-equivalent values corresponding to the value at the reference pattern
         out_times.append(np.average(path[:, to_stretch][path[:, alt] == i]))
     return np.array(out_times)
 
 
-def pred_time(x, stretched_times, lo_time, hi_time, lc_timepoints):
-""" Summary or Description of the Function
+def pred_time(rt, stretched_times, lo_time, hi_time, n_lc_timepoints):
+""" Converts stretched LC bins to absolute LC retention-time
 
     Parameters:
-    argument1 (int): Description of arg1
+    rt (float): a point in LC retention-time
+    stretched_times (list): Remapped bin labels from path_to_stretch_times
+    lo_time (float): lowest scan-time of reference chromatogram
+    hi_time (float): highest scan-time of reference chromatogram
+    n_lc_timepoints (int): number of LC bins in reference chromatogram
 
     Returns:
-    int:Returning value
+    (float): warped point in LC-RT
     """
     time = int(
-        ((x - lo_time) / (hi_time - lo_time)) * lc_timepoints
+        ((rt - lo_time) / (hi_time - lo_time)) * n_lc_timepoints
     )
-    return ((stretched_times[time] / lc_timepoints) * (hi_time - lo_time)) + lo_time
+    return ((stretched_times[time] / n_lc_timepoints) * (hi_time - lo_time)) + lo_time
 
 
-def cluster(df, name_dict, key, RT_cutoff):
-""" Summary or Description of the Function
+def rt_cluster(df, name_dict, key, rt_group_cutoff):
+""" Groups and filters identified charged-species by rt-distance
 
     Parameters:
-    argument1 (int): Description of arg1
-
+    df (Pandas DataFrame): df containing all identified charged species
+    name_dict (dict): dictionary to be filled with rt-group-member library_info indices 
+    key (string): a single library_protein.pdb string
+    
     Returns:
-    int:Returning value
+    None
     """
     n_df = df.loc[df["name"] == key]
     clusters = [
@@ -78,7 +85,7 @@ def cluster(df, name_dict, key, RT_cutoff):
                 n_df.loc[n_df["idx"] == i]["pred_RT"].values[0]
                 - n_df.loc[n_df["idx"] == j]["pred_RT"].values[0]
             )
-            < RT_cutoff
+            < rt_group_cutoff
         ]
         for i in n_df["idx"].values
     ]
@@ -88,13 +95,14 @@ def cluster(df, name_dict, key, RT_cutoff):
 
 
 def subset_filter(clusters, n_df):
-""" Summary or Description of the Function
+""" Determines if any rt=cluster is a subset of any other cluster, and removes them. 
 
     Parameters:
-    argument1 (int): Description of arg1
+    clusters (list of lists of ints): List of all clusters
+    n_df (Pandas DataFrame): DF of all charged species identified as one library protein 
 
     Returns:
-    int:Returning value
+    final (list of list of ints): mutated input list with all subset rt-groups removed
     """
     sets = [set(cluster) for cluster in clusters]
     final = []
@@ -107,6 +115,7 @@ def subset_filter(clusters, n_df):
         if sup:
             final.append(sets[i])
 
+    #find any rt-group index intersections and resolve
     intersections = []
     for s1 in final:
         for i in s1:
@@ -122,13 +131,15 @@ def subset_filter(clusters, n_df):
 
 
 def intersection_filter(final, intersections, n_df):
-""" Summary or Description of the Function
+""" Resolve remianing intersections of subset-filtered rt-clusters
 
     Parameters:
-    argument1 (int): Description of arg1
+    final (list of list  of ints): output of subset_filter, list of lists of all rt-cluster indices
+    intersections (list of ints): list of indices in more than one rt-group
+    n_df (Pandas DataFrame): DF of all charged species identified as one library protein
 
     Returns:
-    int:Returning value
+    final_copy (list of list of ints): remapped rt-groups with no intersections
     """
     final_copy = copy.deepcopy(final)
     [
@@ -151,13 +162,15 @@ def intersection_filter(final, intersections, n_df):
 
 
 def set_global_scan_bounds(mzml):
-""" Summary or Description of the Function
+""" Search .mzML for LC-dimension extrema and magnitude
 
     Parameters:
-    argument1 (int): Description of arg1
+    mzml (string): path/to/undeuterated.mzML
 
     Returns:
-    int:Returning value
+    lo_time (float): lowest scan-time of reference chromatogram
+    hi_time (float): highest scan-time of reference chromatogram
+    n_lc_timepoints (int): number of LC bins in reference chromatogram
     """
     run = pymzml.run.Reader(mzml)
     n_scans = run.get_spectrum_count()
@@ -176,48 +189,51 @@ def set_global_scan_bounds(mzml):
                 hi_time = spectrum.scan_time_in_minutes()
             last = time
 
-    lc_timepoints = lc_times - lo_lc_tp
+    n_lc_timepoints = lc_times - lo_lc_tp
 
-    return np.round(lo_time, 3), np.round(hi_time, 3), lc_timepoints
+    return np.round(lo_time, 3), np.round(hi_time, 3), n_lc_timepoints
 
 
-def gen_warp_path_for_timepoints(reference_tics, tics):
-""" Summary or Description of the Function
+def gen_warp_path_for_timepoints(reference_tic, target_tic):
+""" Applies the fast dynamic time-warping algorithm to two provided tics, returns a minimum-cost path to use as a stretching function.
 
     Parameters:
-    argument1 (int): Description of arg1
+    reference_tic (np_array): Undeuterated .tic to be used as reference in warping
+    target_tic (np_array): some other .tic to warp to the reference
 
     Returns:
-    int:Returning value
+    distance (float): length of warped path
+    path (list): a mapping between the indices of the two tics
     """
-    distance, path = fastdtw(reference_tics.T, tics.T, dist=euclidean, radius=20)
+    distance, path = fastdtw(reference_tic.T, target_tic.T, dist=euclidean, radius=20)
     return distance, path
 
 
-def norm_tics(tics):
-""" Summary or Description of the Function
+def norm_tic(tic):
+""" Normalize tic magnitude to 1
 
     Parameters:
-    argument1 (int): Description of arg1
+    tic (np_array): Chromatogram of Total Ionic Current of an LC-MS run
 
     Returns:
-    int:Returning value
+    tic (np_array): normalized tic
     """
-    tics = tics / (np.sum(tics, axis=0) + 1)
-    return tics
+    tic = tic / (np.sum(tic, axis=0) + 1)
+    return tic
 
 
 def gen_stretched_times(tic_file_list, plot_path=None):
-""" Summary or Description of the Function
+""" Generate all warp-paths between the undeuterated reference .tic and all others .tic files.
 
     Parameters:
-    argument1 (int): Description of arg1
+    tic_file_list (list of strings): list of paths/to/file.tics where 0th index is reference .tic
 
     Returns:
-    int:Returning value
+    stretched_ts1_times (nested list): all rt-labels stretching the unduterated to later timepoints
+    stretched_ts2_times (nested list): all rt-labels stretdhing later timepoints to the undeuterated
     """
-    ref_tics = np.loadtxt(tic_file_list[0])
-    ref_tics_norm = norm_tics(ref_tics)
+    ref_tic = np.loadtxt(tic_file_list[0])
+    ref_tic_norm = norm_tic(ref_tic)
 
     stretched_ts1_times = []
     stretched_ts2_times = []
@@ -226,10 +242,10 @@ def gen_stretched_times(tic_file_list, plot_path=None):
     fig, ax = plt.subplots()
 
     for index, tic_file in enumerate(tic_file_list):
-        tics = np.loadtxt(tic_file)
-        tics_norm = norm_tics(tics)
+        tic = np.loadtxt(tic_file)
+        tic_norm = norm_tic(tic)
 
-        dist, path = gen_warp_path_for_timepoints(ref_tics_norm, tics_norm)
+        dist, path = gen_warp_path_for_timepoints(ref_tic_norm, tic_norm)
 
         stretched_ts1 = path_to_stretch_times(path, 0)
         stretched_ts2 = path_to_stretch_times(path, 1)
@@ -253,35 +269,42 @@ def gen_stretched_times(tic_file_list, plot_path=None):
 ####################    Operation    s####################
 ##########################################################
 
-def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, return_flag=None, outpath=None, plot=None):
-""" Summary or Description of the Function
+def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, return_flag=None, outpath=None, rt_group_cutoff=0.2, plot=None):
+""" Generates the master list of library_proteins identified in MS data: library_info.csv
 
     Parameters:
-    argument1 (int): Description of arg1
+    names_and_seqs_path (string): path/to/names_and_seqs.csv
+    undeut_mzml (string): path/to/undeuterated.mzML
+    intermediates (list of strings): list of paths to imtbx intermediate files
+    tics (list of strings): list of paths to all .tic files
+    timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
+    return_flag (any non-None type): option to return main output in python, for notebook context
+    outpath (string): path/to/file for main output library_info.csv
+    rt_group_cutoff (float): radius in LC-RT to consider signals a part of an rt-cluster
+    plot (any non-None type): path/to/file for stretched time plots
 
     Returns:
-    int:Returning value
+    library_info (dict): Outputs library_info as dict
     """
     name_and_seq = pd.read_csv(names_and_seqs_path) 
-    mzml = undeut_mzml
 
     #if plot is none, function runs without plotting
     stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics, plot)
 
-    lo_time, hi_time, lc_timepoints = set_global_scan_bounds(mzml)
+    lo_time, hi_time, n_lc_timepoints = set_global_scan_bounds(undeut_mzml)
 
-    # merge UNs
+    # merge UNs - no, appends open dfs to list, why? 
     undfs = []
     for file in intermediates:
         undfs.append(pd.read_csv(file))
 
-    # inputs the transformed test-pattern value for each undeuterated imtbx csv as pred_RT
+    # applies warp from provided undeut_mzml to each other undeut mzml, including itself
     for i in range(len(undfs)):
         undfs[i]["pred_RT"] = [
-            pred_time(x, stretched_ts1_times[i], lo_time, hi_time, lc_timepoints)
-            for x in undfs[i]["RT"]
+            pred_time(rt, stretched_ts1_times[i], lo_time, hi_time, n_lc_timepoints)
+            for rt in undfs[i]["RT"]
         ]
-        undfs[i]["UN"] = [i for x in undfs[i]["RT"]]
+        undfs[i]["UN"] = [i for line in undfs[i]["RT"]] #apply source index to each line
 
     # combine undfs and sort
     catdf = pd.concat(undfs)
@@ -296,9 +319,9 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
             and (catdf["charge"].values[i] == catdf["charge"].values[i - 1])
             and (
                 abs(catdf["pred_RT"].values[i] - catdf["pred_RT"].values[i - 1])
-                < snakemake.config["rt_group_cutoff"]
+                < rt_group_cutoff
             )
-        ):  # ensures no duplicate charge-states make it into same rt-group
+        ):
             dups.append(True)
         else:
             dups.append(False)
@@ -317,7 +340,7 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
     # cluster RT values and rename
     name_dict = OrderedDict.fromkeys(catdf["name"].values)
     [
-        cluster(catdf, name_dict, key, snakemake.config["rt_group_cutoff"])
+        rt_cluster(catdf, name_dict, key, rt_group_cutoff)
         for key in name_dict.keys()
     ]  # TODO possibly automate rt_group cutoff determination in the future
 
@@ -338,14 +361,15 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
 
     # Create RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint]
     rt_columns = []
-    for i in range(len(snakemake.config["timepoints"])):
+    for i in range(len(timepoints["timepoints"])):
         base = "RT_%s" % i
-        if len(snakemake.config[snakemake.config["timepoints"][i]]) > 1:
-            for j in range(len(snakemake.config[snakemake.config["timepoints"][i]])):
+        if len(timepoints[timepoints["timepoints"][i]]) > 1:
+            for j in range(len(timepoints[timepoints["timepoints"][i]])):
                 rt_columns.append(base + "_%s" % j)
         else:
             rt_columns.append(base + "_0")
 
+    # apply warp from provided undeut_mzml RT to each later timepoint RT for each charged species identified
     for i, stretched in enumerate(stretched_ts2_times):
         catdf[rt_columns[i]] = [
             pred_time(x, stretched, lo_time, hi_time, lc_timepoints)
@@ -403,7 +427,7 @@ if __name__ == "__main__":
     parser.add_argument("-j", "--intermediates", nargs="*", help="used in snakemake, list of all imtbx intermediate file paths")
     parser.add_argument("-u", "--tics", help="used in snakemake, list of all .imx.mz.tic file paths")
     parser.add_argument("-e", "--timepoints", required=True, help="path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint")
-    parser.add_argument("-c", "--rt_group_cutoff", default=, help="control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters")
+    parser.add_argument("-c", "--rt_group_cutoff", default=0.2, type=float, help="control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters")
     # outputs
     parser.add_argument("-p", "--plot", help="path/to/stretched_times_plots.png")
     parser.add_argument("-o", "--outpath", help="path/to/library_info.csv main output file")

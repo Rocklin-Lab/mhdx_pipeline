@@ -40,15 +40,14 @@ import ipdb
 
 
 def plotcluster(i=0):
-    """ Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     plt.figure(figsize=(16, 3))
     plt.subplot(141)
     plt.plot(testq[clusters == i]["RT"], testq[clusters == i]["mz_mono"])
@@ -76,15 +75,14 @@ def plotcluster(i=0):
 
 
 def kde_plot(sum_df, outpath):
-    """ Summary or Description of the Function
+""" Summary or Description of the Function
 
     Parameters:
     argument1 (int): Description of arg1
 
     Returns:
     int:Returning value
-
-   """
+    """
     mykde = gaussian_kde(sum_df["ppm"])
     xs = np.linspace(-50, 50, 10000)
     xs[np.argmax(mykde.evaluate(xs))]
@@ -517,7 +515,7 @@ def apply_cluster_weights(dataframe, dt_weight, rt_weight, mz_weight):
 
 
 ### SCRIPT ###
-def main(isotopes_path, names_and_seqs_path, intermediate_out_path, plot=None, original_mz_kde_path=None, adjusted_mz_kde_path=None, calibration_outpath=None, polyfit_deg=None, ppm_tolerance=None, intensity_tolerance=None, cluster_corr_tolerance=None, ppm_refilter=None):
+def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, plot=None, original_mz_kde_path=None, adjusted_mz_kde_path=None, calibration_outpath=None, polyfit_deg=None, ppm_tolerance=None, intensity_tolerance=None, cluster_corr_tolerance=None, ppm_refilter=None):
 """ Summary or Description of the Function
 
     Parameters:
@@ -526,7 +524,7 @@ def main(isotopes_path, names_and_seqs_path, intermediate_out_path, plot=None, o
     Returns:
     int:Returning value
     """
-    
+
     # read IMTBX output file
     with open(isotopes_path) as file:
         lines = [x.strip() for x in file.readlines()]
@@ -632,7 +630,12 @@ def main(isotopes_path, names_and_seqs_path, intermediate_out_path, plot=None, o
         print("DUPLICATES: " + hits)
 
     # send sum_df to main output
-    sum_df.to_csv(intermediate_out_path, index=False)
+    if out_path is not None:
+        sum_df.to_csv(intermediate_out_path, index=False)
+
+    if return_flag is not None:
+        return sum_df.to_dict()
+
 
 if __name__ == "__main__":
 
@@ -642,7 +645,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by make_library_master_list.py")
     parser.add_argument("isotopes_path", help="path/to/.peaks.isotopes file from undeuterated mzml")
     parser.add_argument("names_and_seqs_path", help="path/to/.csv with names and sequences of library proteins")
-    parser.add_argument("intermediate_out_path", help="path/to/_intermediate.csv main output file")
+    parser.add_argument("-q", "--out_path", help="path/to/_intermediate.csv main output file")
 
     # optional arguments
     parser.add_argument("-p", "--plot", help="/path/to/directory/ to save original and adjusted mz-error kde plots, use instead of -o and -a")
@@ -673,4 +676,4 @@ if __name__ == "__main__":
 
             # continue, we have -o and -a
 
-    main(args.isotopes_path, args.names_and_seqs_path, args.intermediate_out_path, plot=args.plot, original_mz_kde_path=args.original_mz_kde_path, adjusted_mz_kde_path=args.adjusted_mz_kde_path, calibration_outpath=args.calibration_outpath, polyfit_deg=args.polyfit_deg, ppm_tolerance=args.ppm_tolerance, intensity_tolerance=args.intensity_tolerance, cluster_corr_tolerance=args.cluster_corr_tolerance, ppm_refilter=args.ppm_refilter)
+    main(args.isotopes_path, args.names_and_seqs_path, out_path=args.out_path, plot=args.plot, original_mz_kde_path=args.original_mz_kde_path, adjusted_mz_kde_path=args.adjusted_mz_kde_path, calibration_outpath=args.calibration_outpath, polyfit_deg=args.polyfit_deg, ppm_tolerance=args.ppm_tolerance, intensity_tolerance=args.intensity_tolerance, cluster_corr_tolerance=args.cluster_corr_tolerance, ppm_refilter=args.ppm_refilter)
