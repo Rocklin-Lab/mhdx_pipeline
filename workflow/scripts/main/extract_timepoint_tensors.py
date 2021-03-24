@@ -18,13 +18,14 @@ from collections import Counter
 
 
 def load_pickle_file(pickle_fpath):
-""" Loads a pickle file (without any dependence on other classes or objects or functions)
+    """Loads a pickle file (without any dependence on other classes or objects or functions).
 
-    Parameters:
-    pickle_fpath (str): path/to/file.pickle
+    Args:
+        pickle_fpath (str): path/to/file.pickle
 
     Returns:
-    pk_object: unpickled object
+        pk_object (Python Object: unpickled object
+    
     """
     with open(pickle_fpath, "rb") as file:
         pk_object = pk.load(file)
@@ -32,14 +33,15 @@ def load_pickle_file(pickle_fpath):
 
 
 def apply_polyfit_cal_mz(polyfit_coeffs, mz):
-""" Apply mz calibration determined in make_master_list.py to an extracted tensor
+    """Apply mz calibration determined in make_master_list.py to an extracted tensor.
 
-    Parameters:
-    polyfit_coeffs: polyfit coefficients
-    mz: mz values
+    Args:
+        polyfit_coeffs (list of floats): polyfit coefficients
+        mz (list of floats): mz values
 
     Returns:
-    corrected_mz (ndarray): transformed mz values
+        corrected_mz (Numpy NDarray): transformed mz values
+    
     """
     corrected_mz = np.polyval(polyfit_coeffs, mz)
     return corrected_mz
@@ -56,27 +58,27 @@ def main(library_info_path,
          dt_radius_scale=0.06, 
          polyfit_calibration_dict=None, 
          indices=None):
-""" Reads through .mzML file and extracts subtensors whose dimensions are defined in library_info.csv, optionally saves individual tensors or returns all as a dictionary
+    """Reads through .mzML file and extracts subtensors whose dimensions are defined in 
+       library_info.csv, optionally saves individual tensors or returns all as a dictionary.
 
-    Parameters:
-    library_info_path (str): path/to/library_info.csv
-    mzml_gz_path (str): path/to/timepoint.mzML.gz
-    timepoints_dict (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
-    outputs (list of strings): list of filename strings for writing extracted outputs. 
-    return_flag (bool): option to return main output in python, for notebook context
-    low_mass_margin (int): number of m/Z bins to extend the lower bound of extraction from base-peak m/Z, helps capture incompletely centered data and makes plots more readable
-    high_mass_margin (int): number of m/Z bins to extend the upper bound of extraction from (base-peak + possible mass addition by number residues), helps capture incompletely centered data and makes plots more readable
-    rt_radius (float): radius around signal center of mass to extract in LC - retention time
-    dt_radius_scale (float): scale of radius around signal center of mass to extract in IMS - drift time
-    polyfit_calibration_dict (dict): dictionary of mz-adjustment terms optionally calculated in make_library_master_list.py
-    indices (list of ints): subset of library_info indices to extract
+    Args:
+        library_info_path (str): path/to/library_info.csv
+        mzml_gz_path (str): path/to/timepoint.mzML.gz
+        timepoints_dict (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
+        outputs (list of strings): list of filename strings for writing extracted outputs. 
+        return_flag (bool): option to return main output in python, for notebook context
+        low_mass_margin (int): number of m/Z bins to extend the lower bound of extraction from base-peak m/Z, helps capture incompletely centered data and makes plots more readable
+        high_mass_margin (int): number of m/Z bins to extend the upper bound of extraction from (base-peak + possible mass addition by number residues), helps capture incompletely centered data and makes plots more readable
+        rt_radius (float): radius around signal center of mass to extract in LC - retention time
+        dt_radius_scale (float): scale of radius around signal center of mass to extract in IMS - drift time
+        polyfit_calibration_dict (dict): dictionary of mz-adjustment terms optionally calculated in make_library_master_list.py
+        indices (list of ints): subset of library_info indices to extract
 
     Returns:
-    out_dict (dict): dictionary containing every extracted tensor with library_info indices as keys
+        out_dict (dict): dictionary containing every extracted tensor with library_info indices as keys
+
     """
-
     out_dict = {}
-
     library_info = pd.read_csv(library_info_path)
     mzml = mzml_gz_path.split("/")[-1][:-3]
 

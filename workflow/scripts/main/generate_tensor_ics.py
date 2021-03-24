@@ -9,20 +9,21 @@ sys.path.append(os.getcwd() + "/workflow/scripts/auxiliary/")
 from HDX_LIMIT import TensorGenerator, limit_write
 
 def main(library_info_path, tensor_input_path, timepoints_dict, isotope_clusters_output_path=None, return_flag=False, gauss_params=(3,1)):
-""" Performs nonnegative tensor factorization to deconvolute input tensor, identifies IsotopeCluster objects, and optionally returns or writes output list of IsotopeClusters
+	"""Performs nonnegative tensor factorization to deconvolute input tensor, identifies IsotopeCluster objects, 
+	and optionally returns or writes output list of IsotopeClusters.
 
-    Parameters:
-    library_info_path (str): path/to/library_info.csv
-    tensor_input_path (str): path/to/tensor.cpickle.zlib
-    timepoints_dict (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
-    isotope_clusters_output_path (str): path/to/file for main output - list of IsotopeClusters objects
-    return_flag (bool): option to return output in python, for notebook context
-    gauss_params (tuple of ints/floats): Gaussian smoothing parameters in LC-RT and IMS-DT dimensions, (rt_sigma, dt_sigma)
+    Args:
+	    library_info_path (str): path/to/library_info.csv
+	    tensor_input_path (str): path/to/tensor.cpickle.zlib
+	    timepoints_dict (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
+	    isotope_clusters_output_path (str): path/to/file for main output - list of IsotopeClusters objects
+	    return_flag (bool): option to return output in python, for notebook context
+	    gauss_params (tuple of ints/floats): Gaussian smoothing parameters in LC-RT and IMS-DT dimensions, (rt_sigma, dt_sigma)
 
     Returns:
-    out_dict (dict): dictionary containing list of all identified IsotopeClusters from input tensor
+    	out_dict (dict): dictionary containing list of all identified IsotopeClusters from input tensor
+    
     """
-
 	out_dict = {}
 
 	# open library_info

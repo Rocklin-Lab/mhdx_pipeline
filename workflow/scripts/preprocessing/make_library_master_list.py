@@ -25,16 +25,16 @@ matplotlib.use("Agg")
 
 
 def path_to_stretch_times(path, to_stretch=0):
-""" Applies timewarp to one of the two tics represented in path, 0 to warp the undeuterated-reference to the target, and 1 for the reverse. 
+    """Applies timewarp to one of the two tics represented in path, 0 to warp the undeuterated-reference to the target, and 1 for the reverse. 
 
-    Parameters:
-    path (list): Dynamic Time Warping least-cost path between two chromatograms
-    to_stretch (int): Indicates which path is stretched to the other, in practice 0 is the undeuterated and 1 is a target timepoint.
+    Args:
+        path (list): Dynamic Time Warping least-cost path between two chromatograms
+        to_stretch (int): Indicates which path is stretched to the other, in practice 0 is the undeuterated and 1 is a target timepoint
 
     Returns:
-    out_times (list): List of stretched rt-times mapping one tic to the other
-    """
+        out_times (list): List of stretched rt-times mapping one tic to the other
 
+    """
     # Applies transformation defined by minimum-cost path from fastdtw to timeseries data
     alt = 1 if to_stretch == 0 else 0
 
@@ -47,17 +47,18 @@ def path_to_stretch_times(path, to_stretch=0):
 
 
 def pred_time(rt, stretched_times, lo_time, hi_time, n_lc_timepoints):
-""" Converts stretched LC bins to absolute LC retention-time
+    """Converts stretched LC bins to absolute LC retention-time.
 
-    Parameters:
-    rt (float): a point in LC retention-time
-    stretched_times (list): Remapped bin labels from path_to_stretch_times
-    lo_time (float): lowest scan-time of reference chromatogram
-    hi_time (float): highest scan-time of reference chromatogram
-    n_lc_timepoints (int): number of LC bins in reference chromatogram
+    Args:
+        rt (float): a point in LC retention-time
+        stretched_times (list): Remapped bin labels from path_to_stretch_times
+        lo_time (float): lowest scan-time of reference chromatogram
+        hi_time (float): highest scan-time of reference chromatogram
+        n_lc_timepoints (int): number of LC bins in reference chromatogram
 
     Returns:
-    (float): warped point in LC-RT
+        (float): warped point in LC-RT
+
     """
     time = int(
         ((rt - lo_time) / (hi_time - lo_time)) * n_lc_timepoints
@@ -66,15 +67,16 @@ def pred_time(rt, stretched_times, lo_time, hi_time, n_lc_timepoints):
 
 
 def rt_cluster(df, name_dict, key, rt_group_cutoff):
-""" Groups and filters identified charged-species by rt-distance
+    """Groups and filters identified charged-species by rt-distance.
 
     Parameters:
-    df (Pandas DataFrame): df containing all identified charged species
-    name_dict (dict): dictionary to be filled with rt-group-member library_info indices 
-    key (string): a single library_protein.pdb string
+        df (Pandas DataFrame): df containing all identified charged species
+        name_dict (dict): dictionary to be filled with rt-group-member library_info indices 
+        key (string): a single library_protein.pdb string
     
     Returns:
-    None
+        None
+
     """
     n_df = df.loc[df["name"] == key]
     clusters = [
@@ -95,14 +97,15 @@ def rt_cluster(df, name_dict, key, rt_group_cutoff):
 
 
 def subset_filter(clusters, n_df):
-""" Determines if any rt=cluster is a subset of any other cluster, and removes them. 
+    """Determines if any rt=cluster is a subset of any other cluster, and removes them. 
 
-    Parameters:
-    clusters (list of lists of ints): List of all clusters
-    n_df (Pandas DataFrame): DF of all charged species identified as one library protein 
+    Args:
+        clusters (list of lists of ints): List of all clusters
+        n_df (Pandas DataFrame): DF of all charged species identified as one library protein 
 
     Returns:
-    final (list of list of ints): mutated input list with all subset rt-groups removed
+        final (list of list of ints): mutated input list with all subset rt-groups removed
+    
     """
     sets = [set(cluster) for cluster in clusters]
     final = []
@@ -131,15 +134,16 @@ def subset_filter(clusters, n_df):
 
 
 def intersection_filter(final, intersections, n_df):
-""" Resolve remianing intersections of subset-filtered rt-clusters
+    """Resolve remianing intersections of subset-filtered rt-clusters.
 
-    Parameters:
-    final (list of list  of ints): output of subset_filter, list of lists of all rt-cluster indices
-    intersections (list of ints): list of indices in more than one rt-group
-    n_df (Pandas DataFrame): DF of all charged species identified as one library protein
+    Args:
+        final (list of list  of ints): output of subset_filter, list of lists of all rt-cluster indices
+        intersections (list of ints): list of indices in more than one rt-group
+        n_df (Pandas DataFrame): DF of all charged species identified as one library protein
 
     Returns:
-    final_copy (list of list of ints): remapped rt-groups with no intersections
+        final_copy (list of list of ints): remapped rt-groups with no intersections
+    
     """
     final_copy = copy.deepcopy(final)
     [
@@ -162,15 +166,16 @@ def intersection_filter(final, intersections, n_df):
 
 
 def set_global_scan_bounds(mzml):
-""" Search .mzML for LC-dimension extrema and magnitude
+    """Search .mzML for LC-dimension extrema and magnitude.
 
-    Parameters:
-    mzml (string): path/to/undeuterated.mzML
+    Args:
+        mzml (string): path/to/undeuterated.mzML
 
     Returns:
-    lo_time (float): lowest scan-time of reference chromatogram
-    hi_time (float): highest scan-time of reference chromatogram
-    n_lc_timepoints (int): number of LC bins in reference chromatogram
+        lo_time (float): lowest scan-time of reference chromatogram
+        hi_time (float): highest scan-time of reference chromatogram
+        n_lc_timepoints (int): number of LC bins in reference chromatogram
+    
     """
     run = pymzml.run.Reader(mzml)
     n_scans = run.get_spectrum_count()
@@ -195,42 +200,45 @@ def set_global_scan_bounds(mzml):
 
 
 def gen_warp_path_for_timepoints(reference_tic, target_tic):
-""" Applies the fast dynamic time-warping algorithm to two provided tics, returns a minimum-cost path to use as a stretching function.
+    """Applies the fast dynamic time-warping algorithm to two provided tics, returns a minimum-cost path to use as a stretching function.
 
-    Parameters:
-    reference_tic (np_array): Undeuterated .tic to be used as reference in warping
-    target_tic (np_array): some other .tic to warp to the reference
+    Args:
+        reference_tic (np_array): Undeuterated .tic to be used as reference in warping
+        target_tic (np_array): some other .tic to warp to the reference
 
     Returns:
-    distance (float): length of warped path
-    path (list): a mapping between the indices of the two tics
+        distance (float): length of warped path
+        path (list): a mapping between the indices of the two tics
+    
     """
     distance, path = fastdtw(reference_tic.T, target_tic.T, dist=euclidean, radius=20)
     return distance, path
 
 
 def norm_tic(tic):
-""" Normalize tic magnitude to 1
+    """Normalize tic magnitude to 1.
 
-    Parameters:
-    tic (np_array): Chromatogram of Total Ionic Current of an LC-MS run
+    Args:
+        tic (np_array): Chromatogram of Total Ionic Current of an LC-MS run
 
     Returns:
-    tic (np_array): normalized tic
+        tic (np_array): normalized tic
+
     """
     tic = tic / (np.sum(tic, axis=0) + 1)
     return tic
 
 
 def gen_stretched_times(tic_file_list, plot_path=None):
-""" Generate all warp-paths between the undeuterated reference .tic and all others .tic files.
+    """Generate all warp-paths between the undeuterated reference .tic and all others .tic files.
 
-    Parameters:
-    tic_file_list (list of strings): list of paths/to/file.tics where 0th index is reference .tic
+    Args:
+        tic_file_list (list of strings): list of paths/to/file.tics where 0th index is reference .tic
 
     Returns:
-    stretched_ts1_times (nested list): all rt-labels stretching the unduterated to later timepoints
-    stretched_ts2_times (nested list): all rt-labels stretdhing later timepoints to the undeuterated
+        stretched_ts1_times (nested list): all rt-labels stretching the unduterated to later timepoints
+        stretched_ts2_times (nested list): all rt-labels stretching later timepoints to the undeuterated
+    
     """
     ref_tic = np.loadtxt(tic_file_list[0])
     ref_tic_norm = norm_tic(ref_tic)
@@ -270,21 +278,22 @@ def gen_stretched_times(tic_file_list, plot_path=None):
 ##########################################################
 
 def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, return_flag=None, outpath=None, rt_group_cutoff=0.2, plot=None):
-""" Generates the master list of library_proteins identified in MS data: library_info.csv
+    """Generates the master list of library_proteins identified in MS data: library_info.csv.
 
-    Parameters:
-    names_and_seqs_path (string): path/to/names_and_seqs.csv
-    undeut_mzml (string): path/to/undeuterated.mzML
-    intermediates (list of strings): list of paths to imtbx intermediate files
-    tics (list of strings): list of paths to all .tic files
-    timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
-    return_flag (any non-None type): option to return main output in python, for notebook context
-    outpath (string): path/to/file for main output library_info.csv
-    rt_group_cutoff (float): radius in LC-RT to consider signals a part of an rt-cluster
-    plot (any non-None type): path/to/file for stretched time plots
+    Args:
+        names_and_seqs_path (string): path/to/names_and_seqs.csv
+        undeut_mzml (string): path/to/undeuterated.mzML
+        intermediates (list of strings): list of paths to imtbx intermediate files
+        tics (list of strings): list of paths to all .tic files
+        timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
+        return_flag (any non-None type): option to return main output in python, for notebook context
+        outpath (string): path/to/file for main output library_info.csv
+        rt_group_cutoff (float): radius in LC-RT to consider signals a part of an rt-cluster
+        plot (any non-None type): path/to/file for stretched time plots
 
     Returns:
-    library_info (dict): Outputs library_info as dict
+        library_info (dict): Outputs library_info as dict
+    
     """
     name_and_seq = pd.read_csv(names_and_seqs_path) 
 

@@ -10,19 +10,18 @@ sys.path.append(os.getcwd() + "/workflow/scripts/auxiliary/")
 from HDX_LIMIT import limit_read, limit_write, PathOptimizer
 
 def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name, timepoints):
-""" Generate explicit PathOptimizer input paths for one rt_group
+    """Generate explicit PathOptimizer input paths for one rt_group.
 
-    Parameters:
-    library_info_path (str): path/to/library_info.csv
-    input_directory_path (str): /path/to/dir/ to prepend to each outpath
-    rt_group_name (str): value from 'name' column of library_info
-    timepoints (dict): dictionary containing list of hdx timepoints in seconds, where each timepoint is also an integer key corresponding to that timepoint's .mzML filenames
+    Args:
+        library_info_path (str): path/to/library_info.csv
+        input_directory_path (str): /path/to/dir/ to prepend to each outpath
+        rt_group_name (str): value from 'name' column of library_info
+        timepoints (dict): dictionary containing list of hdx timepoints in seconds, where each timepoint is also an integer key corresponding to that timepoint's .mzML filenames
 
     Returns:
-    name_inputs (list of strings): flat list of all IsotopeCluster inputs to PathOptimizer
+        name_inputs (list of strings): flat list of all IsotopeCluster inputs to PathOptimizer
 
     """
-
     name_inputs = []
     library_info = pd.read_csv(library_info_path)
     idxs = library_info.index[library_info["name"] == name].tolist()
@@ -51,27 +50,27 @@ def optimize_paths_inputs(library_info_path, input_directory_path, rt_group_name
     return name_inputs
 
 def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=False, rt_group_name=None, old_data_dir=None, html_plot_out_path=None, winner_out_path=None, runner_out_path=None, undeut_ground_out_path=None, winner_scores_out_path=None, rtdt_com_cvs_out_path=None):
-""" Uses PathOptimzier class to generate best-estimate of hdx-timeseries of IsotopeClusters for a given library protein
+    """Uses PathOptimzier class to generate best-estimate hdx-timeseries of IsotopeClusters for a given library protein.
 
-    Parameters:
-    library_info_path (str): path/to/library_info.csv
-    all_tensor_input_paths (list of strings): list of paths/to/file for all lists of IsotopeClusters from generate_tensor_ics.py
-    timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
-    return_flag: option to return main output in python, for notebook context
-    rt_group_name (str): library_info['name'] value
-    old_data_dir (str): path/to/dir to provide comparison to GJR formatted results
-    html_plot_out_path (str): path/to/file.html for interactive bokeh plot
-    winner_out_path (str): path/to/file for winning path
-    runner_out_path (str): path/to/file for top n_runners paths
-    undeut_ground_out_path (str): path/to/file for undeuterated ground-truth IsotopeClusters
-    winner_scores_out_path (str): path/to/file for winner path score values
-    rtdt_com_cvs_out_path (str): path/to/file for rt and dt correlation values
+    Args:
+        library_info_path (str): path/to/library_info.csv
+        all_tensor_input_paths (list of strings): list of paths/to/files.cpickle.zlib for all lists of IsotopeClusters from generate_tensor_ics.py
+        timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
+        return_flag: option to return main output in python, for notebook context
+        rt_group_name (str): library_info['name'] value
+        old_data_dir (str): path/to/dir to provide comparison to GJR formatted results
+        html_plot_out_path (str): path/to/file.html for interactive bokeh plot
+        winner_out_path (str): path/to/file for winning path
+        runner_out_path (str): path/to/file for top n_runners paths
+        undeut_ground_out_path (str): path/to/file for undeuterated ground-truth IsotopeClusters
+        winner_scores_out_path (str): path/to/file for winner path score values
+        rtdt_com_cvs_out_path (str): path/to/file for rt and dt correlation values
 
     Returns:
-    out_dict (dict): dictionary containing 'path_optimizer': PathOptimizer instance
-    """
+        out_dict (dict): dictionary containing 'path_optimizer' key, and corresponding PathOptimizer object 
 
-   out_dict = {}
+    """
+    out_dict = {}
 
     # open library_info
     library_info = pd.read_csv(library_info_path)
@@ -102,7 +101,7 @@ def main(library_info_path, all_tensor_input_paths, timepoints, return_flag=Fals
     
     p1.optimize_paths()
     
-    # Save by options
+    # write outputs
     if html_plot_out_path is not None:
         p1.bokeh_plot(html_plot_out_path)
     if winner_out_path is not None:

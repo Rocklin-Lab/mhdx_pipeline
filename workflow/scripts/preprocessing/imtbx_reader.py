@@ -33,20 +33,17 @@ import pickle as pk
 
 matplotlib.use("Agg")
 
-import ipdb
-
-
 ### DEFINITIONS ###
-
-
+#TODO this references an unpassed variable, bad style - fix
 def plotcluster(i=0):
-""" Summary or Description of the Function
+    """Plots rt and ims values of lines of a cluster
 
-    Parameters:
-    argument1 (int): Description of arg1
+    Args:
+        i (int): index of cluster to plot
 
     Returns:
-    int:Returning value
+        None
+
     """
     plt.figure(figsize=(16, 3))
     plt.subplot(141)
@@ -74,14 +71,16 @@ def plotcluster(i=0):
     plt.savefig("../../plots/" + "_RT_cluster_plots.png")
 
 
-def kde_plot(sum_df, outpath):
-""" Summary or Description of the Function
+def kde_plot(sum_df, out_path):
+    """Plots Kernel Density Estimate of ppm error of all charged species in sum_df
 
-    Parameters:
-    argument1 (int): Description of arg1
+    Args:
+        sum_df (Pandas DataFrame): running DF of all identified charged species being considered
+        out_path (string): path/to/ppm_kde_plot.png 
 
     Returns:
-    int:Returning value
+        None
+
     """
     mykde = gaussian_kde(sum_df["ppm"])
     xs = np.linspace(-50, 50, 10000)
@@ -90,18 +89,24 @@ def kde_plot(sum_df, outpath):
     plt.xlim([-50, 50])
     plt.grid()
     plt.plot(xs, mykde(xs))
-    plt.savefig(outpath)
+    plt.savefig(out_path)
 
 
 # mix doesn't serve any purpose in the pipeline TODO
+# Mutates out-of-scope object, bad style - fix TODO
 def getnear(x, charge=None, mix=None, ppm=50):
-""" Summary or Description of the Function
+    """Creates sub-DataFrame of sumdf near a given mass
 
-    Parameters:
-    argument1 (int): Description of arg1
+    Args:
+        x (float): molecular weight of a library protein
+        charge (int): charge-state filter for search
+        miz (int): DEPRECATED
+        ppm (float or int): Parts-per-million error-radius around base-peak m/z to search
+
 
     Returns:
-    int:Returning value
+        tempdf (Pandas DataFrame): DF of charged species near the given mass
+
     """
     subdf = allseq
     if mix != None:
@@ -148,13 +153,17 @@ def getnear(x, charge=None, mix=None, ppm=50):
 def cluster_df_hq_signals(
     testq, ppm=50, intensity_threshold=1e4, cluster_correlation=0.99, adjusted=False
 ):
-""" Cluster high quality mz signals based on intensities and cluster correlation
-    :param testq: dataframe from imtbx
-    :param ppm: ppm error to include for mz signals
-    :param intensity_threshold: minimum intensity value required for mz signals
-    :param cluster_correlation: cluster correlation from imtbx. higher correlation means better isotopic distribution
-    :param adjusted: Boolean to indicate if mz signals have already been corrected
-    :return: clustered mz signal
+    """Cluster high quality mz signals based on intensities and cluster correlation, applies cluster lables to the input DF.
+
+    Args:
+        testq (Pandas DataFrame): dataframe from imtbx
+        ppm (float): ppm error to include for mz signals
+        intensity_threshold (float): minimum intensity value required for mz signals
+        cluster_correlation (float): cluster correlation from imtbx. higher correlation means better isotopic distribution
+        adjusted (bool): Boolean to indicate if mz signals have already been corrected
+
+    Returns:
+        sum_df (Pandas DataFrame): testq with cluster lables applied 
     """
 
     hq_dataframe = testq[
@@ -225,22 +234,37 @@ def cluster_df_hq_signals(
 
 
 def calc_mz_ppm_error(obs_mz, thr_mz):
-""" Calculate mz ppm error
-    :param obs_mz: observed mz values from the experiment
-    :param thr_mz: theoreteical or expected mz values based on chemical composition
-    :return: ppm error
+    """Calculate mz ppm error. 
+
+    Args:
+        obs_mz (float): observed mz value for a signal
+        thr_mz (float): theoreteical or expected mz value based on chemical composition
+
+    Returns:
+        ppm_err (float): ppm error between observed and theoretical m/Z
+
     """
     ppm_err = 1e6 * (obs_mz - thr_mz) / thr_mz
     return ppm_err
 
 
 def gen_calib_dict(polyfit_bool=False, **args):
-""" Generate calibration dictionary with keywords.
-    :param polyfit_bool: True or False
-    :param args: arguements
-    :return: calibration dictionary
-    """
+    """Generate calibration dictionary with keywords.
 
+    Args:
+        polyfit_bool (bool): flag to perform polyfit calibration
+        args (key-value pairs): each additional argument creates key-value pair in the output dict, usually includes: 
+            thr_mz,
+            obs_mz,
+            polyfit_coeffs,
+            polyfit_deg
+            obs_mz_corr,
+            ppm_error_before_corr,
+            ppm_error_after_corr
+
+    calib_dict (dict): calibration dictionary containing relevant calibration parameters and outputs
+
+    """
     calib_dict = dict()
 
     calib_dict["polyfit_bool"] = polyfit_bool
@@ -253,18 +277,20 @@ def gen_calib_dict(polyfit_bool=False, **args):
 
 
 def gen_mz_ppm_error_calib_polyfit(obs_mz, thr_mz, polyfit_deg=1):
-""" Use polyfit to generate a function to correlate observed and theoretical mz values. The function is used as calibration
-    for the mz values. User can specify the degree of the polyfit
-    :param obs_mz: observed mz values
-    :param thr_mz: theoretical mz values
-    :param polyfit_deg: degree for polynomial fit
-    :return: dictionary containing the dataset used for calibration, polyfit, and ppm error before and after calibration
+    """Use polyfit to generate a function to correlate observed and theoretical mz values. The function is used as calibration
+    for the mz values. User can specify the degree of the polyfit.
+        
+    Args:
+        obs_mz (list): observed mz values
+        thr_mz (list): theoretical mz values
+        polyfit_deg (int): degree for polynomial fit
+    
+    Returns:
+        cal_dict (dict): dictionary containing the dataset used for calibration, polyfit, and ppm error before and after calibration
+
     """
-
     polyfit_coeffs = np.polyfit(x=obs_mz, y=thr_mz, deg=polyfit_deg)
-
     obs_mz_corr = apply_polyfit_cal_mz(polyfit_coeffs, obs_mz)
-
     ppm_error_before_corr = calc_mz_ppm_error(obs_mz, thr_mz)
     ppm_error_after_corr = calc_mz_ppm_error(obs_mz_corr, thr_mz)
 
@@ -283,10 +309,14 @@ def gen_mz_ppm_error_calib_polyfit(obs_mz, thr_mz, polyfit_deg=1):
 
 
 def apply_polyfit_cal_mz(polyfit_coeffs, mz):
-""" Apply polyfit coeff to transform the mz values
-    :param polyfit_coeffs: polyfit coefficients
-    :param mz: mz values
-    :return: transformed mz values
+    """Apply polyfit coeff to transform the mz values.
+
+    Args:
+        polyfit_coeffs (list): polyfit coefficients
+        mz (Numpy ndarray): mz values
+    Returns:
+        mz_corr (Numpy ndarray): transformed mz values
+
     """
     mz_corr = np.polyval(polyfit_coeffs, mz)
     return mz_corr
@@ -300,14 +330,19 @@ def gen_mz_error_calib_output(
     int_tol=1e4,
     cluster_corr_tol=0.99,
 ):
-""" Generate calibration using the dataframe from imtbx
-    :param testq: dataframe from imtbx
-    :param calib_pk_fpath: pickle filepath to save calibration information
-    :param polyfit_degree: polyfit degree
-    :param ppm_tol: ppm tolerance for selecting mz signals for calibration
-    :param int_tol: intensity tolerance for selecting mz signals for calibration
-    :param cluster_corr_tol: cluster correlation tolerance for selecting mz signals for calibration
-    :return: calibration dictionary.
+    """Generate calibration using the dataframe from imtbx.
+
+    Args:
+        testq: dataframe from imtbx
+        calib_pk_fpath: pickle filepath to save calibration information
+        polyfit_degree: polyfit degree
+        ppm_tol: ppm tolerance for selecting mz signals for calibration
+        int_tol: intensity tolerance for selecting mz signals for calibration
+        cluster_corr_tol: cluster correlation tolerance for selecting mz signals for calibration
+
+    Returns:
+        calib_dict (dict): dictionary containing the dataset used for calibration, polyfit, and ppm error before and after calibration
+    
     """
 
     # generate high quality cluster mz signals
@@ -331,20 +366,33 @@ def gen_mz_error_calib_output(
     return calib_dict
 
 
-def save_pickle_object(object, fpath):
-""" Summary or Description of the Function
+def save_pickle_object(obj, fpath):
+    """Wrapper function to output an object as a pickle.
 
-    Parameters:
-    argument1 (int): Description of arg1
+    Args:
+        obj (Any Python object): Any python object to pickle
+        fpath (string): path/to/output.pickle 
 
     Returns:
-    int:Returning value
+        None
+
     """
     with open(fpath, "wb") as outfile:
-        pk.dump(object, outfile)
+        pk.dump(obj, outfile)
 
 
 def cluster_df(testq, ppm=50, adjusted=False):
+    """Determine clustered charged-species signals and label with their cluster index.
+
+    Args:
+        testq (Pandas DataFrame): DF containing getnear() output
+        ppm (int or float): parts-per-million error cutoff to consider a signal 
+        adjusted (bool): flag to alert func to use updated m/Z values
+
+    Returns:
+        sum_df (Pandas DataFrame): testq with cluster index labels added
+
+    """
     sum_data = []
     for c in range(0, max(testq["cluster"]) + 1):
         cluster_df = testq[testq["cluster"] == c]
@@ -399,9 +447,17 @@ def cluster_df(testq, ppm=50, adjusted=False):
 
 
 def find_offset(sum_df):
-""" Returns suspected systemic ppm error and width of poi peak of run data from sum_df.
-    Assumes protein of interest within +/- 50ppm of 0ppm.
-    Selects closest peak to 0 if sufficiently prominent.
+    """Returns suspected systemic ppm error and width of poi peak of run data from sum_df.
+    
+    Assumes protein of interest within +/- 50ppm of 0ppm, selects closest peak to 0 if sufficiently prominent.
+
+    Args:
+        sum_df (Pandas DataFrame): DF containing all charged species being considered
+
+    Returns:
+        offset (float): simple linear adjustment which best corrects centering of ppm gaussian around 0
+        offset_peak_width (float): full-width-half-max of the ppm distribution
+
     """
     # Maybe make this save the distplot too.
     ppm_dist = sns.distplot(sum_df["ppm"].values).get_lines()[0].get_data()
@@ -441,13 +497,14 @@ def find_offset(sum_df):
 
 
 def find_rt_duplicates(sum_df):
-""" Summary or Description of the Function
+    """Test for duplicate identifications by looking for signals with the same charge.
 
     Parameters:
-    argument1 (int): Description of arg1
+        sum_df (Pandas DataFrame): DF containing all charged species being considered
 
     Returns:
-    int:Returning value
+        (tuple): True or False for check if duplicates exist, followed by any duplicate indices
+
     """
     proteins = []
     for name in set(sum_df["name"].values):
@@ -498,14 +555,18 @@ def find_rt_duplicates(sum_df):
     return (len(hits) == 0, hits)
 
 
-def apply_cluster_weights(dataframe, dt_weight, rt_weight, mz_weight):
-""" Summary or Description of the Function
+def apply_cluster_weights(dataframe, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006):
+    """Applies heuristic weights to raw physical values for cluster scoring. 
 
-    Parameters:
-    argument1 (int): Description of arg1
+    Args:
+        dataframe (Pandas DataFrame): DF of charged species to reweight 
+        dt_weight (float): divisor for dt
+        rt_weight (float): divisor for rt
+        mz_weight (float): divisor for mz
 
     Returns:
-    int:Returning value
+        None
+    
     """
     # TODO This is not great style, this should accept 3 lists and 3 weights and return 3 new lists
     # applies scoring weights to clustering columns in-place, doesn't return
@@ -515,16 +576,26 @@ def apply_cluster_weights(dataframe, dt_weight, rt_weight, mz_weight):
 
 
 ### SCRIPT ###
-def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, plot=None, original_mz_kde_path=None, adjusted_mz_kde_path=None, calibration_outpath=None, polyfit_deg=None, ppm_tolerance=None, intensity_tolerance=None, cluster_corr_tolerance=None, ppm_refilter=None):
-""" Summary or Description of the Function
+def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, original_mz_kde_path=None, adjusted_mz_kde_path=None, calibration_outpath=None, polyfit_deg=1, ppm_tolerance=50, intensity_tolerance=10000, cluster_corr_tolerance=0.99, ppm_refilter=10):
+    """Reads IMTBX file and clusters identified signals with close physical values. 
 
-    Parameters:
-    argument1 (int): Description of arg1
+    Args:
+        isotopes_path (string): path/to/.peaks.isotopes file from undeuterated mzml
+        names_and_seqs_path (string): path/to/.csv with names and sequences of library proteins
+        out_path (string): path/to/_intermediate.csv main output file
+        return_flag (non-None): option to return main output in Python, for notebook context
+        original_mz_kde_path (string): /path/to/file to save original mz-error kde plots
+        adjusted_mz_kde_path (string): /path/to/file to save adjusted mz-error kde plots
+        calibration_outpath (string): /path/to/file for polyfit-calibration output, determines use of polyfit calibration
+        polyfit_deg (int): degree of polynomial curve to fit to mz data for non-linear correction
+        ppm_tolerance (float): ppm error tolerance of observed to expected mz, defualt 50 ppm
+        intensity_tolerance (float): minimum intensity to consider cluster, default 10E4
+        cluster_corr_tolerance (float): minimum correlation between isotope clusters to consider them redundant, default 0.99
+        ppm_refilter (float): ppm error tolerance for post-mz-adjustment clusters, default 10 ppm
 
     Returns:
-    int:Returning value
+        sum_df (Pandas DataFrame): DF of all charges passing filtration, to be combined with other undeuterated outputs in make_library_master_list.py
     """
-
     # read IMTBX output file
     with open(isotopes_path) as file:
         lines = [x.strip() for x in file.readlines()]
@@ -553,7 +624,7 @@ def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, pl
     allseq["len"] = [len(seq) for seq in allseq["sequence"]]
 
     # cluster IMTBX lines corresponding to designed sequence estimates, hardcode values are heuristic weights for clustering, all weights are inverse
-    apply_cluster_weights(testq, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006)
+    apply_cluster_weights(testq)
 
     # create dbscan object, fit, and apply cluster ids to testq lines
     db = DBSCAN()

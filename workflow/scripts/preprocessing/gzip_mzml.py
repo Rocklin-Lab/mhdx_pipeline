@@ -6,9 +6,15 @@ from pymzml.run import Reader
 
 
 def main(mzml_path, out_path=None):
-    """
-    Create an indexed, gzipped mzML.gz file from a .mzML
-    Usage: python3 gzip_mzml.py <path/to/mzml> <path/to/output>
+    """Create an indexed, gzipped mzML.gz file from a .mzML file.
+    
+    Args:
+        mzml_path (string): path/to/file.mzML to be gzipped 
+        out_path (string): path/to/file.mzML.gz - the gzipped .mzML output path
+
+    Returns:
+        None
+        
     """
     with open(args.inpath) as fin:
         fin.seek(0, 2)

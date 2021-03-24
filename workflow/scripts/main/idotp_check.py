@@ -22,16 +22,21 @@ sys.path.append(os.getcwd()+"/workflow/scripts/auxiliary/")
 #the following sys path is for local debug
 # sys.path.append('../auxiliary/')
 
-import LC_IM_MS_TensorAnalysis as hx
+from LC_IM_MS_TensorAnalysis import TensorGenerator
 import molmass
 
 
 #todo: later to use this function from hxtools(suggie version)
 def calculate_theoretical_isotope_dist_from_sequence(sequence, n_isotopes=None):
-""" Calculate theoretical isotope distribtuion from a given one letter sequence of protein chain
-    :param sequence: sequence in one letter code
-    :param n_isotopes: number of isotopes to include. If none, includes all
-    :return: isotope distribution
+    """Calculate theoretical isotope distribtuion from the given one-letter sequence of a library protein.
+
+    Args:
+        sequence (string): sequence in one letter code
+        n_isotopes (int): number of isotopes to include. If none, includes all
+
+    Return:
+        isotope_dist (numpy ndarray): resulting theoretical isotope distribution
+
     """
     seq_formula = molmass.Formula(sequence)
     isotope_dist = np.array([x[1] for x in seq_formula.spectrum().values()])
@@ -46,10 +51,14 @@ def calculate_theoretical_isotope_dist_from_sequence(sequence, n_isotopes=None):
 
 #todo: later to use this function from hxtools (suggie version)
 def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array, n_isotopes=None):
-""" Calculate the isotope distribution from the integrated mz intensitities
-    :param integrated_mz_values: array of integrated mz intensitites
-    :param n_isotopes: number of isotopes to include. If none, includes all
-    :return: isotope distribution
+    """Calculate the isotope distribution from the integrated mz intensitities.
+    
+    Args: 
+        integrated_mz_values (Numpy ndarray): array of integrated mz intensitites
+        n_isotopes (int): number of isotopes to include. If none, includes all
+    Returns: 
+        isotope_dist (Numpy ndarray): isotope distribution with magnitude normalized to 1
+    
     """
     isotope_dist = integrated_mz_array/max(integrated_mz_array)
     if n_isotopes:
@@ -59,10 +68,14 @@ def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array, n_i
 
 #todo: reminder! keep this function in this script rather than coming from hxtools
 def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
-""" Calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array
-    :param sequence: sequence of the protein
-    :param undeut_integrated_mz_array: integrated mz array
-    :return: dot product
+    """Calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array.
+    
+    Args:
+        sequence (string): single-letter sequence of the library protein-of-interest
+        undeut_integrated_mz_array (Numpy ndarray): observed integrated mz array from an undeuterated .mzML
+    Returns:
+        dot_product (float): result of dot product between theoretical and observed integrated-m/Z, from [0-1]
+
     """
     theo_isotope_dist = calculate_theoretical_isotope_dist_from_sequence(sequence=sequence)
     emp_isotope_dist = calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array=undeut_integrated_mz_array)
@@ -72,22 +85,27 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
 
 
 def gen_tensors_factorize(library_info_df, undeut_tensor_path_list, timepoint_index=0, n_factors=15, gauss_params=(3, 1)):
-""" Instantiates TensorGenerator and factorizes
-    :param library_info_df: library info data france
-    :param undeut_tensor_path_list: undeuterated tensor file path list
-    :param timepoint_index: time point index
-    :param n_factors: number of factors for factorization
-    :param factor_gauss_param: gaussian paramters for factorization
-    :return: list of isotope_cluster and data_tensor
-    """
+    """Instantiates TensorGenerator and factorizes.
+    
+    Args:
+        library_info_df: library info data france
+        undeut_tensor_path_list: undeuterated tensor file path list
+        timepoint_index: time point index
+        n_factors: number of factors for factorization
+        factor_gauss_param: gaussian paramters for factorization
 
+    Return:
+        undeut_ics_list (list): list of all IsotopeCluster objects from factorized tensors
+        data_tensor_list (list): list of all DataTensor objects made from path_list
+
+    """
     data_tensor_list = []
     undeut_ics_list = []
 
     for num, undeut_tensor_path in enumerate(undeut_tensor_path_list):
 
         # generate new data tensor
-        new_data_tensor = hx.TensorGenerator(filename=undeut_tensor_path,
+        new_data_tensor = TensorGenerator(filename=undeut_tensor_path,
                                           library_info=library_info_df,
                                           timepoint_index=timepoint_index)
 
@@ -108,14 +126,14 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
 """ Calculate normalized dot product [0-1] of undeuterated IsotopeCluster.baseline_subtracted_int_mz to sequence determined theoretical distribution
     
     Parameters:
-    sequence (str): sequence of the protein
-    undeut_isotope_clusters : list of factorized IsotopeCluster objects 
+    sequence (str): sequence of the protein-of-interest in single-letter format
+    undeut_isotope_clusters (list): list of IsotopeCluster objects to be compared against reference 
 
     Returns:
     dot_product_list (list): list of dot product results, index matched to integrated_mz_list
     integrated_mz_list (list): list of integrated m/Z arrays, index matched to dot_product_list
-    """
 
+    """
     dot_product_list = []
     integrated_mz_list = []
 
@@ -129,15 +147,22 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
 
 
 def main(library_info_path, undeut_tensor_path_list, output_path=None, return_flag=None, n_factors=15, factor_gauss_param=(3,1)):
-""" Compares each undeuterated charge state of an rt-group to its theoretical distribution to determine signal quality
-    :param library_info_path: library info file path
-    :param undeut_tensor_path_list: undeut tensor filepath list
-    :param output_path: idotp check output file path
-    :param n_factors: high number of factors to start factorization with
-    :param factor_gauss_param: gaussian smoothing parameters in tuple (rt-sigma, dt-sigma), default (3,1)
-    :return: iso_cluster_list, data_tensor_list, idotp_list, integrated_mz_list (for debugging / checking)
-    """
+    """Compares each undeuterated charge state of an rt-group to its theoretical distribution to determine signal quality.
 
+    Args:
+        library_info_path (string): path/to/library_info.csv
+        undeut_tensor_path_list (list of strings): list of paths/to/files.cpickle.zlib
+        output_path (string): path/to/output.csv
+        n_factors (int): high number of factors to start factorization with
+        factor_gauss_param (tuple of floats): gaussian smoothing parameters in tuple (rt-sigma, dt-sigma), default (3,1)
+    
+    Returns:
+        iso_cluster_list (list): list of IsotopeCluster objects produced from factorized input tensors
+        data_tensor_list (list): list of DataTensor objects produced from input tensor paths
+        idotp_list (list): list of resulting idotps for charge states
+        integrated_mz_list (list): list containing integrated mzs of IsotopeClusters
+
+    """
     lib_idx = int(undeut_tensor_path_list[0].split('/')[-1].split('_')[0])
     library_info = pd.read_csv(library_info_path)
     my_seq = library_info.iloc[lib_idx]['sequence']
@@ -154,7 +179,7 @@ def main(library_info_path, undeut_tensor_path_list, output_path=None, return_fl
         pd.DataFrame({'idotp': max(idotp_list)}, index=[0]).to_csv(output_path)
 
     if return_flag is not None:
-        return {"":iso_clusters_list, "":data_tensor_list, "":idotp_list, "":integrated_mz_list}
+        return {"iso_clusters_list":iso_clusters_list, "data_tensor_list":data_tensor_list, "idotp_list":idotp_list, "integrated_mz_list":integrated_mz_list}
 
 
 if __name__ == '__main__':

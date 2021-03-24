@@ -4,16 +4,16 @@ import pandas as pd
 def main(all_idotp_csv_inputs, outpath=None, return_flag=False, idotp_cutoff=0.95):
 """ Reads all rt-group idotp csvs and returns or saves a list of indices with idotp > idotp_cutoff
 
-    Parameters:
-    all_idotp_csv_inputs (list of strings): list of all input IsotopeCluster-list filepaths
-    outpath (str): path/to/file for main output.cpickle.zlib
-    return_flag (bool): option to return main output in python, for notebook context
-    idotp_cutoff (float): inclusive lower-bound on idotp [0,1] to be considered for evaluation, default=0.95
+    Args:
+	    all_idotp_csv_inputs (list of strings): list of all input IsotopeCluster-list filepaths
+	    outpath (str): path/to/file for main output.cpickle.zlib
+	    return_flag (bool): option to return main output in python, for notebook context
+	    idotp_cutoff (float): inclusive lower-bound on idotp [0,1] to be considered for evaluation, default=0.95
 
     Returns:
-    out_dict (dict) = dictionary containing 'filter_passing_indices'
-    """
+    	out_dict (dict) = dictionary containing 'filter_passing_indices'
 
+    """
 	out_dict = {}
 
 	filter_passing_indices = []
