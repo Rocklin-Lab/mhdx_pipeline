@@ -111,8 +111,11 @@ rule optimize_paths:
         "resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib",
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
-    shell:
-        "python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} --all_tensor_input_paths {input[1]} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]}"
+    run:
+        inputs = [input[i] for i in range(1, len(input))]
+        shell('''
+            "python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} --all_tensor_input_paths {inputs} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]}"
+        ''')
 
 """
 #REVIEW FUNCTIONALITY
