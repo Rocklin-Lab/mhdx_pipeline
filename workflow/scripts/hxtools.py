@@ -22,7 +22,7 @@ from sklearn.metrics import mean_squared_error
 from scipy.optimize import fmin_powell, fmin_bfgs
 
 molmass_spec = importlib.util.spec_from_file_location(
-    "molmass.py", "workflow/scripts/auxiliary/molmass.py"
+    "molmass.py", "workflow/scripts/molmass.py"
 )
 ### the following is for local debug
 # molmass_spec = importlib.util.spec_from_file_location(

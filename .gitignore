@@ -15,6 +15,7 @@ analysis/*
 !notebooks/**
 !workflow
 !workflow/**
+!workflow/*/**
 !.gitignore
 !.gitattributes
 !.editorconfig

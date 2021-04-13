@@ -99,7 +99,7 @@ from functools import reduce
 import importlib.util
 
 elements_spec = importlib.util.spec_from_file_location(
-    "elements.py", "workflow/scripts/auxiliary/elements.py"
+    "elements.py", "workflow/scripts/elements.py"
 )
 ####the following is for local debug
 # elements_spec = importlib.util.spec_from_file_location(

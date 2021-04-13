@@ -7,12 +7,8 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
-if config["idotp_filter"] == 1:
-    library_info_fn = "resources/library_info/filtered_library_info.csv"
-    library_info = pd.read_csv("resources/library_info/filtered_library_info.csv")
-else:
-    library_info_fn = "resources/library_info/library_info.csv"
-    library_info = pd.read_csv("resources/library_info/library_info.csv")
+library_info_fn = "resources/library_info/library_info.csv"
+library_info = pd.read_csv("resources/library_info/library_info.csv")
 
 proc = glob.glob("resources/ic_time_series/*.zlib")
 # names = [fn.split('_')[:-3] for fn in proc]
@@ -22,7 +18,8 @@ names = list(set(library_info["name"].values))
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
     input:
-        expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
+        expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name=names)
+        #expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
 
 
 def optimize_paths_inputs(name, library_info):
@@ -68,8 +65,9 @@ if config['polyfit_calibration']:
             ),
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
-        script:
-            "scripts/main/extract_tensors.py"
+        
+        shell:
+            "python workflow/scripts/HDX_LIMIT/pipeline/extract_tensors.py {input[0]} {input[1]} --polyfit_calibration_dict {input[2]} --outputs {output}"
 else:
     rule extract_tensors:
         input:
@@ -82,21 +80,22 @@ else:
             ),
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
-        script:
-            "scripts/main/extract_tensors.py"
+        shell:
+            "python workflow/scripts/HDX_LIMIT/pipeline/extract_tensors.py {input[0]} {input[1]} --outputs {output}"
 
 
-rule generate_subtensor_ics:
+rule generate_tensor_ics:
     # TODO: docstring
     input:
         library_info_fn,
         "resources/tensors/{lib_idx}_{file}.cpickle.zlib",
+        "config/config.yaml"
     output:
         "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
-    script:
-        "scripts/main/generate_subtensor_ics.py"
+    shell:
+        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output}"
 
 
 rule optimize_paths:
@@ -112,10 +111,11 @@ rule optimize_paths:
         "resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib",
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
-    script:
-        "scripts/main/optimize_paths.py"
+    shell:
+        "python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} --all_tensor_input_paths {input[1]} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]}"
 
-
+"""
+#REVIEW FUNCTIONALITY
 rule make_overview_plot:
     input:
         expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name=names),  #subset_names),
@@ -129,10 +129,11 @@ rule make_overview_plot:
         "results/plots/" + config["run_name"] + "_overview.html",
     benchmark:
         "results/benchmarks/make_overview_plot.benchmark.txt"
-    script:
-        "scripts/main/overview_plotter.py"
+    shell:
+        "python scripts/main/overview_plotter.py"
 
 
+#TO BE REMOVED WHEN gjr_plot is included in PO
 rule gjr_plots:
     input:
         "resources/ic_time_series/{name}_winner.cpickle.zlib",
@@ -145,7 +146,7 @@ rule gjr_plots:
     script:
         "scripts/main/gjr_plot.py"
 
-
+#TO BE REVIEWED FOR FUNCTION
 rule make_plot_linker:
     input:
         "results/plots/" + config["run_name"] + "_overview.html",
@@ -157,7 +158,7 @@ rule make_plot_linker:
     script:
         "scripts/main/plot_linker.py"
 
-
+#PLACEHOLDER
 rule calculate_hdx_rates:
     input:
         "resources/ic_time_series/{name}_winner.cpickle.zlib",
@@ -167,3 +168,4 @@ rule calculate_hdx_rates:
         "results/benchmarks/calculate_hdx_rates.{name}.benchmark.txt"
     script:
         "scripts/main/hxrates.py"
+"""

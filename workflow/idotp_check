@@ -15,40 +15,6 @@ for tp in config["timepoints"]:
     for fn in config[tp]:
         mzml_list.append(fn)
 
-
-# all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake "
-rule all:
-    input:
-        "resources/library_info/filtered_library_info.csv"
-        #expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info))),
-        #Only allow undeuterated tensors to be extracted, check their idotps, then remake library_info with only passing charges
-        #expand(
-        #    "resources/tensors/{idx}_{mzml}.gz.cpickle.zlib",
-        #    idx=range(len(library_info)), mzml=[fn[:-3].split('/')[-1] for fn in glob.glob("./resources/mzml/*") if "mzML.gz" in fn]
-        #)
-
-
-
-rule extract_tensors:
-    input:
-        "resources/library_info/library_info.csv",
-        "resources/mzml/{mzml}.gz",
-        expand(
-            "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
-        ),
-    output:
-        temp(
-            expand(
-                "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=range(len(library_info))
-            )
-        )
-    benchmark:
-        "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
-    script:
-        "scripts/main/extract_tensors.py"
-
-
 def idotp_check_inputs(i):
     # Writes inputs for idotp_check rule based on library_info index
     idx_inputs = []
@@ -62,9 +28,54 @@ def idotp_check_inputs(i):
         idx_inputs.append(
             "resources/tensors/" + str(i) + "_" + file + ".gz.cpickle.zlib"
         )
-
     return idx_inputs
 
+rule all:
+    input:
+        "resources/library_info/filter_passing_indices.csv"
+
+
+if config['polyfit_calibration']:
+    rule extract_tensors:
+        input:
+            "resources/library_info/library_info.csv",
+            "resources/mzml/{mzml}.gz",
+            "config/config.yaml",
+            expand(
+                "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
+            )
+        output:
+            expand(
+                "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
+                idx=range(len(library_info))
+            )
+        benchmark:
+            "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+
+        run:
+            outputs = [output[i] for i in range(len(output))]
+            shell('''
+                python workflow/scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py {input[0]} {input[1]} {input[2]}--polyfit_calibration_dict {input[3]} --outputs {outputs}
+            ''')
+
+else:
+    rule extract_tensors:
+        input:
+            "resources/library_info/library_info.csv",
+            "resources/mzml/{mzml}.gz",
+            "config/config.yaml"
+        output:
+            expand(
+                "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
+                idx=range(len(library_info))
+            )
+        benchmark:
+            "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+        run:
+            outputs = [output[i] for i in range(len(output))]
+            shell('''
+                python workflow/scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py {input[0]} {input[1]} {input[2]} --outputs {outputs}
+            ''')
 
 rule idotp_check:
     # TODO: docstring
@@ -75,14 +86,22 @@ rule idotp_check:
         "resources/idotp_filter/{i}_idotp_check.csv",
     benchmark:
         "results/benchmarks/idotp_check.{i}.benchmark.txt"
-    script:
-        "scripts/main/idotp_check.py"
+    run:
+        inputs = [input[1] for i in range(1, len(input))]
+        shell('''
+            python workflow/scripts/HDX_LIMIT/pipeline/idotp_check.py {input[0]} {inputs} {output}
+        ''')
 
 rule idotp_filter:
     input: 
         "resources/library_info/library_info.csv",
         expand("resources/idotp_filter/{i}_idotp_check.csv", i=range(len(library_info)))
     output:
-        "resources/library_info/filtered_library_info.csv"
-    script:
-        "scripts/main/idotp_filter.py"
+        "resources/library_info/filter_passing_indices.csv"
+
+    run:
+        inputs = [input[i] for i in range(1, len(input))]
+        shell('''
+            "python workflow/HDX_LIMIT/pipeline/idotp_filter.py {input[0]} --all_idotp_csv_inputs {inputs} --out_path {output}"
+        ''')
+
