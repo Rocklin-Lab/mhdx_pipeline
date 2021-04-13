@@ -7,12 +7,8 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
-if config["idotp_filter"] == 1:
-    library_info_fn = "resources/library_info/filtered_library_info.csv"
-    library_info = pd.read_csv("resources/library_info/filtered_library_info.csv")
-else:
-    library_info_fn = "resources/library_info/library_info.csv"
-    library_info = pd.read_csv("resources/library_info/library_info.csv")
+library_info_fn = "resources/library_info/library_info.csv"
+library_info = pd.read_csv("resources/library_info/library_info.csv")
 
 proc = glob.glob("resources/ic_time_series/*.zlib")
 # names = [fn.split('_')[:-3] for fn in proc]
@@ -22,7 +18,8 @@ names = list(set(library_info["name"].values))
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
     input:
-        expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
+        expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name=names)
+        #expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
 
 
 def optimize_paths_inputs(name, library_info):
@@ -68,8 +65,9 @@ if config['polyfit_calibration']:
             ),
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+        
         shell:
-            "python scripts/main/extract_tensors.py {input[0]} {input[1]} --polyfit_calibration_dict {input[2]} --outputs {output}"
+            "python workflow/scripts/HDX_LIMIT/pipeline/extract_tensors.py {input[0]} {input[1]} --polyfit_calibration_dict {input[2]} --outputs {output}"
 else:
     rule extract_tensors:
         input:
@@ -83,10 +81,10 @@ else:
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         shell:
-            "python scripts/main/extract_tensors.py {input[0]} {input[1]} --outputs {output}"
+            "python workflow/scripts/HDX_LIMIT/pipeline/extract_tensors.py {input[0]} {input[1]} --outputs {output}"
 
 
-rule generate_subtensor_ics:
+rule generate_tensor_ics:
     # TODO: docstring
     input:
         library_info_fn,
@@ -97,7 +95,7 @@ rule generate_subtensor_ics:
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
     shell:
-        "python scripts/main/generate_subtensor_ics.py {input[0]} {input[1]} {input[2]} {output}"
+        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output}"
 
 
 rule optimize_paths:
@@ -114,7 +112,7 @@ rule optimize_paths:
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
     shell:
-        "python scripts/main/optimize_paths.py {input[0]} --all_tensor_input_paths {input[1]} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]}"
+        "python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} --all_tensor_input_paths {input[1]} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]}"
 
 """
 #REVIEW FUNCTIONALITY

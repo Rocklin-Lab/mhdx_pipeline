@@ -3,56 +3,80 @@ import glob
 import argparse
 import pandas as pd
 
-def main(all_idotp_csv_inputs, outpath=None, return_flag=False, idotp_cutoff=0.95):
-	"""Reads all rt-group idotp csvs and returns or saves a list of indices with idotp > idotp_cutoff
+
+def main(all_idotp_csv_inputs,
+         out_path=None,
+         return_flag=False,
+         idotp_cutoff=0.95):
+    """Reads all rt-group idotp csvs and returns or saves a list of indices with idotp >= idotp_cutoff.
 
     Args:
-	    all_idotp_csv_inputs (list of strings): list of all input IsotopeCluster-list filepaths
-	    outpath (str): path/to/file for main output.cpickle.zlib
-	    return_flag (bool): option to return main output in python, for notebook context
-	    idotp_cutoff (float): inclusive lower-bound on idotp [0,1] to be considered for evaluation, default=0.95
+        all_idotp_csv_inputs (list of strings): list of all input IsotopeCluster-list filepaths
+        out_path (str): path/to/file for main output.cpickle.zlib
+        return_flag (bool): option to return main output in python, for notebook context
+        idotp_cutoff (float): inclusive lower-bound on idotp [0,1] to be considered for evaluation, default=0.95
 
     Returns:
-    	out_dict (dict) = dictionary containing 'filter_passing_indices'
+        out_dict (dict) = dictionary containing 'filter_passing_indices'
 
     """
-	out_dict = {}
+    out_dict = {}
 
-	filter_passing_indices = []
-	for fn in all_idotp_csv_inputs:
-		lib_idx = int(fn.split('/')[-1].split('_')[0])
-		idpc = pd.read_csv(fn)
-		if idpc["idotp"].values[0] >= idotp_cutoff:
-			filter_passing_indices.append(lib_idx)
+    filter_passing_indices = []
+    for fn in all_idotp_csv_inputs:
+        lib_idx = int(fn.split('/')[-1].split('_')[0])
+        idpc = pd.read_csv(fn)
+        if idpc["idotp"].values[0] >= idotp_cutoff:
+            filter_passing_indices.append(lib_idx)
 
-	# re-order indices
-	filter_passing_indices=sorted(filter_passing_indices)
-	# add passing indices to output dict
-	out_dict["filter_passing_indices"] = filter_passing_indices
-	# make df output option
-	out_df = pd.DataFrame.from_dict(out_dict)
-	
-	if outpath is not None:
-		out_df.to_csv(outpath)
-	
-	if return_flag:
-		return out_dict
+    # re-order indices
+    filter_passing_indices = sorted(filter_passing_indices)
+    # add passing indices to output dict
+    out_dict["filter_passing_indices"] = filter_passing_indices
+    # make df output option
+    out_df = pd.DataFrame.from_dict(out_dict)
+
+    if out_path is not None:
+        out_df.to_csv(out_path)
+
+    if return_flag:
+        return out_dict
+
 
 if __name__ == '__main__':
 
-	# set expected command line arguments
-	parser = argparse.ArgumentParser(description="makes a .csv of all library_info indices with idotp >= idotp_cutoff, default 0.95")
-	parser.add_argument("-i", "--all_idotp_csv_inputs", help="list of all idotp check .csv outputs to be read")
-	parser.add_argument("-d", "--input_dir_path", help="path/to/dir/ containing idotp_check.csv files")
-	parser.add_argument("-o", "--outpath", help="path/to/filter_passing_indices.csv")
-	parser.add_argument("-c", "--idotp_cutoff", type=float, default=0.95, help="lower limit on dot-product between theoretical integrated m/z of POI and int. m/z of observed signal in question. Float in range [0,1], default 0.95 ")
-	args = parser.parse_arguments()
+    # set expected command line arguments
+    parser = argparse.ArgumentParser(
+        description=
+        "Reads all rt-group idotp csvs and returns or saves a list of indices with idotp >= idotp_cutoff."
+    )
+    parser.add_argument("-i",
+                        "--all_idotp_csv_inputs",
+                        help="list of all idotp check .csv outputs to be read")
+    parser.add_argument("-d",
+                        "--input_dir_path",
+                        help="path/to/dir/ containing idotp_check.csv files")
+    parser.add_argument("-o",
+                        "--out_path",
+                        help="path/to/filter_passing_indices.csv")
+    parser.add_argument(
+        "-c",
+        "--idotp_cutoff",
+        type=float,
+        default=0.95,
+        help=
+        "lower limit on dot-product between theoretical integrated m/z of POI and int. m/z of observed signal in question. Float in range [0,1], default 0.95 "
+    )
+    args = parser.parse_args()
 
-	if args.all_idotp_csv_inputs is None and args.input_dir_path is None:
-		parser.print_help()
-		sys.exit()
+    if args.all_idotp_csv_inputs is None and args.input_dir_path is None:
+        parser.print_help()
+        sys.exit()
 
-	if args.all_idotp_csv_inputs is None and args.input_dir_path is not None:
-		args.all_idotp_csv_inputs = sorted(list(glob.glob(args.input_dir_path+"*idotp_check.csv")))
+    if args.all_idotp_csv_inputs is None and args.input_dir_path is not None:
+        args.all_idotp_csv_inputs = sorted(
+            list(glob.glob(args.input_dir_path + "*idotp_check.csv")))
 
-	main(args.all_idotp_csv_inputs, outpath=args.outpath, idotp_cutoff=args.idotp_cutoff)
+    main(args.all_idotp_csv_inputs,
+         out_path=args.out_path,
+         idotp_cutoff=args.idotp_cutoff)

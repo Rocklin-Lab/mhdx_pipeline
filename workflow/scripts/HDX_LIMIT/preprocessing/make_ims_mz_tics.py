@@ -27,18 +27,14 @@ def main(mzml_path, return_flag=None, out_path=None):
     # opens mzml
     lines = open(mzml_path, "rt").readlines()
     for line in lines:
-        if (
-            '<cvParam cvRef="MS" accession="MS:1002476" name="ion mobility drift time" value'
-            in line
-        ):
+        if ('<cvParam cvRef="MS" accession="MS:1002476" name="ion mobility drift time" value'
+                in line):
             dt = line.split('value="')[1].split('"')[0]  # replace('"/>',''))
             drift_times.append(float(dt))
 
     for line in lines:
-        if (
-            '<cvParam cvRef="MS" accession="MS:1000016" name="scan start time" value='
-            in line
-        ):
+        if ('<cvParam cvRef="MS" accession="MS:1000016" name="scan start time" value='
+                in line):
             st = line.split('value="')[1].split('"')[0]  # replace('"/>',''))
             scan_times.append(float(st))
 
@@ -54,8 +50,7 @@ def main(mzml_path, return_flag=None, out_path=None):
 
     # print ((len(set(drift_times)),len(set(scan_times))))
     ms1_ims_tic = np.zeros(
-        (len(set(drift_times)) * mz_bins, len(set(scan_times))), np.int
-    )
+        (len(set(drift_times)) * mz_bins, len(set(scan_times))), np.int)
     print(np.shape(ms1_ims_tic))
     # np.savetxt('%s.ims.mz.tic' % mzml, ms1_ims_tic)
 
@@ -81,13 +76,8 @@ def main(mzml_path, return_flag=None, out_path=None):
             if len(specpeaks) > 0:
                 for mz_bin in range(mz_bins):
                     ms1_ims_tic[(ims_bin * mz_bins) + mz_bin, rtIndex] = int(
-                        sum(
-                            specpeaks[1][
-                                (specpeaks[0] > lims[mz_bin])
-                                & (specpeaks[0] < lims[mz_bin + 1])
-                            ]
-                        )
-                    )
+                        sum(specpeaks[1][(specpeaks[0] > lims[mz_bin]) &
+                                         (specpeaks[0] < lims[mz_bin + 1])]))
 
             if ims_bin == 199:
                 rtIndex += 1
@@ -105,9 +95,15 @@ def main(mzml_path, return_flag=None, out_path=None):
 if __name__ == "__main__":
 
     # set expected command line arguments
-    parser = argparse.ArgumentParser(description="Sum of Total Ionic Current over IMS and m/Z dimensions, yielding an LC-Chromatogram")
-    parser.add_argument("mzml_path", help="path/to/file for one timepoint .mzML")
-    parser.add_argument("-o", "--out_path", help="path/to/file for output .ims.mz.tic")
+    parser = argparse.ArgumentParser(
+        description=
+        "Sum of Total Ionic Current over IMS and m/Z dimensions, yielding an LC-Chromatogram"
+    )
+    parser.add_argument("mzml_path",
+                        help="path/to/file for one timepoint .mzML")
+    parser.add_argument("-o",
+                        "--out_path",
+                        help="path/to/file for output .ims.mz.tic")
     args = parser.parse_args()
 
     main(args.mzml_path, out_path=args.out_path)

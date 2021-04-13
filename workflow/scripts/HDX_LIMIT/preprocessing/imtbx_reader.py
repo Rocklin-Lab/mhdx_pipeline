@@ -1,11 +1,9 @@
 import importlib.util
 
 hxtools_spec = importlib.util.spec_from_file_location(
-    "hxtools.py", "workflow/scripts/hxtools.py"
-)
+    "hxtools.py", "workflow/scripts/hxtools.py")
 molmass_spec = importlib.util.spec_from_file_location(
-    "molmass.py", "workflow/scripts/molmass.py"
-)
+    "molmass.py", "workflow/scripts/molmass.py")
 hxtools = importlib.util.module_from_spec(hxtools_spec)
 molmass = importlib.util.module_from_spec(molmass_spec)
 hxtools_spec.loader.exec_module(hxtools)
@@ -33,6 +31,7 @@ import pickle as pk
 
 matplotlib.use("Agg")
 
+
 ### DEFINITIONS ###
 #TODO this references an unpassed variable, bad style - fix
 def plotcluster(i=0):
@@ -48,23 +47,17 @@ def plotcluster(i=0):
     plt.figure(figsize=(16, 3))
     plt.subplot(141)
     plt.plot(testq[clusters == i]["RT"], testq[clusters == i]["mz_mono"])
-    plt.title(
-        "mz range = %.4f"
-        % (max(testq[clusters == i]["mz_mono"]) - min(testq[clusters == i]["mz_mono"]))
-    )
+    plt.title("mz range = %.4f" % (max(testq[clusters == i]["mz_mono"]) -
+                                   min(testq[clusters == i]["mz_mono"])))
 
     plt.subplot(142)
     plt.plot(testq[clusters == i]["RT"], testq[clusters == i]["cluster_im"])
-    plt.title(
-        "im range = %.1f"
-        % (
-            max(testq[clusters == i]["cluster_im"])
-            - min(testq[clusters == i]["cluster_im"])
-        )
-    )
+    plt.title("im range = %.1f" % (max(testq[clusters == i]["cluster_im"]) -
+                                   min(testq[clusters == i]["cluster_im"])))
 
     plt.subplot(143)
-    plt.plot(testq[clusters == i]["RT"], testq[clusters == i]["ab_cluster_total"])
+    plt.plot(testq[clusters == i]["RT"],
+             testq[clusters == i]["ab_cluster_total"])
 
     plt.subplot(144)
     plt.plot(testq[clusters == i]["RT"], testq[clusters == i]["cluster_corr"])
@@ -117,42 +110,45 @@ def getnear(x, allseq, charge=None, mix=None, ppm=50):
             ((x * charge) - (1.00727 * charge)) * ((1000000 + ppm) / 1000000),
         )
         mlow, mhigh = allseq["MW"] > low, allseq["MW"] < high
-        tempdf = allseq[mlow & mhigh].sort_values("MW")[
-            ["MW", "mix", "name", "len", "sequence"]
-        ]
+        tempdf = allseq[mlow & mhigh].sort_values("MW")[[
+            "MW", "mix", "name", "len", "sequence"
+        ]]
         tempdf["plus%s" % int(charge)] = [
             (q + (1.00727 * charge)) / charge for q in tempdf["MW"]
         ]
         tempdf["ppm"] = [
-            "%.1f" % ((1.0 - (q / x)) * 1000000) for q in tempdf["plus%s" % int(charge)]
+            "%.1f" % ((1.0 - (q / x)) * 1000000)
+            for q in tempdf["plus%s" % int(charge)]
         ]
         tempdf["abs_ppm"] = [
-            np.abs(((1.0 - (q / x)) * 1000000)) for q in tempdf["plus%s" % int(charge)]
+            np.abs(((1.0 - (q / x)) * 1000000))
+            for q in tempdf["plus%s" % int(charge)]
         ]
-        return tempdf[
-            [
-                "plus%s" % int(charge),
-                "ppm",
-                "abs_ppm",
-                "MW",
-                "mix",
-                "name",
-                "len",
-                "sequence",
-            ]
-        ]
+        return tempdf[[
+            "plus%s" % int(charge),
+            "ppm",
+            "abs_ppm",
+            "MW",
+            "mix",
+            "name",
+            "len",
+            "sequence",
+        ]]
     else:
         low, high = x - window, x + window
         mlow, mhigh = allseq["MW"] > low, allseq["MW"] < high
-        tempdf = subdf[mlow & mhigh].sort_values("MW")[
-            ["MW", "mix", "name", "len", "sequence"]
-        ]
+        tempdf = subdf[mlow & mhigh].sort_values("MW")[[
+            "MW", "mix", "name", "len", "sequence"
+        ]]
         return tempdf
 
 
-def cluster_df_hq_signals(
-    testq, allseq, ppm=50, intensity_threshold=1e4, cluster_correlation=0.99, adjusted=False
-):
+def cluster_df_hq_signals(testq,
+                          allseq,
+                          ppm=50,
+                          intensity_threshold=1e4,
+                          cluster_correlation=0.99,
+                          adjusted=False):
     """Cluster high quality mz signals based on intensities and cluster correlation, applies cluster lables to the input DF.
 
     Args:
@@ -166,19 +162,16 @@ def cluster_df_hq_signals(
         sum_df (Pandas DataFrame): testq with cluster lables applied 
     """
 
-    hq_dataframe = testq[
-        (testq["cluster_corr"] > cluster_correlation)
-        & (testq["ab_cluster_total"] > (intensity_threshold))
-    ]
+    hq_dataframe = testq[(testq["cluster_corr"] > cluster_correlation) &
+                         (testq["ab_cluster_total"] > (intensity_threshold))]
 
     sum_data = []
     for c in range(0, max(hq_dataframe["cluster"]) + 1):
 
         cluster_df = hq_dataframe[hq_dataframe["cluster"] == c]
 
-        if (
-            len(cluster_df["mz_mono"]) > 1
-        ):  # ask Wes why isn't this set to greater than 1?
+        if (len(cluster_df["mz_mono"]) >
+                1):  # ask Wes why isn't this set to greater than 1?
 
             charge = np.median(cluster_df["charge"])
             if adjusted:
@@ -187,34 +180,29 @@ def cluster_df_hq_signals(
                     weights=cluster_df["ab_cluster_total"],
                 )
             else:
-                mz = np.average(
-                    cluster_df["mz_mono"], weights=cluster_df["ab_cluster_total"]
-                )
-            RT = np.average(cluster_df["RT"], weights=cluster_df["ab_cluster_total"])
-            im = np.average(
-                cluster_df["im_mono"], weights=cluster_df["ab_cluster_total"]
-            )
+                mz = np.average(cluster_df["mz_mono"],
+                                weights=cluster_df["ab_cluster_total"])
+            RT = np.average(cluster_df["RT"],
+                            weights=cluster_df["ab_cluster_total"])
+            im = np.average(cluster_df["im_mono"],
+                            weights=cluster_df["ab_cluster_total"])
 
             near = getnear(mz, allseq, charge=charge, mix=2, ppm=ppm)
 
             if len(near) > 0:
-                sum_data.append(
-                    [
-                        near["name"].values[0],
-                        RT,
-                        im,
-                        sum(cluster_df["ab_cluster_total"]),
-                        near["MW"].values[0],
-                        charge,
-                        near["plus%s" % int(charge)].values[0],
-                        mz,
-                        near["ppm"].values[0],
-                        near["abs_ppm"].values[0],
-                        c,
-                    ]
-                )
-            if len(near) > 1:
-                display(near)
+                sum_data.append([
+                    near["name"].values[0],
+                    RT,
+                    im,
+                    sum(cluster_df["ab_cluster_total"]),
+                    near["MW"].values[0],
+                    charge,
+                    near["plus%s" % int(charge)].values[0],
+                    mz,
+                    near["ppm"].values[0],
+                    near["abs_ppm"].values[0],
+                    c,
+                ])
     sum_df = pd.DataFrame(sum_data)
     sum_df.columns = [
         "name",
@@ -399,36 +387,32 @@ def cluster_df(testq, allseq, ppm=50, adjusted=False):
         cluster_df = testq[testq["cluster"] == c]
         charge = np.median(cluster_df["charge"])
         if adjusted:
-            mz = np.average(
-                cluster_df["mz_mono_fix_round"], weights=cluster_df["ab_cluster_total"]
-            )
+            mz = np.average(cluster_df["mz_mono_fix_round"],
+                            weights=cluster_df["ab_cluster_total"])
         else:
-            mz = np.average(
-                cluster_df["mz_mono"], weights=cluster_df["ab_cluster_total"]
-            )
-        RT = np.average(cluster_df["RT"], weights=cluster_df["ab_cluster_total"])
-        im = np.average(cluster_df["im_mono"], weights=cluster_df["ab_cluster_total"])
+            mz = np.average(cluster_df["mz_mono"],
+                            weights=cluster_df["ab_cluster_total"])
+        RT = np.average(cluster_df["RT"],
+                        weights=cluster_df["ab_cluster_total"])
+        im = np.average(cluster_df["im_mono"],
+                        weights=cluster_df["ab_cluster_total"])
 
         near = getnear(mz, allseq, charge=charge, mix=2, ppm=ppm)
 
         if len(near) > 0:
-            sum_data.append(
-                [
-                    near["name"].values[0],
-                    RT,
-                    im,
-                    sum(cluster_df["ab_cluster_total"]),
-                    near["MW"].values[0],
-                    charge,
-                    near["plus%s" % int(charge)].values[0],
-                    mz,
-                    near["ppm"].values[0],
-                    near["abs_ppm"].values[0],
-                    c,
-                ]
-            )
-        if len(near) > 1:
-            display(near)
+            sum_data.append([
+                near["name"].values[0],
+                RT,
+                im,
+                sum(cluster_df["ab_cluster_total"]),
+                near["MW"].values[0],
+                charge,
+                near["plus%s" % int(charge)].values[0],
+                mz,
+                near["ppm"].values[0],
+                near["abs_ppm"].values[0],
+                c,
+            ])
     sum_df = pd.DataFrame(sum_data)
     sum_df.columns = [
         "name",
@@ -476,10 +460,8 @@ def find_offset(sum_df):
         # If peak closer to zero is less than half the height of the more prominent peak, check larger peak's ppm
         if ys[np.argmin(abs(xs))] < ys[np.argmax(ys)] / 2:
             # If most prominent peak is heuristically close to 0, or lowest ppm peak is relatively very small (10% of major peak): use big peak
-            if (
-                xs[np.argmax(ys)] < 25
-                or ys[np.argmin(abs(xs))] < ys[np.argmax(ys)] / 10
-            ):
+            if (xs[np.argmax(ys)] < 25 or
+                    ys[np.argmin(abs(xs))] < ys[np.argmax(ys)] / 10):
                 offset = xs[np.argmax(ys)]
             else:
                 offset = xs[np.argmin(abs(xs))]
@@ -491,9 +473,7 @@ def find_offset(sum_df):
     # This line returns the rounded value of the 80%-max width found by matching the offset to its position in xs, and feeding that index position into peaks - a list of indices, returning the peaks-list index of the xs index. The peaks index corresponds to the peak-widths index, returning the width.
     offset_peak_width = np.round(
         np.asarray(peak_widths)[
-            0, list(peaks).index(list(peaks)[list(xs).index(offset)])
-        ]
-    )
+            0, list(peaks).index(list(peaks)[list(xs).index(offset)])])
     return (offset, offset_peak_width)
 
 
@@ -535,28 +515,43 @@ def find_rt_duplicates(sum_df):
         protein_rts[key] = protein_names[key][["name", "RT"]].values
         rt_matches[key] = dict.fromkeys(protein_rts[key][:, 0])
         for tup in protein_rts[key]:
-            rt_cluster = np.array(
-                [x[0] for x in protein_rts[key] if x[1] == abs(x[1] - tup[1]) <= 0.2]
-            )
-            lo_line = [x[0] for x in rt_cluster if x[1] == min(rt_cluster[:, 1])]
-            hi_line = [x[0] for x in rt_cluster if x[1] == max(rt_cluster[:, 1])]
+            rt_cluster = np.array([
+                x[0]
+                for x in protein_rts[key]
+                if x[1] == abs(x[1] - tup[1]) <= 0.2
+            ])
+            lo_line = [
+                x[0] for x in rt_cluster if x[1] == min(rt_cluster[:, 1])
+            ]
+            hi_line = [
+                x[0] for x in rt_cluster if x[1] == max(rt_cluster[:, 1])
+            ]
             rt_matches[key][tup[0]] = lo_line + hi_line
 
     # Clustering working when hits returns empty
     hits = []
     for key in protein_rts.keys():
         for tup in protein_rts[key]:
-            rt_cluster = np.array(
-                [x[0] for x in protein_rts[key] if x[1] == abs(x[1] - tup[1]) <= 0.2]
-            )
-            lo_line = [x[0] for x in rt_cluster if x[1] == min(rt_cluster[:, 1])]
-            hi_line = [x[0] for x in rt_cluster if x[1] == max(rt_cluster[:, 1])]
+            rt_cluster = np.array([
+                x[0]
+                for x in protein_rts[key]
+                if x[1] == abs(x[1] - tup[1]) <= 0.2
+            ])
+            lo_line = [
+                x[0] for x in rt_cluster if x[1] == min(rt_cluster[:, 1])
+            ]
+            hi_line = [
+                x[0] for x in rt_cluster if x[1] == max(rt_cluster[:, 1])
+            ]
         if len(rt_cluster) > 0:
             hits.append(key)
     return (len(hits) == 0, hits)
 
 
-def apply_cluster_weights(dataframe, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006):
+def apply_cluster_weights(dataframe,
+                          dt_weight=5.0,
+                          rt_weight=0.6,
+                          mz_weight=0.006):
     """Applies heuristic weights to raw physical values for cluster scoring. 
 
     Args:
@@ -577,7 +572,18 @@ def apply_cluster_weights(dataframe, dt_weight=5.0, rt_weight=0.6, mz_weight=0.0
 
 
 ### SCRIPT ###
-def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, original_mz_kde_path=None, adjusted_mz_kde_path=None, calibration_outpath=None, polyfit_deg=1, ppm_tolerance=50, intensity_tolerance=10000, cluster_corr_tolerance=0.99, ppm_refilter=10):
+def main(isotopes_path,
+         names_and_seqs_path,
+         out_path=None,
+         return_flag=None,
+         original_mz_kde_path=None,
+         adjusted_mz_kde_path=None,
+         calibration_outpath=None,
+         polyfit_deg=1,
+         ppm_tolerance=50,
+         intensity_tolerance=10000,
+         cluster_corr_tolerance=0.99,
+         ppm_refilter=10):
     """Reads IMTBX file and clusters identified signals with close physical values. 
 
     Args:
@@ -611,7 +617,8 @@ def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, or
                 j += 1
 
     df = pd.DataFrame(out)
-    df.columns = "mz_mono im_mono ab_mono_peak ab_mono_total mz_top im_top ab_top_peak ab_top_total cluster_peak_count idx_top charge mz_cluster_avg ab_cluster_peak ab_cluster_total cluster_corr noise RT".split()
+    df.columns = "mz_mono im_mono ab_mono_peak ab_mono_total mz_top im_top ab_top_peak ab_top_total cluster_peak_count idx_top charge mz_cluster_avg ab_cluster_peak ab_cluster_total cluster_corr noise RT".split(
+    )
 
     # buffer df
     testq = copy.deepcopy(df)
@@ -631,7 +638,8 @@ def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, or
     # create dbscan object, fit, and apply cluster ids to testq lines
     db = DBSCAN()
     db.fit(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
-    clusters = db.fit_predict(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
+    clusters = db.fit_predict(
+        testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
     testq["cluster"] = clusters
 
     # for z in range(3): For visualizing cluster characteristics
@@ -654,11 +662,9 @@ def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, or
             polyfit_degree=polyfit_deg,
             ppm_tol=ppm_tolerance,
             int_tol=intensity_tolerance,
-            cluster_corr_tol=cluster_corr_tolerance
-        )
+            cluster_corr_tol=cluster_corr_tolerance)
         testq["mz_mono_fix"] = apply_polyfit_cal_mz(
-            polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=df["mz_mono"]
-        )
+            polyfit_coeffs=calib_dict["polyfit_coeffs"], mz=df["mz_mono"])
         testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
 
     else:
@@ -671,22 +677,24 @@ def main(isotopes_path, names_and_seqs_path, out_path=None, return_flag=None, or
             testq["mz_mono_fix"] = [
                 x * (1000000 - offset) / (1000000) for x in df["mz_mono"]
             ]
-            testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
+            testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values,
+                                                  3)
         else:
             testq["mz_mono_fix"] = [
                 x * (1000000 + offset) / (1000000) for x in df["mz_mono"]
             ]
-            testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
+            testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values,
+                                                  3)
 
         ppm_refilter = math.ceil(offset_peak_width / 2)
-
 
     # re-cluster on the adjusted MZ, same weights
     apply_cluster_weights(testq, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006)
 
     db = DBSCAN()
     db.fit(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
-    clusters = db.fit_predict(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
+    clusters = db.fit_predict(
+        testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
     testq["cluster"] = clusters
 
     # re-average clusters to single lines, check for duplicate RTs, save sum_df to outfile
@@ -715,38 +723,103 @@ if __name__ == "__main__":
     # set expected command line arguments
 
     # positional arguments
-    parser = argparse.ArgumentParser(description="Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by make_library_master_list.py")
-    parser.add_argument("isotopes_path", help="path/to/.peaks.isotopes file from undeuterated mzml")
-    parser.add_argument("names_and_seqs_path", help="path/to/.csv with names and sequences of library proteins")
-    parser.add_argument("-q", "--out_path", help="path/to/_intermediate.csv main output file")
+    parser = argparse.ArgumentParser(
+        description=
+        "Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by make_library_master_list.py"
+    )
+    parser.add_argument(
+        "isotopes_path",
+        help="path/to/.peaks.isotopes file from undeuterated mzml")
+    parser.add_argument(
+        "names_and_seqs_path",
+        help="path/to/.csv with names and sequences of library proteins")
+    parser.add_argument("-q",
+                        "--out_path",
+                        help="path/to/_intermediate.csv main output file")
 
     # optional arguments
-    parser.add_argument("-p", "--plot", help="/path/to/directory/ to save original and adjusted mz-error kde plots, use instead of -o and -a")
-    parser.add_argument("-o", "--original_mz_kde_path", help="/path/to/file to save original mz-error kde plots, use with -a")
-    parser.add_argument("-a", "--adjusted_mz_kde_path", help="/path/to/file to save adjusted mz-error kde plots, use with -o")
-    parser.add_argument("-c", "--calibration_outpath", help="/path/to/file for polyfit-calibration output, determines use of polyfit calibration") 
-    parser.add_argument("-d", "--polyfit_deg", help="degree of polynomial curve to fit to mz data for non-linear correction", type=int, default=1)
-    parser.add_argument("-t", "--ppm_tolerance", help="ppm error tolerance of observed to expected mz, defualt 50 ppm", type=float, default=50)
-    parser.add_argument("-i", "--intensity_tolerance", help="minimum intensity to consider cluster, default 10E4", type=float, default=10000)
-    parser.add_argument("-r", "--cluster_corr_tolerance", help="minimum correlation between isotope clusters to consider them redundant, default 0.99", type=float, default=0.99)
-    parser.add_argument("-f", "--ppm_refilter", help="ppm error tolerance for post-mz-adjustment clusters, default 10 ppm", type=float, default=10)
-    
+    parser.add_argument(
+        "-p",
+        "--plot",
+        help=
+        "/path/to/directory/ to save original and adjusted mz-error kde plots, use instead of -o and -a"
+    )
+    parser.add_argument(
+        "-o",
+        "--original_mz_kde_path",
+        help="/path/to/file to save original mz-error kde plots, use with -a")
+    parser.add_argument(
+        "-a",
+        "--adjusted_mz_kde_path",
+        help="/path/to/file to save adjusted mz-error kde plots, use with -o")
+    parser.add_argument(
+        "-c",
+        "--calibration_outpath",
+        help=
+        "/path/to/file for polyfit-calibration output, determines use of polyfit calibration"
+    )
+    parser.add_argument(
+        "-d",
+        "--polyfit_deg",
+        help=
+        "degree of polynomial curve to fit to mz data for non-linear correction",
+        type=int,
+        default=1)
+    parser.add_argument(
+        "-t",
+        "--ppm_tolerance",
+        help="ppm error tolerance of observed to expected mz, defualt 50 ppm",
+        type=float,
+        default=50)
+    parser.add_argument(
+        "-i",
+        "--intensity_tolerance",
+        help="minimum intensity to consider cluster, default 10E4",
+        type=float,
+        default=10000)
+    parser.add_argument(
+        "-r",
+        "--cluster_corr_tolerance",
+        help=
+        "minimum correlation between isotope clusters to consider them redundant, default 0.99",
+        type=float,
+        default=0.99)
+    parser.add_argument(
+        "-f",
+        "--ppm_refilter",
+        help=
+        "ppm error tolerance for post-mz-adjustment clusters, default 10 ppm",
+        type=float,
+        default=10)
+
     # parse given arguments
-    args = parser.parse_args()    
-    
+    args = parser.parse_args()
+
     # check for any plotting argument
     if args.plot is not None or args.original_mz_kde_path is not None or args.adjusted_mz_kde_path is not None:
         # make explicit filenames if directory given
-        if args.p is not None:
-            args.o = args.p+"original_mz_kde_path.pdf"
-            args.a = args.p+"adjusted_mz_kde_path.pdf"
+        if args.plot is not None:
+            args.original_mz_kde_path = args.plot + "original_mz_kde_path.pdf"
+            args.adjusted_mz_kde_path = args.plot + "adjusted_mz_kde_path.pdf"
         else:
             # require both explicit filenames
-            if args.o is None or args.a is None:
+            if args.original_mz_kde_path is None or args.adjusted_mz_kde_path is None:
                 parser.print_help()
-                print("Plotting with explicit paths requires both -o and -a to be set")
+                print(
+                    "Plotting with explicit paths requires both -o and -a to be set"
+                )
                 sys.exit()
 
             # continue, we have -o and -a
 
-    main(args.isotopes_path, args.names_and_seqs_path, out_path=args.out_path, plot=args.plot, original_mz_kde_path=args.original_mz_kde_path, adjusted_mz_kde_path=args.adjusted_mz_kde_path, calibration_outpath=args.calibration_outpath, polyfit_deg=args.polyfit_deg, ppm_tolerance=args.ppm_tolerance, intensity_tolerance=args.intensity_tolerance, cluster_corr_tolerance=args.cluster_corr_tolerance, ppm_refilter=args.ppm_refilter)
+    main(args.isotopes_path,
+         args.names_and_seqs_path,
+         out_path=args.out_path,
+         original_mz_kde_path=args.original_mz_kde_path,
+         adjusted_mz_kde_path=args.adjusted_mz_kde_path,
+         calibration_outpath=args.calibration_outpath,
+         polyfit_deg=args.polyfit_deg,
+         ppm_tolerance=args.ppm_tolerance,
+         intensity_tolerance=args.intensity_tolerance,
+         cluster_corr_tolerance=args.cluster_corr_tolerance,
+         ppm_refilter=args.ppm_refilter)

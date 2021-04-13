@@ -1,3 +1,4 @@
+import os
 import sys
 import copy
 import glob
@@ -18,8 +19,6 @@ from scipy.spatial.distance import euclidean
 import matplotlib
 
 matplotlib.use("Agg")
-
-
 
 ###Definitions###
 
@@ -60,10 +59,9 @@ def pred_time(rt, stretched_times, lo_time, hi_time, n_lc_timepoints):
         (float): warped point in LC-RT
 
     """
-    time = int(
-        ((rt - lo_time) / (hi_time - lo_time)) * n_lc_timepoints
-    )
-    return ((stretched_times[time] / n_lc_timepoints) * (hi_time - lo_time)) + lo_time
+    time = int(((rt - lo_time) / (hi_time - lo_time)) * n_lc_timepoints)
+    return ((stretched_times[time] / n_lc_timepoints) *
+            (hi_time - lo_time)) + lo_time
 
 
 def rt_cluster(df, name_dict, key, rt_group_cutoff):
@@ -79,18 +77,11 @@ def rt_cluster(df, name_dict, key, rt_group_cutoff):
 
     """
     n_df = df.loc[df["name"] == key]
-    clusters = [
-        [
-            j
-            for j in n_df["idx"].values
-            if abs(
-                n_df.loc[n_df["idx"] == i]["pred_RT"].values[0]
-                - n_df.loc[n_df["idx"] == j]["pred_RT"].values[0]
-            )
-            < rt_group_cutoff
-        ]
-        for i in n_df["idx"].values
-    ]
+    clusters = [[
+        j for j in n_df["idx"].values if
+        abs(n_df.loc[n_df["idx"] == i]["pred_RT"].values[0] -
+            n_df.loc[n_df["idx"] == j]["pred_RT"].values[0]) < rt_group_cutoff
+    ] for i in n_df["idx"].values]
     no_dups = []
     [no_dups.append(lst) for lst in clusters if lst not in no_dups]
     name_dict[key] = subset_filter(no_dups, n_df)
@@ -146,18 +137,20 @@ def intersection_filter(final, intersections, n_df):
     
     """
     final_copy = copy.deepcopy(final)
-    [
-        [final_copy[i].discard(j) for j in intersections]
-        for i in range(len(final_copy))
+    [[final_copy[i].discard(j)
+      for j in intersections]
+     for i in range(len(final_copy))
     ]  # modifies final_copy in place, removing intersection values from each cluster in final_copy
     means = [
         np.mean(n_df.loc[n_df["idx"].isin(list(st))]["pred_RT"].values)
         for st in final_copy
     ]  # generates mean pred_RT of each mutualy exclusive cluster, order maps to final_copy
-    dists = [
-        [abs(n_df.loc[n_df["idx"] == i]["pred_RT"].values - mean) for mean in means]
-        for i in intersections
-    ]  # outer order maps to intersections, inner maps to final_copy
+    dists = [[
+        abs(n_df.loc[n_df["idx"] == i]["pred_RT"].values - mean)
+        for mean in means
+    ]
+             for i in intersections
+            ]  # outer order maps to intersections, inner maps to final_copy
     [
         final_copy[dists[i].index(min(dists[i]))].add(intersections[i])
         for i in range(len(intersections))
@@ -211,7 +204,10 @@ def gen_warp_path_for_timepoints(reference_tic, target_tic):
         path (list): a mapping between the indices of the two tics
     
     """
-    distance, path = fastdtw(reference_tic.T, target_tic.T, dist=euclidean, radius=20)
+    distance, path = fastdtw(reference_tic.T,
+                             target_tic.T,
+                             dist=euclidean,
+                             radius=20)
     return distance, path
 
 
@@ -277,7 +273,16 @@ def gen_stretched_times(tic_file_list, plot_path=None):
 ####################    Operation    s####################
 ##########################################################
 
-def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, return_flag=None, outpath=None, rt_group_cutoff=0.2, plot=None):
+
+def main(names_and_seqs_path,
+         undeut_mzml,
+         intermediates,
+         tics,
+         timepoints,
+         return_flag=None,
+         out_path=None,
+         rt_group_cutoff=0.2,
+         plot=None):
     """Generates the master list of library_proteins identified in MS data: library_info.csv.
 
     Args:
@@ -287,7 +292,7 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
         tics (list of strings): list of paths to all .tic files
         timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
         return_flag (any non-None type): option to return main output in python, for notebook context
-        outpath (string): path/to/file for main output library_info.csv
+        out_path (string): path/to/file for main output library_info.csv
         rt_group_cutoff (float): radius in LC-RT to consider signals a part of an rt-cluster
         plot (any non-None type): path/to/file for stretched time plots
 
@@ -295,14 +300,14 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
         library_info (dict): Outputs library_info as dict
     
     """
-    name_and_seq = pd.read_csv(names_and_seqs_path) 
+    name_and_seq = pd.read_csv(names_and_seqs_path)
 
     #if plot is none, function runs without plotting
     stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics, plot)
 
     lo_time, hi_time, n_lc_timepoints = set_global_scan_bounds(undeut_mzml)
 
-    # merge UNs - no, appends open dfs to list, why? 
+    # merge UNs - no, appends open dfs to list, why?
     undfs = []
     for file in intermediates:
         undfs.append(pd.read_csv(file))
@@ -310,10 +315,11 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
     # applies warp from provided undeut_mzml to each other undeut mzml, including itself
     for i in range(len(undfs)):
         undfs[i]["pred_RT"] = [
-            pred_time(rt, stretched_ts1_times[i], lo_time, hi_time, n_lc_timepoints)
-            for rt in undfs[i]["RT"]
+            pred_time(rt, stretched_ts1_times[i], lo_time, hi_time,
+                      n_lc_timepoints) for rt in undfs[i]["RT"]
         ]
-        undfs[i]["UN"] = [i for line in undfs[i]["RT"]] #apply source index to each line
+        undfs[i]["UN"] = [i for line in undfs[i]["RT"]
+                         ]  #apply source index to each line
 
     # combine undfs and sort
     catdf = pd.concat(undfs)
@@ -323,26 +329,18 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
     # clear duplicate lines
     dups = [False]
     for i in range(1, len(catdf)):
-        if (
-            (catdf["name"].values[i] == catdf["name"].values[i - 1])
-            and (catdf["charge"].values[i] == catdf["charge"].values[i - 1])
-            and (
-                abs(catdf["pred_RT"].values[i] - catdf["pred_RT"].values[i - 1])
-                < rt_group_cutoff
-            )
-        ):
+        if ((catdf["name"].values[i] == catdf["name"].values[i - 1]) and
+            (catdf["charge"].values[i] == catdf["charge"].values[i - 1]) and
+            (abs(catdf["pred_RT"].values[i] - catdf["pred_RT"].values[i - 1]) <
+             rt_group_cutoff)):
             dups.append(True)
         else:
             dups.append(False)
     catdf["dup"] = dups
     catdf = catdf.query("dup == False")
     catdf["sequence"] = [
-        list(
-            name_and_seq.loc[name_and_seq["name"] == catdf.iloc[i]["name"]][
-                "sequence"
-            ].values
-        )[0]
-        for i in range(len(catdf))
+        list(name_and_seq.loc[name_and_seq["name"] == catdf.iloc[i]["name"]]
+             ["sequence"].values)[0] for i in range(len(catdf))
     ]  # adds sequences to output
     catdf["idx"] = [i for i in range(len(catdf))]
 
@@ -357,12 +355,14 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
         for cluster in name_dict[key]:
             mean = np.mean(catdf.iloc[list(cluster)]["pred_RT"].values)
             for line in list(cluster):
-                catdf.iat[line, 0] = catdf.iloc[line]["name"] + "_" + str(round(mean, 5))
+                catdf.iat[line, 0] = catdf.iloc[line]["name"] + "_" + str(
+                    round(mean, 5))
 
     # stick each 'rt_group' entry with a median RT
     med_RTs = {}
     for name in set(catdf["name"].values):
-        med_RTs[name] = np.median(catdf.query('name == "%s"' % name)["pred_RT"].values)
+        med_RTs[name] = np.median(
+            catdf.query('name == "%s"' % name)["pred_RT"].values)
     catdf["med_RT"] = [med_RTs[x] for x in catdf["name"].values]
 
     catdf = catdf.sort_values(["med_RT", "charge"])
@@ -400,15 +400,13 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
                     for i in np.arange(-len(rt_columns), 0, 1)
                 ]
             else:
-                name_rt_preds = subdf.iloc[0, -len(rt_columns) :].values
+                name_rt_preds = subdf.iloc[0, -len(rt_columns):].values
             # Set avg rt preds for all lines in rt-group
-            [
-                [
-                    all_tp_mean_preds[i].append(name_rt_preds[i])
-                    for i in range(len(all_tp_mean_preds))
-                ]
-                for j in range(len(subdf))
+            [[
+                all_tp_mean_preds[i].append(name_rt_preds[i])
+                for i in range(len(all_tp_mean_preds))
             ]
+             for j in range(len(subdf))]
             # set prev_name to current name
             prev_name = catdf.iloc[i]["name"]
         else:
@@ -417,39 +415,92 @@ def main(names_and_seqs_path, undeut_mzml, intermediates, tics, timepoints, retu
     for i in range(len(all_tp_mean_preds)):
         catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
 
-    if outpath is not None:
-        catdf.to_csv(outpath)
+    if out_path is not None:
+        catdf.to_csv(out_path)
 
     if return_flag is not None:
         return catdf.to_dict()
 
+
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Creates a list of library proteins observed in HDX-LC-IM-MS from imtbx .peaks.isotopes, undeuterated .mzML, and .ims.mz.tic files.")
+    parser = argparse.ArgumentParser(
+        description=
+        "Creates a list of library proteins observed in HDX-LC-IM-MS from imtbx .peaks.isotopes, undeuterated .mzML, and .ims.mz.tic files."
+    )
     # inputs
-    parser.add_argument("names_and_seqs_path", help="path/to/file .csv of protein library names and sequences")
-    parser.add_argument("-m", "--mzml_dir", help="path/to/dir/ containing undeuterated .mzML files")
-    parser.add_argument("-s", "--undeut_match_string", help="unique part of undeuterated mzML filename to be used in matching")
-    parser.add_argument("-i", "--intermediates_dir", help="path/to/dir/ containing intermediate imtbx files")
-    parser.add_argument("-t", "--tics_dir", help="path/to/dir/ containing .ims.mz.tic files")
-    parser.add_argument("-n", "--undeut_mzml", help="path/to/file, one undeuterated .mzML")
-    parser.add_argument("-j", "--intermediates", nargs="*", help="used in snakemake, list of all imtbx intermediate file paths")
-    parser.add_argument("-u", "--tics", help="used in snakemake, list of all .imx.mz.tic file paths")
-    parser.add_argument("-e", "--timepoints", required=True, help="path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint")
-    parser.add_argument("-c", "--rt_group_cutoff", default=0.2, type=float, help="control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters")
+    parser.add_argument(
+        "names_and_seqs_path",
+        help="path/to/file .csv of protein library names and sequences")
+    parser.add_argument("-m",
+                        "--mzml_dir",
+                        help="path/to/dir/ containing undeuterated .mzML files")
+    parser.add_argument(
+        "-s",
+        "--undeut_match_string",
+        help="unique part of undeuterated mzML filename to be used in matching")
+    parser.add_argument("-i",
+                        "--intermediates_dir",
+                        help="path/to/dir/ containing intermediate imtbx files")
+    parser.add_argument("-t",
+                        "--tics_dir",
+                        help="path/to/dir/ containing .ims.mz.tic files")
+    parser.add_argument("-n",
+                        "--undeut_mzml",
+                        help="path/to/file, one undeuterated .mzML")
+    parser.add_argument(
+        "-j",
+        "--intermediates",
+        nargs="+",
+        help="used in snakemake, list of all imtbx intermediate file paths")
+    parser.add_argument(
+        "-u",
+        "--tics",
+        nargs="+",
+        help="used in snakemake, list of all .imx.mz.tic file paths")
+    parser.add_argument(
+        "-e",
+        "--timepoints",
+        required=True,
+        help=
+        "path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint"
+    )
+    parser.add_argument(
+        "-c",
+        "--rt_group_cutoff",
+        default=0.2,
+        type=float,
+        help=
+        "control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters"
+    )
     # outputs
-    parser.add_argument("-p", "--plot", help="path/to/stretched_times_plots.png")
-    parser.add_argument("-o", "--outpath", help="path/to/library_info.csv main output file")
-    
+    parser.add_argument("-p",
+                        "--plot",
+                        help="path/to/stretched_times_plots.png")
+    parser.add_argument("-o",
+                        "--out_path",
+                        help="path/to/library_info.csv main output file")
+
     args = parser.parse_args()
 
     #Generate explicit filenames and open timepoints .yaml
     if args.mzml_dir is not None and args.undeut_match_string is not None and args.undeut_mzMLs is None:
-        args.undeut_mzml = list(glob.glob(args.mzml_dir+"*"+args.undeut_match_string+"*"+".mzML"))
+        args.undeut_mzml = list(
+            glob.glob(args.mzml_dir + "*" + args.undeut_match_string + "*" +
+                      ".mzML"))
     if args.intermediates_dir is not None and args.intermediates is None:
-        args.intermediates = list(glob.glob(args.intermediates_dir+"*intermediate.csv"))
+        args.intermediates = list(
+            glob.glob(args.intermediates_dir + "*intermediate.csv"))
     if args.tics_dir is not None and args.tics is None:
-        args.tics = list(glob.glob(args.tics_dir+"*.ims.mz.tic"))
-    open_timepoints = yaml.load(args.timepoints, Loader=yaml.FullLoader) 
+        args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic"))
+    open_timepoints = yaml.load(open(args.timepoints, 'rt'),
+                                Loader=yaml.FullLoader)
 
-    main(args.names_and_seqs_path, outpath=args.outpath, undeut_mzml=args.undeut_mzml, intermediates=args.intermediates, tics=args.tics, timepoints=open_timepoints, rt_group_cutoff=args.rt_group_cutoff, plot=args.plot)
+    main(args.names_and_seqs_path,
+         out_path=args.out_path,
+         undeut_mzml=args.undeut_mzml,
+         intermediates=args.intermediates,
+         tics=args.tics,
+         timepoints=open_timepoints,
+         rt_group_cutoff=args.rt_group_cutoff,
+         plot=args.plot)

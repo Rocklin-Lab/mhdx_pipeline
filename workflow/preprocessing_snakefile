@@ -1,6 +1,5 @@
 configfile: "config/config.yaml"
 
-
 """ Eventual implementation of wine/docker use of convert.exe
 rule raw_to_mzml:
 	input:
@@ -10,13 +9,14 @@ rule raw_to_mzml:
 	script:
 		script to run docker/wine env for msconvert.exe
 """
+
 # make flat list of all MS datafiles
 all_timepoint_files = []
 for key in config["timepoints"]:
     for file in config[key]:
         all_timepoint_files.append(file)
 
-
+# snakefile targets creation of library_info.csv and gzipping all .mzMLs
 rule all:
     input:
         "resources/library_info/library_info.csv",
@@ -37,7 +37,7 @@ if config['polyfit_calibration']:
         benchmark:
             "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
-            "python scripts/preprocessing/imtbx_reader.py {input[0]} {input[1]} {output[0]} -o {output[1]} -a {output[2]} -c {output[3]}"
+            "python workflow/scripts/HDX_LIMIT/preprocessing/imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
 
 else: 
     rule read_imtbx:
@@ -52,7 +52,7 @@ else:
         benchmark:
             "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
-            "python scripts/preprocessing/imtbx_reader.py {input[0]} {input[1]} {output[0]} -o {output[1]} -a {output[2]}"
+            "python workflow/scripts/HDX_LIMIT/preprocessing/imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]}"
 
 
 rule gzip_mzmls:
@@ -63,7 +63,7 @@ rule gzip_mzmls:
     benchmark:
         "results/benchmarks/gzip_mzml.{mzml}.benchmark.txt"
     shell:
-        "python scripts/preprocessing/gzip_mzml.py {input} {output}"
+        "python workflow/scripts/HDX_LIMIT/preprocessing/gzip_mzml.py {input} --out_path {output}"
 
 
 rule make_ims_mz_tics:
@@ -75,21 +75,27 @@ rule make_ims_mz_tics:
     benchmark:
         "results/benchmarks/make_ims_mz_tics.{mzml}.benchmark.txt"
     shell:
-        "python scripts/preprocessing/make_ims_mz_tics.py {input} {output}"
+        "python workflow/scripts/HDX_LIMIT/preprocessing/make_ims_mz_tics.py {input} --out_path {output}"
 
 
 rule make_library_master_list:
     input:
         config["names_and_seqs"],
+        "config/config.yaml",
         expand("resources/mzml/{mzml}", mzml=all_timepoint_files[0]),
         expand(
             "resources/imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0][0]
         ),
-        expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files)
+        expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files),
+
     output:
         "results/plots/preprocessing/stretched_times_plots.png",
         "resources/library_info/library_info.csv",
     benchmark:
         "results/benchmarks/make_library_master_list.benchmark.txt"
-    shell:
-        "python scripts/preprocessing/make_library_master_list.py {input[0]} -n {input[1]} -j {input[2]} -u {input[3]} -p {output[0]} -o {output[1]}"
+
+    run:
+        tics = " ".join([input[i] for i in range(4, len(input))])
+        shell('''
+            python workflow/scripts/HDX_LIMIT/preprocessing/make_library_master_list.py {input[0]} --timepoints {input[1]} --undeut_mzml {input[2]} --intermediates {input[3]} --tics {tics}  --plot {output[0]} --out_path {output[1]}
+        ''')
