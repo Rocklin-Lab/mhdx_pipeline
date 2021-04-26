@@ -28,7 +28,7 @@ def main(library_info_path,
         gauss_params (tuple of ints/floats): Gaussian smoothing parameters in LC-RT and IMS-DT dimensions, (rt_sigma, dt_sigma)
 
     Returns:
-        out_dict (dict): dictionary containing list of all identified IsotopeClusters from input tensor
+        out_dict (dict): dictionary containing TensorGenerator object
     
     """
     out_dict = {}
@@ -72,7 +72,7 @@ def main(library_info_path,
         limit_write(all_ics, isotope_clusters_out_path)
 
     if return_flag:
-        out_dict['all_ics'] = all_ics
+        out_dict['TensorGenerator'] = tg
         return out_dict
 
 

@@ -18,7 +18,7 @@ def main(mzml_path, return_flag=None, out_path=None):
         out_path (string): option to save main output, path/to/file.tic
 
     Returns:
-        ms1_ims_tic (np_array): LC Chromatogram as numpy ndarray. Contains sum of ionic current for every LC-RT bin
+        ms1_ims_tic (np_array): LC Chromatogram as 2D numpy ndarray. Contains sum of ionic current for LC-RT and m/Z bins. 
     
     """
     drift_times = []
@@ -43,6 +43,7 @@ def main(mzml_path, return_flag=None, out_path=None):
     # scan_numbers=np.arange(0,len(scan_times))
 
     run = pymzml.run.Reader(mzml_path)
+    # These are hardcoded values controlling the density of sampling - TODO: Arguments?
     mz_bins = 70
     lims = np.arange(
         600, 2020, 20
@@ -52,7 +53,6 @@ def main(mzml_path, return_flag=None, out_path=None):
     ms1_ims_tic = np.zeros(
         (len(set(drift_times)) * mz_bins, len(set(scan_times))), np.int)
     print(np.shape(ms1_ims_tic))
-    # np.savetxt('%s.ims.mz.tic' % mzml, ms1_ims_tic)
 
     id_appearance_count = collections.Counter()
     rtIndex = 0
@@ -61,18 +61,11 @@ def main(mzml_path, return_flag=None, out_path=None):
             continue
         spec_id = int(spectrum["id"] - 1)
         id_appearance_count[spec_id] += 1
-        # if spectrum['ms level'] == 1:
-        if id_appearance_count[spec_id] == 1:  # this replaces 'ms level'
+        if id_appearance_count[spec_id] == 1:
             ims_bin = (
                 spec_id % 200
             )  # Waters synapt-G2 has 200 IMS bins for each LC timepoint, TODO - make main argument with default and config variable
             specpeaks = np.array(spectrum.peaks("raw")).T
-
-            try:
-                len(specpeaks)
-            except:
-                ipdb.set_trace()
-
             if len(specpeaks) > 0:
                 for mz_bin in range(mz_bins):
                     ms1_ims_tic[(ims_bin * mz_bins) + mz_bin, rtIndex] = int(

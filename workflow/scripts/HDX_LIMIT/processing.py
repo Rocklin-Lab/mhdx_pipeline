@@ -8,9 +8,6 @@ from scipy.stats import gmean
 from HDX_LIMIT import io, datatypes
 from numpy import linspace, cumsum, searchsorted
 
-sys.path.append(os.getcwd() + "/workflow/scripts/")
-import hxtools
-
 ### BOKEH ###
 from bokeh.plotting import figure
 from bokeh.palettes import Spectral6
@@ -276,7 +273,7 @@ class PathOptimizer:
                             n_undeut_runs=None):
         """
         Selects undeuterated isotope cluster which best matches theoretically calculated isotope distribution for POI sequence, for each observed charge state of the POI
-        all_tp_clusters = TensorG enerator attribute, e.g. T1 = TensorGenerator(...)\n select_undeuterated(T1.all_tp_clusters)
+        all_tp_clusters = TensorGenerator attribute, e.g. T1 = TensorGenerator(...); select_undeuterated(T1.all_tp_clusters)
         n_undeut_runs = number of undeuterated HDX runs included in the 'library_info' master csv
         """
 
@@ -292,8 +289,7 @@ class PathOptimizer:
         if n_undeut_runs is None:
             n_undeut_runs = self.n_undeut_runs
 
-        HX1 = hxtools.hxprot(seq=library_info.loc[library_info["name"] == name]
-                             ["sequence"].values[0])
+        my_seq = library_info.loc[library_info["name"] == name]["sequence"].values[0]
 
         if (
                 self.old_data_dir is not None
@@ -305,21 +301,22 @@ class PathOptimizer:
                         charge_dict["major_species_integrated_intensities"][i]
                 } for i in range(3)]  # hardcode for gabe's undeut idxs in list
                 charge_dict["fit_to_theo_dist"] = max(
-                    [HX1.calculate_isotope_dist(d) for d in undeut_amds])
+                    [self.calculate_isotope_dist_dot_product(sequence=my_seq, undeut_integrated_mz_array=d) for d in undeut_amds]
+                    )
 
         undeuts = []
         for ic in all_tp_clusters[
-                0]:  # hardcode for all replicates being collapsed into their tp index
+                0]:  # anticipates all undeuterated replicates being in the 0th index
             undeuts.append(ic)
         dot_products = []
 
-        # make list of all normed dot products between an undeuterated IC and the theoretical distribution, calculate_isotope_dist requires Pandas input
+        # <ake list of all normed dot products between an undeuterated IC and the theoretical distribution.
         for ic in undeuts:
             df = pd.DataFrame(
                 ic.baseline_integrated_mz,
                 columns=["major_species_integrated_intensities"],
             )
-            fit = HX1.calculate_isotope_dist(df)
+            fit = self.calculate_isotope_dist_dot_product(sequence=my_seq, undeut_integrated_mz_array=ic.baseline_integrated_mz)
             ic.undeut_ground_dot_product = fit
             dot_products.append((fit, ic.charge_states))
 
@@ -705,6 +702,64 @@ class PathOptimizer:
                 # if len(tp)<n_runners just append tp to filtered_runners
                 filtered_runners.append(tp)
         self.filtered_runners = filtered_runners
+
+    def calculate_theoretical_isotope_dist_from_sequence(self, sequence, n_isotopes=None):
+        """Calculate theoretical isotope distribtuion from the given one-letter sequence of a library protein.
+
+        Args:
+            sequence (string): sequence in one letter code
+            n_isotopes (int): number of isotopes to include. If none, includes all
+
+        Return:
+            isotope_dist (numpy ndarray): resulting theoretical isotope distribution
+
+        """
+        seq_formula = molmass.Formula(sequence)
+        isotope_dist = np.array([x[1] for x in seq_formula.spectrum().values()])
+        isotope_dist = isotope_dist / max(isotope_dist)
+        if n_isotopes:
+            if n_isotopes < len(isotope_dist):
+                isotope_dist = isotope_dist[:n_isotopes]
+            else:
+                fill_arr = np.zeros(n_isotopes - len(isotope_dist))
+                isotope_dist = np.append(isotope_dist, fill_arr)
+        return isotope_dist
+
+    def calculate_empirical_isotope_dist_from_integrated_mz(self, integrated_mz_array,
+                                                            n_isotopes=None):
+        """Calculate the isotope distribution from the integrated mz intensitities.
+        
+        Args: 
+            integrated_mz_values (Numpy ndarray): array of integrated mz intensitites
+            n_isotopes (int): number of isotopes to include. If none, includes all
+        Returns: 
+            isotope_dist (Numpy ndarray): isotope distribution with magnitude normalized to 1
+        
+        """
+        isotope_dist = integrated_mz_array / max(integrated_mz_array)
+        if n_isotopes:
+            isotope_dist = isotope_dist[:n_isotopes]
+        return isotope_dist
+
+    def calculate_isotope_dist_dot_product(self, sequence, undeut_integrated_mz_array):
+        """Calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array.
+        
+        Args:
+            sequence (string): single-letter sequence of the library protein-of-interest
+            undeut_integrated_mz_array (Numpy ndarray): observed integrated mz array from an undeuterated .mzML
+        Returns:
+            dot_product (float): result of dot product between theoretical and observed integrated-m/Z, from [0-1]
+
+        """
+        theo_isotope_dist = self.calculate_theoretical_isotope_dist_from_sequence(
+            sequence=sequence)
+        emp_isotope_dist = self.calculate_empirical_isotope_dist_from_integrated_mz(
+            integrated_mz_array=undeut_integrated_mz_array)
+        min_length = min([len(theo_isotope_dist), len(emp_isotope_dist)])
+        dot_product = np.linalg.norm(
+            np.dot(theo_isotope_dist[0:min_length], emp_isotope_dist[0:min_length])
+        ) / np.linalg.norm(theo_isotope_dist) / np.linalg.norm(emp_isotope_dist)
+        return dot_product
 
     ##########################################################################################################################################################################################################################################
     ### Scoring Functions for PathOptimizer ##################################################################################################################################################################################################

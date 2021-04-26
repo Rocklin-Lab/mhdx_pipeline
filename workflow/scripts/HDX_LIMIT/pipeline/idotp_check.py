@@ -6,6 +6,7 @@ import math
 import copy
 import pickle
 import pymzml
+import molmass
 import argparse
 import importlib.util
 import numpy as np
@@ -19,11 +20,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 sys.path.append(os.getcwd() + "/workflow/scripts/")
 
-#the following sys path is for local debug
-# sys.path.append('../auxiliary/')
-
 from HDX_LIMIT.processing import TensorGenerator
-import molmass
 
 
 #todo: later to use this function from hxtools(suggie version)

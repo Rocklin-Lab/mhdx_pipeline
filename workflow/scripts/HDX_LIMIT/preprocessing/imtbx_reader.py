@@ -1,14 +1,3 @@
-import importlib.util
-
-hxtools_spec = importlib.util.spec_from_file_location(
-    "hxtools.py", "workflow/scripts/hxtools.py")
-molmass_spec = importlib.util.spec_from_file_location(
-    "molmass.py", "workflow/scripts/molmass.py")
-hxtools = importlib.util.module_from_spec(hxtools_spec)
-molmass = importlib.util.module_from_spec(molmass_spec)
-hxtools_spec.loader.exec_module(hxtools)
-molmass_spec.loader.exec_module(molmass)
-
 import sys
 import time
 import copy

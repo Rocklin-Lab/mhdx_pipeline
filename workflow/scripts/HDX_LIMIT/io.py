@@ -30,7 +30,7 @@ def limit_read(path):
     return cpickle.loads(zlib.decompress(open(path, "rb").read()))
 
 
-def optimize_paths_inputs(name, library_info):
+def optimize_paths_inputs(name, library_info, config):
     # Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
     name_inputs = []
     idxs = library_info.index[library_info["name"] == name].tolist()

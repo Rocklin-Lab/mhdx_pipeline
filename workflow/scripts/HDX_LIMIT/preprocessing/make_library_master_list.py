@@ -326,7 +326,7 @@ def main(names_and_seqs_path,
     catdf = catdf.sort_values(["name", "charge", "pred_RT"])
     catdf.index = range(len(catdf))
 
-    # clear duplicate lines
+    # clear duplicate lines TODO: this can be done with DataFrame.drop_duplicates()
     dups = [False]
     for i in range(1, len(catdf)):
         if ((catdf["name"].values[i] == catdf["name"].values[i - 1]) and
@@ -358,7 +358,7 @@ def main(names_and_seqs_path,
                 catdf.iat[line, 0] = catdf.iloc[line]["name"] + "_" + str(
                     round(mean, 5))
 
-    # stick each 'rt_group' entry with a median RT
+    # stick each 'rt_group' entry with a median RT TODO: make weighted avg by signal intensity
     med_RTs = {}
     for name in set(catdf["name"].values):
         med_RTs[name] = np.median(

@@ -345,6 +345,9 @@ class DataTensor:
                     rts=nnf1[0].T[i],
                     dts=nnf1[1].T[i],
                     mz_data=nnf1[2].T[i],
+                    retention_labels=self.retention_labels,
+                    drift_labels=self.drift_labels,
+                    mz_labels=self.mz_labels,
                     factor_idx=i,
                     n_factors=n_factors,
                     lows=lows,
@@ -383,6 +386,9 @@ class Factor:
         rts,
         dts,
         mz_data,
+        retention_labels,
+        drift_labels,
+        mz_labels,
         factor_idx,
         n_factors,
         lows,
@@ -403,6 +409,9 @@ class Factor:
         self.rts = rts
         self.dts = dts
         self.mz_data = mz_data
+        self.retention_labels = retention_labels
+        self.drift_labels = drift_labels
+        self.mz_labels = mz_labels
         self.auc = sum(mz_data)
         self.factor_idx = factor_idx
         self.n_factors = n_factors
@@ -521,6 +530,9 @@ class Factor:
                         grate=self.grate,
                         rts=self.rts,
                         dts=self.dts,
+                        retention_labels=self.retention_labels,
+                        drift_labels=self.drift_labels,
+                        mz_labels=self.mz_labels,
                         max_rtdt=self.max_rtdt,
                         outer_rtdt=self.outer_rtdt,
                         box_dist_avg=self.box_dist_avg,
@@ -673,6 +685,9 @@ class IsotopeCluster:
         grate,
         rts,
         dts,
+        retention_labels,
+        drift_labels,
+        mz_labels,
         max_rtdt,
         outer_rtdt,
         box_dist_avg,
@@ -698,6 +713,9 @@ class IsotopeCluster:
         self.grate = grate
         self.rts = rts
         self.dts = dts
+        self.retention_labels = retention_labels
+        self.drift_labels = drift_labels
+        self.mz_labels = mz_labels
         self.max_rtdt = max_rtdt
         self.outer_rtdt = outer_rtdt
         self.box_dist_avg = box_dist_avg
