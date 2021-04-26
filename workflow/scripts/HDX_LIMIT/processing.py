@@ -2,6 +2,7 @@ import os
 import sys
 import copy
 import math
+import molmass
 import numpy as np
 import pandas as pd
 from scipy.stats import gmean
