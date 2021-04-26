@@ -1,4 +1,4 @@
-gimport os
+import os
 import sys
 import argparse
 from pymzml.utils.utils import index_gzip

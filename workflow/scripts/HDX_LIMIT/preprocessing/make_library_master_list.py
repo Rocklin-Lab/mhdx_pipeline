@@ -358,14 +358,16 @@ def main(names_and_seqs_path,
                 catdf.iat[line, 0] = catdf.iloc[line]["name"] + "_" + str(
                     round(mean, 5))
 
-    # stick each 'rt_group' entry with a median RT TODO: make weighted avg by signal intensity
-    med_RTs = {}
+    # Make rt-group averages weighted by total intensity.
+    weighted_avgs = {}
     for name in set(catdf["name"].values):
-        med_RTs[name] = np.median(
-            catdf.query('name == "%s"' % name)["pred_RT"].values)
-    catdf["med_RT"] = [med_RTs[x] for x in catdf["name"].values]
+        weighted_avgs[name] = np.average(
+            catdf.loc[catdf['name']==name]["pred_RT"].values,
+            weights=catdf.loc[catdf['name']==name]["ab_cluster_total"])
+    #apply weighted avg to all rt-group members
+    catdf["weighted_average_rt"] = [weighted_avgs[x] for x in catdf["name"].values]
 
-    catdf = catdf.sort_values(["med_RT", "charge"])
+    catdf = catdf.sort_values(["weighted_average_rt", "charge"])
     catdf.index = range(len(catdf))
 
     # Create RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint]
@@ -388,7 +390,7 @@ def main(names_and_seqs_path,
     # determine rt-group average pred-RT-n times from above
     prev_name = None
     all_tp_mean_preds = [[] for i in range(len(rt_columns))]
-    catdf = catdf.sort_values(["med_RT", "name"])
+    catdf = catdf.sort_values(["weighted_average_rt", "name"])
     for i in range(len(catdf)):
         if catdf.iloc[i]["name"] != prev_name:
             # get sub frame of rt-group
@@ -396,7 +398,7 @@ def main(names_and_seqs_path,
             # take means of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins
             if len(subdf) > 1:
                 name_rt_preds = [
-                    np.mean(subdf.iloc[:, i].values)
+                    np.mean(subdf.iloc[:, i].values, weights=catdf.loc[catdf['name']==name]["ab_cluster_total"])
                     for i in np.arange(-len(rt_columns), 0, 1)
                 ]
             else:

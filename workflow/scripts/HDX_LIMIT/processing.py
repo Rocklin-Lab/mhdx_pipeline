@@ -166,8 +166,8 @@ class PathOptimizer:
         self.gather_old_data()
         self.select_undeuterated()
         self.precalculate_fit_to_ground()
-        # self.prefiltered_ics = self.weak_pareto_dom_filter()
-        self.prefiltered_ics = self.all_tp_clusters
+        self.prefiltered_ics = self.weak_pareto_dom_filter()
+        #self.prefiltered_ics = self.all_tp_clusters
         self.generate_sample_paths()
 
     def weak_pareto_dom_filter(self):
