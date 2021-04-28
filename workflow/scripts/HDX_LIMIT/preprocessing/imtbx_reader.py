@@ -301,6 +301,7 @@ def apply_polyfit_cal_mz(polyfit_coeffs, mz):
 
 def gen_mz_error_calib_output(
     testq,
+    allseq,
     calib_pk_fpath,
     polyfit_degree=1,
     ppm_tol=50,
@@ -647,6 +648,7 @@ def main(isotopes_path,
 
         calib_dict = gen_mz_error_calib_output(
             testq=testq,
+            allseq=allseq,
             calib_pk_fpath=calibration_outpath,
             polyfit_degree=polyfit_deg,
             ppm_tol=ppm_tolerance,
