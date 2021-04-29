@@ -124,7 +124,7 @@ def gen_tensors_factorize(library_info_df,
             for isotope_cluster in factor.isotope_clusters:
                 undeut_ics_list.append(
                     isotope_cluster
-                )  #todo: check if the outer bracket creates a different list shape
+                )
 
         data_tensor_list.append(new_data_tensor)
 

@@ -622,7 +622,7 @@ def main(isotopes_path,
     ]
     allseq["len"] = [len(seq) for seq in allseq["sequence"]]
 
-    # cluster IMTBX lines corresponding to designed sequence estimates, hardcode values are heuristic weights for clustering, all weights are inverse
+    # cluster IMTBX lines corresponding to designed sequence estimates, code values are heuristic weights for clustering, all weights are inverse
     apply_cluster_weights(testq)
 
     # create dbscan object, fit, and apply cluster ids to testq lines
