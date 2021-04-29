@@ -181,9 +181,9 @@ def main(library_info_path,
 
     """
     print(undeut_tensor_path_list)
-    lib_idx = int(undeut_tensor_path_list[0].split('/')[-1].split('_')[0])
+    lib_idx = int(undeut_tensor_path_list[0].split("/")[-1].split("_")[0])
     library_info = pd.read_csv(library_info_path)
-    my_seq = library_info.iloc[lib_idx]['sequence']
+    my_seq = library_info.iloc[lib_idx]["sequence"]
 
     iso_clusters_list, data_tensor_list = gen_tensors_factorize(
         library_info_df=library_info,
@@ -195,7 +195,7 @@ def main(library_info_path,
         sequence=my_seq, undeut_isotope_clusters=iso_clusters_list)
 
     if output_path is not None:
-        pd.DataFrame({'idotp': max(idotp_list)}, index=[0]).to_csv(output_path)
+        pd.DataFrame({"idotp": max(idotp_list)}, index=[0]).to_csv(output_path)
 
     if return_flag is not None:
         return {
@@ -206,7 +206,7 @@ def main(library_info_path,
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description=
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
     parser.add_argument(
         "undeut_tensor_path_list",
-        nargs='+',
+        nargs="+",
         help=
         "list of paths to undeuterated tensor outputs from extract_tensors.py")
     parser.add_argument("output_path", help="path/to/file for main .csv output")

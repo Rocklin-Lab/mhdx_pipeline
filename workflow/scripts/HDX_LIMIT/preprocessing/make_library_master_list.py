@@ -362,8 +362,8 @@ def main(names_and_seqs_path,
     weighted_avgs = {}
     for name in set(catdf["name"].values):
         weighted_avgs[name] = np.average(
-            catdf.loc[catdf['name']==name]["pred_RT"].values,
-            weights=catdf.loc[catdf['name']==name]["ab_cluster_total"])
+            catdf.loc[catdf["name"]==name]["pred_RT"].values,
+            weights=catdf.loc[catdf["name"]==name]["ab_cluster_total"])
     #apply weighted avg to all rt-group members
     catdf["weighted_average_rt"] = [weighted_avgs[x] for x in catdf["name"].values]
 
@@ -398,7 +398,7 @@ def main(names_and_seqs_path,
             # take weighted-avg of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins
             if len(subdf) > 1:
                 name_rt_preds = [
-                    np.average(subdf.iloc[:, i].values, weights=catdf.loc[catdf['name']==name]["ab_cluster_total"])
+                    np.average(subdf.iloc[:, i].values, weights=catdf.loc[catdf["name"]==name]["ab_cluster_total"])
                     for i in np.arange(-len(rt_columns), 0, 1)
                 ]
             else:
@@ -495,7 +495,7 @@ if __name__ == "__main__":
             glob.glob(args.intermediates_dir + "*intermediate.csv"))
     if args.tics_dir is not None and args.tics is None:
         args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic"))
-    open_timepoints = yaml.load(open(args.timepoints, 'rt'),
+    open_timepoints = yaml.load(open(args.timepoints, "rt"),
                                 Loader=yaml.FullLoader)
 
     main(args.names_and_seqs_path,

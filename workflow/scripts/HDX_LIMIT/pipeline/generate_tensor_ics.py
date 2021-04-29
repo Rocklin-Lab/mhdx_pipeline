@@ -72,11 +72,11 @@ def main(library_info_path,
         limit_write(all_ics, isotope_clusters_out_path)
 
     if return_flag:
-        out_dict['TensorGenerator'] = tg
+        out_dict["TensorGenerator"] = tg
         return out_dict
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # set expected command line arguments
     parser = argparse.ArgumentParser(

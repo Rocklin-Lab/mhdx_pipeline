@@ -143,7 +143,7 @@ def main(library_info_path,
     # Read scan info from msrun
     for k in range(msrun.get_spectrum_count()):
         nextscan = msrun.next()
-        scan_functions.append(nextscan.id_dict['function'])
+        scan_functions.append(nextscan.id_dict["function"])
         scan_times.append(nextscan.scan_time_in_minutes())
     scan_times = np.array(scan_times)
     scan_numbers = np.arange(0, len(scan_times))
@@ -367,12 +367,12 @@ if __name__ == "__main__":
     # outputs
     parser.add_argument("-o",
                         "--outputs",
-                        nargs='*',
+                        nargs="*",
                         help="explicit list of string outputs to be created")
     parser.add_argument(
         "-i",
         "--indices",
-        nargs='*',
+        nargs="*",
         type=int,
         help="subset of library_info to extract tensors for, use with -o or -t")
     parser.add_argument(
@@ -397,7 +397,7 @@ if __name__ == "__main__":
                     args.output_directory + str(i) + "_" + mzml
                     for i in args.indices
                 ]
-    open_timepoints = yaml.load(open(args.timepoints_yaml, 'rb').read(), Loader=yaml.Loader)
+    open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
 
     main(library_info_path=args.library_info_path,
          mzml_gz_path=args.mzml_gz_path,

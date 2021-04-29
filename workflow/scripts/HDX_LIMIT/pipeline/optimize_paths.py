@@ -84,7 +84,7 @@ def main(library_info_path,
 
     if rt_group_name is None:
         name = library_info.iloc[int(
-            all_tensor_input_paths[0][0].split('/')[-1].split('_')[0])]['name']
+            all_tensor_input_paths[0][0].split("/")[-1].split("_")[0])]["name"]
     else:
         name = rt_group_name
 
@@ -95,7 +95,7 @@ def main(library_info_path,
         for fn in timepoints[tp]:
             for file in all_tensor_input_paths:
                 if fn.split(
-                        '.')[0] in file:  # only match filename without .mzML
+                        ".")[0] in file:  # only match filename without .mzML
                     ics = limit_read(file)  # expects list of ics
                     for ic in ics:
                         tp_buf.append(ic)
@@ -128,11 +128,11 @@ def main(library_info_path,
         limit_write([p1.rt_com_cv, p1.dt_com_cv], rtdt_com_cvs_out_path)
 
     if return_flag:
-        out_dict['path_optimizer'] = p1
+        out_dict["path_optimizer"] = p1
         return out_dict
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # set expected command line arguments
     parser = argparse.ArgumentParser(
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "-i",
         "--all_ic_input_paths",
-        nargs='*',
+        nargs="*",
         help=
         "structured 2D list of extracted IsotopeCluster objects from each tensor included in the rt_group."
     )
@@ -205,7 +205,7 @@ if __name__ == '__main__':
         else:
             parser.print_help()
             sys.exit()
-    open_timepoints = yaml.load(open(args.timepoints_yaml, 'rb').read())
+    open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read())
 
     main(library_info_path=args.library_info_path,
          all_ic_input_paths=args.all_ic_input_paths,

@@ -38,7 +38,7 @@ class TensorGenerator:
 
         if (
                 kwargs is not None
-        ):  # TODO: Default control values should be placed in a check statement below (if hasattr(self, 'name of value'): Do) do this for other kwargs fxns
+        ):  # TODO: Default control values should be placed in a check statement below (if hasattr(self, "name of value"): Do) do this for other kwargs fxns
             for key in kwargs.keys():
                 setattr(self, key, kwargs[key])
 
@@ -1110,10 +1110,10 @@ class PathOptimizer:
                          view=index_view,
                          line_color="blue",
                          line_width=1.5,
-                         hover_color='red')
+                         hover_color="red")
             p.add_tools(
                 HoverTool(show_arrow=False,
-                          line_policy='next',
+                          line_policy="next",
                           tooltips=tooltips))
 
             # Have a figure by here, use glyph plotting from here
@@ -1210,7 +1210,7 @@ class PathOptimizer:
             )
             p.add_tools(
                 HoverTool(show_arrow=False,
-                          line_policy='next',
+                          line_policy="next",
                           tooltips=tooltips))
             p.xaxis.axis_label = "Added-Mass Units"
             p.yaxis.axis_label = "Relative Intensity"

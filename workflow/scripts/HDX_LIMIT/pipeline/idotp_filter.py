@@ -17,14 +17,14 @@ def main(all_idotp_csv_inputs,
         idotp_cutoff (float): inclusive lower-bound on idotp [0,1] to be considered for evaluation, default=0.95
 
     Returns:
-        out_dict (dict) = dictionary containing 'filter_passing_indices'
+        out_dict (dict) = dictionary containing "filter_passing_indices"
 
     """
     out_dict = {}
 
     filter_passing_indices = []
     for fn in all_idotp_csv_inputs:
-        lib_idx = int(fn.split('/')[-1].split('_')[0])
+        lib_idx = int(fn.split("/")[-1].split("_")[0])
         idpc = pd.read_csv(fn)
         if idpc["idotp"].values[0] >= idotp_cutoff:
             filter_passing_indices.append(lib_idx)
@@ -43,7 +43,7 @@ def main(all_idotp_csv_inputs,
         return out_dict
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # set expected command line arguments
     parser = argparse.ArgumentParser(
@@ -66,6 +66,10 @@ if __name__ == '__main__':
         default=0.95,
         help=
         "lower limit on dot-product between theoretical integrated m/z of POI and int. m/z of observed signal in question. Float in range [0,1], default 0.95 "
+    )
+    parser.add_argument(""
+
+
     )
     args = parser.parse_args()
 
