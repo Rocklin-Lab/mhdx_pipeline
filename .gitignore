@@ -12,7 +12,8 @@ analysis/*
 !results/logs
 !results/benchmarks
 !notebooks
-!notebooks/**
+notebooks/*
+!notebooks/*.ipynb
 !workflow
 !workflow/*
 !workflow/**
@@ -25,5 +26,9 @@ analysis/*
 !LICENSE
 !README.md
 **/__pycache__/
+**/__pycache__/*
+**/__pycache__/**
 **/.ipynb_checkpoints/
+**/.ipynb_checkpoints/*
+**/.ipynb_checkpoints/**
 **/.DS_Store
