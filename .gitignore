@@ -24,4 +24,5 @@ analysis/*
 !.test
 !LICENSE
 !README.md
-**__pycache__
+**__pycache__/
+**.ipynb_checkpoints/
