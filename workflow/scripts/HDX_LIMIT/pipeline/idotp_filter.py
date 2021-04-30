@@ -2,6 +2,10 @@ import sys
 import glob
 import argparse
 import pandas as pd
+import seaborn as sns
+import matplotlib as mpl
+mpl.use("Agg")
+import matplotlib.pyplot as plt
 
 
 def main(all_idotp_csv_inputs,
@@ -9,7 +13,7 @@ def main(all_idotp_csv_inputs,
          plot_out_path=None,
          return_flag=False,
          idotp_cutoff=0.95):
-    """Reads all rt-group idotp csvs and returns or saves a list of indices with idotp >= idotp_cutoff.
+    """Reads all library_info index idotp_check.csv files and returns or saves a list of indices with idotp >= idotp_cutoff.
 
     Args:
         all_idotp_csv_inputs (list of strings): list of all input IsotopeCluster-list filepaths
@@ -25,9 +29,11 @@ def main(all_idotp_csv_inputs,
     out_dict = {}
 
     filter_passing_indices = []
+    idotps = []
     for fn in all_idotp_csv_inputs:
         lib_idx = int(fn.split("/")[-1].split("_")[0])
         idpc = pd.read_csv(fn)
+        idotps.append(idpc["idotp"].values[0])
         if idpc["idotp"].values[0] >= idotp_cutoff:
             filter_passing_indices.append(lib_idx)
 
@@ -38,7 +44,9 @@ def main(all_idotp_csv_inputs,
     # make df output option
     out_df = pd.DataFrame.from_dict(out_dict)
 
-    if 
+    if plot_out_path is not None:
+        sns.displot(idotps)
+        plt.savefig(plot_out_path)
 
     if out_path is not None:
         out_df.to_csv(out_path)
@@ -65,7 +73,7 @@ if __name__ == "__main__":
                         help="path/to/filter_passing_indices.csv")
     parser.add_argument("--p",
                         "--plot_out_path",
-                        help="path/to/idotp_distribution.csv")
+                        help="path/to/idotp_distribution.png")
     parser.add_argument(
         "-c",
         "--idotp_cutoff",

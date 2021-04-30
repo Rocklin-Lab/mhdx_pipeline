@@ -163,7 +163,7 @@ def main(library_info_path,
          return_flag=None,
          n_factors=15,
          gauss_params=(3, 1)):
-    """Compares each undeuterated charge state of an rt-group to its theoretical distribution to determine signal quality.
+    """Compares each undeuterated replicate of a charge state to its theoretical distribution as a measure of signal quality.
 
     Args:
         library_info_path (string): path/to/library_info.csv
