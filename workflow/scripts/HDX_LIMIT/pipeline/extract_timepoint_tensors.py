@@ -398,6 +398,7 @@ if __name__ == "__main__":
                     for i in args.indices
                 ]
     open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
+    args.outputs=arg.outputs.split(",")
 
     main(library_info_path=args.library_info_path,
          mzml_gz_path=args.mzml_gz_path,

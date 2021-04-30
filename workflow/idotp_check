@@ -55,6 +55,7 @@ if config['polyfit_calibration']:
         run:
             outputs = [output[i] for i in range(len(output))]
             shell('''
+                ulimit -s 65532;
                 python workflow/scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py {input[0]} {input[1]} {input[2]}--polyfit_calibration_dict {input[3]} --outputs {outputs}
             ''')
 
@@ -72,8 +73,9 @@ else:
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         run:
-            outputs = [output[i] for i in range(len(output))]
+            outputs = ",".join([output[i] for i in range(len(output))])
             shell('''
+                ulimit -s 65532;
                 python workflow/scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py {input[0]} {input[1]} {input[2]} --outputs {outputs}
             ''')
 
