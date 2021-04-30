@@ -128,7 +128,7 @@ def main(library_info_path,
         limit_write([p1.rt_com_cv, p1.dt_com_cv], rtdt_com_cvs_out_path)
 
     if return_flag:
-        out_dict["path_optimizer"] = p1
+        out_dict["PathOptimizer"] = p1
         return out_dict
 
 
