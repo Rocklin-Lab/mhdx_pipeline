@@ -142,6 +142,9 @@ class PathOptimizer:
         self.rt_ground_rmse_weight = 10
         self.dt_ground_rmse_weight = 10
         self.auc_ground_rmse_weight = 20
+        self.rmses_sum_weight = 1 
+        self.maxint_sum_weight = 1
+        self.int_mz_FWHM_rmse_weight = 1
 
         # Set internal variables
         self.name = name
@@ -804,10 +807,12 @@ class PathOptimizer:
         return sd / len(major_species_centroids)
 
     def delta_mz_rate(self, ics, timepoints=None):
+    # Two penalizations are computed: [0] if the ic is too fast (sd) and [1] if the ic goes backwards (back)
 
         if timepoints is None:
             timepoints = self.timepoints
-
+        
+        back = 0
         sd = 0
         previous_rate = (ics[1].baseline_integrated_mz_com -
                          ics[0].baseline_integrated_mz_com) / (timepoints[1] -
@@ -817,7 +822,7 @@ class PathOptimizer:
             new_com = ics[i].baseline_integrated_mz_com
             if new_com < ics[
                     i - 1].baseline_integrated_mz_com:  # if we went backwards
-                sd += (100 *
+                back += (100 *
                        (new_com - ics[i - 1].baseline_integrated_mz_com)**2.0
                       )  # penalize for going backwards
                 new_com = (
@@ -829,7 +834,7 @@ class PathOptimizer:
             if (current_rate / previous_rate) > 1.2:
                 sd += (current_rate / previous_rate)**2.0
             previous_rate = current_rate
-        return sd / len(ics)
+        return sd / len(ics), back / len(ics
 
     def int_mz_rot_fit(self, ics):
         # Compares i to i-1 from ics[2]
@@ -895,6 +900,28 @@ class PathOptimizer:
                     sd += (ic.log_baseline_auc -
                            undeut_grounds[key].log_baseline_auc)**2
         return math.sqrt(np.mean(sd))
+    
+    def rmses_sum(ics):
+        rmses = 0
+        for ic in ics:
+            rmses += 100*ic.baseline_integrated_mz_rmse
+        return rmses
+  
+    def maxint_sum(ics):
+        maxint = 0
+        for ic in ics:
+            maxint += max(ic.baseline_integrated_mz)
+            return 100000/maxint
+  
+    def int_mz_FWHM_rmse(ics):
+        sd = 0
+        for i in range(2, len(ics)):
+            sd += (
+                ics[i].baseline_integrated_mz_FWHM - ics[i - 1].baseline_integrated_mz_FWHM
+            ) ** 2.0
+ 
+        return math.sqrt(sd)
+    
 
     # Eventually put defaults here as else statements
     def set_score_weights(
@@ -928,22 +955,50 @@ class PathOptimizer:
             self.dt_ground_rmse_weight = dt_ground_rmse_weight
         if auc_ground_rmse_weight != None:
             self.auc_ground_rmse_weight = auc_ground_rmse_weight
+        if rmses_sum_weight != None:
+            self.rmses_sum_weight = rmses_sum_weight
+        if maxint_sum_weight != None:
+            self.maxint_sum_weight = maxint_sum_weight
+        if int_mz_FWHM_rmse_weight != None:
+             self.int_mz_FWHM_rmse_weight  = int_mz_FWHM_rmse_weight
+            
 
     def combo_score(self, ics):
-
+        
+        
+           coeffs = [1.7331330816863306,
+             1.8279294604480563,
+             1.253516574780788,
+             1.253516574780788,
+             0.1437773152156825,
+             1.8219429028285896,
+             0.775616753877507,
+             0.9623855886298811,
+             0.3231014751705914,
+             1.0611233913847378,
+             0.43853197459601656,
+             1.79011362219571]
+  
+  
         return sum([
-            self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
-            self.baseline_peak_error_weight * self.baseline_peak_error(ics),
-            self.delta_mz_rate_weight * self.delta_mz_rate(ics),
+            coeffs[0] * self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
+            coeffs[1] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
+            coeffs[2] * self.delta_mz_rate_weight * self.delta_mz_rate(ics)[0],
+            coeffs[3] * self.delta_mz_rate_weight * self.delta_mz_rate(ics)[1],
             # self.int_mz_rot_fit_weight*self.int_mz_rot_fit(ics),
-            self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
-            self.dt_ground_fit_weight * self.dt_ground_fit(ics),
-            self.rt_ground_fit_weight * self.rt_ground_fit(ics),
-            self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
-            self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
+            coeffs[4] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
+            coeffs[5] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
+            coeffs[6] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
+            coeffs[7] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
+            coeffs[8] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
+            coeffs[9] * self.rmses_sum_weight * self.rmses_sum(ics),
+            coeffs[10] * self.maxint_sum_weight * self.maxint_sum(ics),
+            coeffs[11] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics)
         ])
-
+           
+                                         
     def report_score(self, ics):
+    # TODO Add additional scores to this function                                    
 
         return {
             "int_mz_std_rmse": (self.int_mz_std_rmse_weight,
