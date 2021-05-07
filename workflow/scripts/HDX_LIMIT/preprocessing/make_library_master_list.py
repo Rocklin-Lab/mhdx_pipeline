@@ -394,12 +394,13 @@ def main(names_and_seqs_path,
     for i in range(len(catdf)):
         if catdf.iloc[i]["name"] != prev_name:
             # get sub frame of rt-group
-            subdf = catdf.loc[catdf["name"] == catdf.iloc[i]["name"]]
+            protein_name = catdf.iloc[i]["name"]
+            subdf = catdf.loc[catdf["name"] == protein_name]
             # take weighted-avg of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins
             if len(subdf) > 1:
                 name_rt_preds = [
-                    np.average(subdf.iloc[:, i].values, weights=catdf.loc[catdf["name"]==name]["ab_cluster_total"])
-                    for i in np.arange(-len(rt_columns), 0, 1)
+                    np.average(subdf.iloc[:, j].values, weights=catdf.loc[catdf["name"]==protein_name]["ab_cluster_total"])
+                    for j in np.arange(-len(rt_columns), 0, 1)
                 ]
             else:
                 name_rt_preds = subdf.iloc[0, -len(rt_columns):].values

@@ -14,9 +14,11 @@ import pandas as pd
 import seaborn as sns
 import _pickle as cpickle
 import matplotlib.pyplot as plt
-from importlib import reload
+from scipy.stats import norm
+from scipy.signal import find_peaks
 from collections import defaultdict as ddict
 from scipy.ndimage.filters import gaussian_filter
+
 
 sys.path.append(os.getcwd() + "/workflow/scripts/")
 
