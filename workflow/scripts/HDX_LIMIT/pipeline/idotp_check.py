@@ -20,7 +20,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 sys.path.append(os.getcwd() + "/workflow/scripts/")
 
-from HDX_LIMIT.processing import TensorGenerator
+from HDX_LIMIT.processing import TensorGenerator, generate_tensor_factors
 
 
 #todo: later to use this function from hxtools(suggie version)
@@ -89,6 +89,7 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
 
 def gen_tensors_factorize(library_info_df,
                           undeut_tensor_path_list,
+                          factor_output_path,
                           timepoint_index=0,
                           n_factors=15,
                           gauss_params=(3, 1)):
@@ -111,22 +112,22 @@ def gen_tensors_factorize(library_info_df,
 
     for num, undeut_tensor_path in enumerate(undeut_tensor_path_list):
 
-        # generate new data tensor
-        new_data_tensor = TensorGenerator(filename=undeut_tensor_path,
-                                          library_info=library_info_df,
-                                          timepoint_index=timepoint_index)
+        # gen data tensor and factors
+        data_tensor = generate_tensor_factors(tensor_fpath=undeut_tensor_path,
+                                              library_info_df=library_info_df,
+                                              timepoint_index=timepoint_index,
+                                              gauss_params=gauss_params,
+                                              n_factors=n_factors,
+                                              factor_output_fpath=factor_output_path,
+                                              timepoint_label=None)
 
-        # factorize
-        new_data_tensor.DataTensor.factorize(n_factors=n_factors,
-                                             gauss_params=gauss_params)
-
-        for factor in new_data_tensor.DataTensor.factors:
+        for factor in data_tensor.DataTensor.factors:
             for isotope_cluster in factor.isotope_clusters:
                 undeut_ics_list.append(
                     isotope_cluster
                 )
 
-        data_tensor_list.append(new_data_tensor)
+        data_tensor_list.append(data_tensor)
 
     return undeut_ics_list, data_tensor_list
 
@@ -159,6 +160,7 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
 
 def main(library_info_path,
          undeut_tensor_path_list,
+         factor_output_path=None,
          output_path=None,
          return_flag=None,
          n_factors=15,
@@ -188,6 +190,7 @@ def main(library_info_path,
     iso_clusters_list, data_tensor_list = gen_tensors_factorize(
         library_info_df=library_info,
         undeut_tensor_path_list=undeut_tensor_path_list,
+        factor_output_path=factor_output_path,
         n_factors=n_factors,
         gauss_params=gauss_params)
 
@@ -219,6 +222,7 @@ if __name__ == "__main__":
         help=
         "list of paths to undeuterated tensor outputs from extract_tensors.py")
     parser.add_argument("output_path", help="path/to/file for main .csv output")
+    parser.add_argument("factor_output_path", help="path/to/file for factor data .factor output")
     parser.add_argument(
         "--n_factors",
         default=15,
@@ -238,4 +242,5 @@ if __name__ == "__main__":
     # main operation
     main(library_info_path=args.library_info_path,
          undeut_tensor_path_list=args.undeut_tensor_path_list,
+         factor_output_path=args.factor_output_path,
          output_path=args.output_path)
