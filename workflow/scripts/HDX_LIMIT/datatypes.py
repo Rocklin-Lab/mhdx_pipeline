@@ -12,12 +12,13 @@ from scipy.ndimage.measurements import center_of_mass
 import scipy as sp
 from scipy.optimize import curve_fit
 from sklearn.metrics import mean_squared_error
+from scipy.stats import norm
 
 
 class DataTensor:
 
     def __init__(self, source_file, tensor_idx, timepoint_idx, name,
-                 total_mass_window, n_concatenated, charge_states, **kwargs):
+                 total_mass_window, n_concatenated, charge_states, integrated_mz_limits, **kwargs):
 
         ###Set Common Attributes###
 
@@ -29,10 +30,7 @@ class DataTensor:
         self.total_mass_window = total_mass_window
         self.n_concatenated = n_concatenated
         self.charge_states = charge_states
-        self.measured_precision = 1e-6  # hardcode from pymzml
-        self.internal_precision = (
-            1000  # chosen for low-loss compression of mz dimension
-        )
+        self.integrated_mz_limits = integrated_mz_limits
 
         # Keyword Args
         if kwargs is not None:
@@ -53,76 +51,24 @@ class DataTensor:
                 self.concat_dt_idxs = kwargs["concat_dt_idxs"]
             if "concatenated_grid" in kws:
                 self.concatenated_grid = kwargs["concatenated_grid"]
-            if "lows" in kws:
-                self.lows = kwargs["lows"]
-            if "highs" in kws:
-                self.highs = kwargs["highs"]
-            if "abs_mz_low" in kws:
-                self.mz_bin_low = kwargs["abs_mz_low"]
+            if "bins_per_isotope_peak" in kws:
+                self.bins_per_isotope_peak = kwargs["bins_per_isotope_peak"]
+
 
         ###Compute Instance Values###
 
         # Handle normal case: new DataTensor from output of isolate_tensors.py
         if self.n_concatenated == 1:
-            """
-            t0 = time.time()
-            #print('Reprofiling...')
-            self.grid_out = np.reshape(self.reprofile(), (len(self.rts), len(self.dts)))
-            t = time.time()
-            #print("T+"+str(t-t0))
-            #For creating full_grid_out, a 3d array with all mz dimensions having the same length
-            #Find min and max mz range values:
-            #check high
-            self.mz_bin_low = 1e9
-            self.mz_bin_high = 0
-            for x in self.grid_out:
-                for y in x:
-                    if len(y) > 0:
-                        z = np.asarray(y)[:,0]
-                        if min(z) < self.mz_bin_low: self.mz_bin_low = y[np.argmin(z)][0]
-                        if max(z) > self.mz_bin_high: self.mz_bin_high = y[np.argmax(z)][0]
-
-            #create zero array with range of bin indices
-            self.mz_bins = np.arange(self.mz_bin_low, self.mz_bin_high, 0.02) #hardcode for desired coarseness of gaussian representation, could be parameterized
-            self.mz_len = len(self.mz_bins)
-
-            #create empty space with dimensions matching grid_out and m/z indices
-            self.full_grid_out = np.zeros((np.shape(self.grid_out)[0], np.shape(self.grid_out)[1], self.mz_len))
-
-            #determine and apply mapping of nonzero grid_out values to full_grid_out
-            for l in range(len(self.grid_out)):
-                for m in range(len(self.grid_out[l])):
-                    if len(self.grid_out[l][m]) == 0:
-                        pass
-
-                    else:
-                        if len(self.grid_out[l][m]) != 0:
-                            low_idx = np.searchsorted(self.mz_bins, self.grid_out[l][m][0,0])
-                            high_idx = np.searchsorted(self.mz_bins, self.grid_out[l][m][-1,0])
-                            if high_idx - low_idx == len(self.grid_out[l][m][:,0]):
-                                self.indices = np.arange(low_idx, high_idx, 1)
-                            else:
-                                self.indices = np.clip(np.searchsorted(self.mz_bins, self.grid_out[l][m][:,0]), 0, len(self.mz_bins)-1)
-                        else:
-                            self.indices = np.clip(np.searchsorted(self.mz_bins, self.grid_out[l][m][:,0]), 0, len(self.mz_bins)-1)
-
-                        if self.indices[-1] == len(self.mz_bins):
-                            self.indices[-1] = self.indices[-1]-1
-                        try:
-                            self.full_grid_out[l,m][self.indices] = self.grid_out[l][m][:,1]
-                        except:
-                            ipdb.set_trace()
-                            print("this stops the iterator")
-            """
 
             (
                 self.retention_labels,
                 self.drift_labels,
                 self.mz_labels,
-                self.min_mz,
-                self.max_mz,
+                self.bins_per_isotope_peak,
                 self.full_grid_out,
-            ) = self.sparse_to_full_tensor((self.rts, self.dts, self.seq_out))
+            ) = self.sparse_to_full_tensor_reprofile((self.rts, self.dts, self.seq_out),
+                                                     self.integrated_mz_limits,
+                                                     self.bins_per_isotope_peak )
             self.full_gauss_grids = self.gauss(self.full_grid_out)
 
         # Handle concatenated tensor case, check for required inputs
@@ -135,58 +81,29 @@ class DataTensor:
                 print("Concatenated Tensor Missing Required Values")
                 sys.exit()
 
-    def sparse_to_full_tensor(self, data):
+    def sparse_to_full_tensor_reprofile(self, data, integrated_mz_limits, bins_per_isotope_peak = 7, ms_resolution=25000):
         retention_labels, drift_labels, sparse_data = data
+        
+        FWHM = np.average(integrated_mz_limits) / ms_resolution
+        gaussian_scale = FWHM / 2.355 #a gaussian with scale = standard deviation = 1 has FWHM 2.355
+        
+        mz_bin_centers = np.ravel([np.linspace(lowlim, highlim, bins_per_isotope_peak) for lowlim, highlim in integrated_mz_limits])
+        tensor3_out = np.zeros((len(retention_labels), len(drift_labels), len(mz_bin_centers)))
 
-        min_mz = min([min(x[:, 0]) for x in sparse_data if len(x[:, 0]) > 0])
-        max_mz = max([max(x[:, 0]) for x in sparse_data if len(x[:, 0]) > 0])
-        # print (min_mz, max_mz)
-        # mz_labels = np.arange(min_mz, max_mz + 0.03, 0.02)
-        mz_labels = np.arange(min_mz, max_mz + 0.03, 0.02)
-
-        tensor3_out = np.zeros(
-            (len(retention_labels), len(drift_labels), len(mz_labels)))
 
         scan = 0
         for i in range(len(retention_labels)):
             for j in range(len(drift_labels)):
-                mz_indices = np.searchsorted(mz_labels, sparse_data[scan][:, 0])
-                large_array = np.zeros((len(sparse_data[scan]), len(mz_labels)))
-                large_array[np.arange(len(sparse_data[scan])),
-                            mz_indices] = sparse_data[scan][:, 1]
-                tensor3_out[i][j] = np.sum(large_array, axis=0)
+                n_peaks = len(sparse_data[scan])
+                gaussians = norm(loc=sparse_data[scan][:,0],scale=gaussian_scale)
+                resize_gridpoints = np.resize(mz_bin_centers, (n_peaks, len(mz_bin_centers) )).T
+                eval_gaussians = gaussians.pdf(resize_gridpoints) * sparse_data[scan][:,1] * gaussian_scale
+
+                tensor3_out[i][j] = np.sum(eval_gaussians,axis=1) 
                 scan += 1
+                
+        return retention_labels, drift_labels, mz_bin_centers, bins_per_isotope_peak, tensor3_out
 
-        return (retention_labels, drift_labels, mz_labels, min_mz, max_mz,
-                tensor3_out)
-
-    def reprofile(self):
-        # Reads list of mz peak centroids and returns full length mz array of gaussians.
-        # Measured and interal precision are adjusted to vary compression of the mz dimension.
-        # Adapted from pymzml, used here to push peak reprofiling downstream of mzml extraction for more efficient load distribution.
-        out = []
-        for scan in self.seq_out:
-            tmp = ddict(int)
-            for mz, i in scan:
-                # Let the measured precision be 2 sigma of the signal width
-                # When using normal distribution
-                # FWHM = 2 sqt(2 * ln(2)) sigma = 2.3548 sigma
-                s = mz * self.measured_precision * 2  # in before 2
-                s2 = s * s
-                floor = mz - 5.0 * s  # Gauss curve +- 3 sigma
-                ceil = mz + 5.0 * s
-                ip = self.internal_precision / 4
-                # more spacing, i.e. less points describing the gauss curve
-                # -> faster adding
-                for _ in range(int(round(floor * ip)),
-                               int(round(ceil * ip)) + 1):
-                    if _ % int(5) == 0:
-                        a = float(_) / float(ip)
-                        y = i * math.exp(-1 * ((mz - a) * (mz - a)) / (2 * s2))
-                        tmp[a] += y
-            out.append(np.asarray([[key, tmp[key]] for key in list(tmp.keys())
-                                  ]))
-        return np.asarray(out)
 
     # Takes tensor input and gaussian filter parameters, outputs filtered data
     def gauss(self, grid, rt_sig=3, dt_sig=1):
@@ -197,46 +114,7 @@ class DataTensor:
                                                   (rt_sig, dt_sig))
         return gauss_grid
 
-    def interpolate(self, grid_in, new_mz_len, gauss_params=None):
-        # Takes length of mz_bins to interpolated to, and optional gaussian filter parameters
-        # Returns the interpolated tensor, length of interpolated axis, interpolated low_lims and high_lims
-
-        if gauss_params != None:
-            grid = self.gauss(grid_in, gauss_params[0], gauss_params[1])
-        else:
-            grid = grid_in
-
-        test_points = []
-        z_axis = np.clip(np.linspace(0,
-                                     np.shape(grid)[2], new_mz_len), 0,
-                         np.shape(grid)[2] - 1)
-        for n in range(np.shape(grid)[0]):
-            for o in range(np.shape(grid)[1]):
-                for p in z_axis:
-                    test_points.append((n, o, p))
-
-        x, y, z = (
-            np.arange(np.shape(grid)[0]),
-            np.arange(np.shape(grid)[1]),
-            np.arange(np.shape(grid)[2]),
-        )
-        interpolation_function = sp.interpolate.RegularGridInterpolator(
-            points=[x, y, z], values=grid)
-        interpolated_out = interpolation_function(test_points)
-        interpolated_out = np.reshape(
-            interpolated_out,
-            (np.shape(grid)[0], np.shape(grid)[1], new_mz_len))
-
-        interpolated_bin_mzs = np.linspace(self.mz_bin_low, self.mz_bin_high,
-                                           new_mz_len)
-        interpolated_low_lims = np.searchsorted(interpolated_bin_mzs,
-                                                self.mz_labels[self.lows])
-        interpolated_high_lims = np.searchsorted(interpolated_bin_mzs,
-                                                 self.mz_labels[self.highs])
-
-        return [interpolated_out, interpolated_low_lims, interpolated_high_lims]
-
-    def factorize(self, n_factors=13, new_mz_len=None, gauss_params=None):
+    def factorize(self, n_factors=4, new_mz_len=None, gauss_params=None): 
         # Test factorization starting at n_factors = 15 and counting down, keep factorization that has no factors with correlation greater than 0.2 in any dimension.
 
         def corr_check(factors, cutoff):
@@ -263,53 +141,25 @@ class DataTensor:
         # print('Filtering... T+'+str(t-t0))
         # handle concatenation and intetrpolfilter option
         if self.n_concatenated != 1:
+            #code handing n_concatenated != 1 needs  to be re-written from scratch
             grid, lows, highs, concat_dt_idxs = (
                 self.concatenated_grid,
-                self.lows,
-                self.highs,
                 self.concat_dt_idxs,
             )
         else:
-            if new_mz_len != None:
-                if gauss_params != None:
-                    grid, lows, highs, concat_dt_idxs = (
-                        interpolate(
-                            self.full_grid_out,
-                            new_mz_len,
-                            gauss_params[0],
-                            gauss_params[1],
-                        ),
-                        None,
-                    )
-                else:
-                    grid, lows, highs, concat_dt_idxs = (
-                        interpolate(self.full_grid_out, new_mz_len),
-                        None,
-                    )
+            concat_dt_idxs = None
+            if gauss_params != None:
+                grid = self.gauss(self.full_grid_out, gauss_params[0],
+                                  gauss_params[1])
             else:
-                lows, highs, concat_dt_idxs = self.lows, self.highs, None
-                if gauss_params != None:
-                    grid = self.gauss(self.full_grid_out, gauss_params[0],
-                                      gauss_params[1])
-                else:
-                    grid = self.full_grid_out
+                grid = self.full_grid_out
+        
         grid = self.full_gauss_grids
-        pmem("1 Read Params")
-        t = time.time()
-        # print('Zeroing Non-POI M/z... T+'+str(t-t0))
-        # Multiply all values outside of integration box boundaries by 0, TODO: demonstrate this against keeping the full tensor - obv faster, self-evidently better fac: quantify as support
-        zero_mult = np.zeros((np.shape(grid)))
-        for lo, hi in zip(lows, highs):
-            zero_mult[:, :, lo:hi] = 1
-        grid *= zero_mult
-        pmem("2 Zeroing")
-        # Count down from 15 and keep highest n_factors that satisfies corr_check
-        flag = True
-        t = time.time()
-        # print('Start Factorization Series... T+'+str(t-t0))
-        pmem("3 Pre-Factorization")
-        n_itr = 4
-        while flag:
+        
+        pmem("1 Pre-Factorization")
+        n_itr = 2
+        
+        while n_factors > 0:
             pmem(str(n_itr) + " " + str(n_factors) + " Factors " + " Start")
             t1 = time.time()
             # print('Starting '+str(nf)+' Factors... T+'+str(t1-t))
@@ -321,7 +171,6 @@ class DataTensor:
 
             if n_factors > 1:
                 if corr_check(nnf1, 0.25):
-                    flag = False
                     break
                 else:
                     n_factors -= 1
@@ -351,14 +200,12 @@ class DataTensor:
                     retention_labels=self.retention_labels,
                     drift_labels=self.drift_labels,
                     mz_labels=self.mz_labels,
+
                     factor_idx=i,
                     n_factors=n_factors,
-                    lows=lows,
-                    highs=highs,
-                    abs_mz_low=self.min_mz,
+                    bins_per_isotope_peak = self.bins_per_isotope_peak,
                     n_concatenated=self.n_concatenated,
                     concat_dt_idxs=concat_dt_idxs,
-                    total_mass_window=self.total_mass_window,
                 ))
             pmem(str(n_itr) + " End Factor " + str(i))
             n_itr += 1
@@ -394,12 +241,9 @@ class Factor:
         mz_labels,
         factor_idx,
         n_factors,
-        lows,
-        highs,
-        abs_mz_low,
+        bins_per_isotope_peak,
         n_concatenated,
         concat_dt_idxs,
-        total_mass_window,
     ):
 
         ###Set Attributes###
@@ -418,46 +262,24 @@ class Factor:
         self.auc = sum(mz_data)
         self.factor_idx = factor_idx
         self.n_factors = n_factors
-        self.lows = lows
-        self.highs = highs
-        self.abs_mz_low = abs_mz_low
+        self.bins_per_isotope_peak = bins_per_isotope_peak
         self.n_concatenated = n_concatenated
         self.concat_dt_idxs = concat_dt_idxs
-        self.total_mass_window = total_mass_window
 
         ###Compute Instance Values###
 
         # integrate within expected peak bounds and create boolean mask of expected peak bounds called grate
-        self.integrated_mz_data = []
-        self.grate = np.resize(False, (len(self.mz_data)))
-        for i, j in zip(self.lows, self.highs):
-            self.integrated_mz_data.append(sum(self.mz_data[i:j]))
-            self.grate[i:j] = True
-        self.grate_sum = sum(self.mz_data[self.grate])
+        self.integrated_mz_data = np.sum(np.reshape(mz_data, (-1, self.bins_per_isotope_peak)), axis=1)
 
         self.max_rtdt = max(self.rts) * max(self.dts)
         self.outer_rtdt = sum(sum(np.outer(self.rts, self.dts)))
 
         # This can be a shared function
-        self.integration_box_centers = []
-        [
-            self.integration_box_centers.append(i + ((j - i) / 2))
-            for i, j in zip(self.lows, self.highs)
-        ]
-
         self.integrated_mz_baseline = peakutils.baseline(
             np.asarray(self.integrated_mz_data),
             6)  # 6 degree curve seems to work well
         self.baseline_subtracted_integrated_mz = (self.integrated_mz_data -
                                                   self.integrated_mz_baseline)
-
-        # this is a poor implementation, at least use list comprehensions TODO
-        self.box_dist_avg = 0
-        for i in range(1, len(self.integration_box_centers)):
-            self.box_dist_avg += (self.integration_box_centers[i] -
-                                  self.integration_box_centers[i - 1])
-        self.box_dist_avg = self.box_dist_avg / (
-            len(self.integration_box_centers) - 1)
 
         # Writes to self.isotope_clusters
         self.find_isotope_clusters(
@@ -511,10 +333,10 @@ class Factor:
                 peaks, self.baseline_subtracted_integrated_mz)
             [ic_idxs.append(tup) for tup in height_filtered]
             cluster_idx = 0
-            for tup in ic_idxs:
-                integrated_indices = tup
+            for integrated_indices in ic_idxs:
                 if integrated_indices != None:
                     #try:
+
                     newIC = IsotopeCluster(
                         charge_states=self.charge_states,
                         factor_mz_data=copy.deepcopy(self.mz_data),
@@ -524,25 +346,18 @@ class Factor:
                         n_factors=self.n_factors,
                         factor_idx=self.factor_idx,
                         cluster_idx=cluster_idx,
-                        low_idx=self.lows[integrated_indices[0]] -
-                        math.ceil(self.box_dist_avg / 2),
-                        high_idx=self.highs[integrated_indices[1]] +
-                        math.ceil(self.box_dist_avg / 2),
-                        lows=self.lows,
-                        highs=self.highs,
-                        grate=self.grate,
+                        low_idx = self.bins_per_isotope_peak * integrated_indices[0],
+                        high_idx = self.bins_per_isotope_peak * (integrated_indices[1] + 1),
                         rts=self.rts,
                         dts=self.dts,
                         retention_labels=self.retention_labels,
                         drift_labels=self.drift_labels,
                         mz_labels=self.mz_labels,
+                        bins_per_isotope_peak=self.bins_per_isotope_peak,
                         max_rtdt=self.max_rtdt,
                         outer_rtdt=self.outer_rtdt,
-                        box_dist_avg=self.box_dist_avg,
-                        abs_mz_low=self.abs_mz_low,
                         n_concatenated=self.n_concatenated,
                         concat_dt_idxs=self.concat_dt_idxs,
-                        total_mass_window=self.total_mass_window,
                     )
                     if (newIC.baseline_peak_error / newIC.baseline_auc <
                             0.2):  # TODO: HARDCODE
@@ -682,19 +497,14 @@ class IsotopeCluster:
         cluster_idx,
         low_idx,
         high_idx,
-        total_mass_window,
-        lows,
-        highs,
-        grate,
         rts,
         dts,
         retention_labels,
         drift_labels,
         mz_labels,
+        bins_per_isotope_peak,
         max_rtdt,
         outer_rtdt,
-        box_dist_avg,
-        abs_mz_low,
         n_concatenated,
         concat_dt_idxs,
     ):
@@ -711,28 +521,18 @@ class IsotopeCluster:
         self.cluster_idx = cluster_idx
         self.low_idx = low_idx
         self.high_idx = high_idx
-        self.lows = lows
-        self.highs = highs
-        self.grate = grate
         self.rts = rts
         self.dts = dts
         self.retention_labels = retention_labels
         self.drift_labels = drift_labels
         self.mz_labels = mz_labels
+        self.bins_per_isotope_peak = bins_per_isotope_peak
         self.max_rtdt = max_rtdt
         self.outer_rtdt = outer_rtdt
-        self.box_dist_avg = box_dist_avg
-        self.abs_mz_low = abs_mz_low
         self.n_concatenated = n_concatenated
         self.concat_dt_idxs = concat_dt_idxs
-        self.total_mass_window = total_mass_window
 
         ###Calculate Scoring Requirements###
-
-        # Create array of expected peak positions
-        self.integration_box_centers = []
-        for i, j in zip(self.lows, self.highs):
-            self.integration_box_centers.append(i + ((j - i) / 2))
 
         # prune factor_mz to get window around cluster that is consistent between charge-states
         self.cluster_mz_data = copy.deepcopy(self.factor_mz_data)
@@ -742,51 +542,22 @@ class IsotopeCluster:
         # integrate area of IC
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt
 
-        # Values of isotope cluster that fall within the grate of expected peak bounds
-        self.box_intensities = self.cluster_mz_data[self.grate]
-        self.grate_sum = sum(self.box_intensities)
-
         # identify peaks and find error from expected peak positions using raw mz
+        
+        #CONTINUE HERE TO DEFINE PEAK ERROR USING bins_per_isotope_peak
 
-        self.mz_peaks = find_peaks(self.factor_mz_data,
-                                   distance=self.box_dist_avg)[0]
-        self.max_peak_height = max(self.box_intensities)
+        isotope_peak_array = np.reshape(self.cluster_mz_data, (-1, self.bins_per_isotope_peak))
 
-        self.peak_error, self.peaks_chosen = self.find_peak_error(
-            self.cluster_mz_data,
-            self.mz_peaks,
-            self.
-            integration_box_centers[np.searchsorted(self.lows, self.low_idx):np.
-                                    searchsorted(self.highs, self.high_idx)],
-            self.max_peak_height,
-        )
-
-        # subtract baseline from IC mz values, recompute intrinsic values with new array
-        self.baseline = peakutils.baseline(
-            self.cluster_mz_data[self.low_idx:self.high_idx],
-            6)  # 6 degree curve seems to work well
-        self.baseline_subtracted_mz = self.cluster_mz_data
-        self.baseline_subtracted_mz[self.low_idx:self.high_idx] = (
-            self.cluster_mz_data[self.low_idx:self.high_idx] - self.baseline)
-        self.baseline_auc = sum(self.baseline_subtracted_mz) * self.outer_rtdt
+        self.baseline = 0
+        self.baseline_subtracted_mz = self.cluster_mz_data 
+        self.baseline_auc = self.auc
         self.log_baseline_auc = np.log(self.baseline_auc)
-        self.baseline_box_intensities = self.baseline_subtracted_mz[self.grate]
-        self.baseline_grate_sum = sum(self.baseline_box_intensities)
-        self.baseline_max_peak_height = max(self.baseline_box_intensities)
-        self.baseline_peak_error, self.baseline_peaks_chosen = self.find_peak_error(
-            self.baseline_subtracted_mz,
-            self.mz_peaks,
-            self.
-            integration_box_centers[np.searchsorted(self.lows, self.low_idx):np.
-                                    searchsorted(self.highs, self.high_idx)],
-            self.baseline_max_peak_height,
-        )
+        self.baseline_max_peak_height = max(self.baseline_subtracted_mz)
+        self.baseline_integrated_mz = np.sum(isotope_peak_array, axis=1)
 
-        # create integrated mz array, indexed by integration box
-        baseline_int_mz = []
-        for lo, hi in zip(self.lows, self.highs):
-            baseline_int_mz.append(sum(self.baseline_subtracted_mz[lo:hi]))
-        self.baseline_integrated_mz = np.asarray(baseline_int_mz)
+        self.peak_error = np.average( np.abs( np.argmax(isotope_peak_array,axis=1) - ((self.bins_per_isotope_peak - 1)/2) ) / ((self.bins_per_isotope_peak - 1)/2), weights=self.baseline_integrated_mz)
+        self.baseline_peak_error = self.peak_error
+
 
         # Cache int_mz and rt scoring values
         # Compute baseline_integrated_mz_com, baseline_integrated_mz_std, baseline_integrated_mz_FWHM and baseline_integrated_mz_rmse from Gaussian Fit
@@ -850,7 +621,7 @@ class IsotopeCluster:
             self.dt_norms = [self.dts / np.linalg.norm(self.dts)]
 
         if self.n_concatenated == 1:
-            self.abs_mz_com = self.find_mz_com(self.total_mass_window)
+            self.abs_mz_com = np.average(self.mz_labels, weights=self.cluster_mz_data)
         else:
             self.abs_mz_com = "Concatenated, N/A, see IC.baseline_integrated_mz_com"
 
@@ -869,7 +640,7 @@ class IsotopeCluster:
             self.low_idx,  # Low bin index corresponding to Factor-level bins
             self.high_idx,  # High bin index corresponding to Factor-level bins
             self.baseline_auc,  # Baseline-subtracted AUC (BAUC)
-            self.baseline_grate_sum,  # Baseline-subtracted grate area sum (BGS)
+            self.baseline_auc,  # Baseline-subtracted grate area sum (BGS) #gabe 210507: duplicating baseline_auc for now bc we got rid of grate sum
             self.
             baseline_peak_error,  # Baseline-subtracted version of peak-error (BPE)
             self.
@@ -890,138 +661,3 @@ class IsotopeCluster:
         self.undeut_ground_dot_products = None
 
     # uses internal
-    def find_mz_com(self, tensor_mass_range):
-        factor_mz_range = tensor_mass_range / self.charge_states[0]
-        factor_mz_bin_step = factor_mz_range / len(self.factor_mz_data)
-        left_mz_dist = (
-            self.highs[math.floor(self.baseline_integrated_mz_com)] -
-            self.integration_box_centers[math.floor(
-                self.baseline_integrated_mz_com)]
-        ) * factor_mz_bin_step  # MZ dist from center to right bound, times bin_to_mz factor
-        right_mz_dist = (
-            self.integration_box_centers[
-                math.floor(self.baseline_integrated_mz_com) + 1] -
-            self.lows[math.floor(self.baseline_integrated_mz_com) + 1]
-        ) * factor_mz_bin_step  # MZ dist from left bound to center, times bin_to_mz factor
-
-        if (self.baseline_integrated_mz_com -
-                math.floor(self.baseline_integrated_mz_com)) <= 0.5:
-            major = self.abs_mz_low + (factor_mz_bin_step *
-                                       self.integration_box_centers[math.floor(
-                                           self.baseline_integrated_mz_com)])
-            minor = left_mz_dist * (self.baseline_integrated_mz_com -
-                                    math.floor(self.baseline_integrated_mz_com))
-            abs_mz_com = major + minor
-        else:
-            major = self.abs_mz_low + (
-                factor_mz_bin_step *
-                self.lows[math.floor(self.baseline_integrated_mz_com)] + 1)
-            minor = right_mz_dist * (
-                self.baseline_integrated_mz_com -
-                math.floor(self.baseline_integrated_mz_com) - 0.5)
-            abs_mz_com = major + minor
-
-        return abs_mz_com
-
-    # calculates sum of distances between nearest prominent peaks and expected peak centers in IC
-    def find_peak_error(self, source, mz_peaks, integration_box_centers,
-                        max_peak_height):
-
-        peak_error = 0
-        peaks_chosen = []
-        peaks_total_height = 0
-        match_idx = np.searchsorted(mz_peaks, integration_box_centers)
-        if len(mz_peaks) > 0:
-            for i in range(len(match_idx)):
-                # handle peaks list of length 1
-                if len(mz_peaks) == 1:
-                    peak_error += abs(integration_box_centers[i] -
-                                      mz_peaks[0]) * (source[mz_peaks[0]])
-                    peaks_chosen.append(mz_peaks[0])
-                    peaks_total_height += source[mz_peaks[0]]
-                else:
-                    # check if place to be inserted is leftmost of peaks
-                    if match_idx[i] == 0:
-                        peak_error += abs(integration_box_centers[i] -
-                                          mz_peaks[match_idx[i]]) * (
-                                              source[mz_peaks[match_idx[i]]])
-                        peaks_chosen.append(mz_peaks[match_idx[i]])
-                        peaks_total_height += source[mz_peaks[match_idx[i]]]
-                    else:
-                        # check if insertion position is rightmost of peaks
-                        if match_idx[i] == len(mz_peaks):
-                            peak_error += abs(integration_box_centers[i] -
-                                              mz_peaks[-1]) * (
-                                                  source[mz_peaks[-1]])
-                            peaks_chosen.append(mz_peaks[-1])
-                            peaks_total_height += source[mz_peaks[-1]]
-                        else:
-                            # handle case where distances between peaks are the same, pick biggest peak
-                            if abs(integration_box_centers[i] -
-                                   mz_peaks[match_idx[i]]) == abs(
-                                       integration_box_centers[i] -
-                                       mz_peaks[match_idx[i] - 1]):
-                                peak_error += max([
-                                    abs(integration_box_centers[i] -
-                                        mz_peaks[match_idx[i]]) *
-                                    (source[mz_peaks[match_idx[i]]]),
-                                    abs(integration_box_centers[i] -
-                                        mz_peaks[match_idx[i] - 1]) *
-                                    (source[mz_peaks[match_idx[i] - 1]]),
-                                ])
-                                if abs(integration_box_centers[i] -
-                                       mz_peaks[match_idx[i]]) * (
-                                           source[mz_peaks[match_idx[i]]]
-                                       ) > abs(integration_box_centers[i] -
-                                               mz_peaks[match_idx[i] - 1]) * (
-                                                   source[mz_peaks[match_idx[i]
-                                                                   - 1]]):
-                                    peaks_chosen.append(mz_peaks[match_idx[i]])
-                                    peaks_total_height += source[mz_peaks[
-                                        match_idx[i]]]
-                                else:
-                                    peaks_chosen.append(mz_peaks[match_idx[i] -
-                                                                 1])
-                                    peaks_total_height += source[mz_peaks[
-                                        match_idx[i] - 1]]
-                            else:
-                                # only need to check left hand side differences because of left-hand default of searchsorted algorithm
-                                # now check which peak is closer, left or right. This poses problems as there may be very close peaks which are not
-                                # actually significant in height but which pass filtering.
-                                if abs(integration_box_centers[i] -
-                                       mz_peaks[match_idx[i]]) < abs(
-                                           integration_box_centers[i] -
-                                           mz_peaks[match_idx[i] - 1]):
-                                    peak_error += abs(
-                                        integration_box_centers[i] -
-                                        mz_peaks[match_idx[i]]) * (
-                                            source[mz_peaks[match_idx[i]]])
-                                    peaks_chosen.append(mz_peaks[match_idx[i]])
-                                    peaks_total_height += source[mz_peaks[
-                                        match_idx[i]]]
-                                else:
-                                    peak_error += abs(
-                                        integration_box_centers[i] -
-                                        mz_peaks[match_idx[i] - 1]) * (
-                                            source[mz_peaks[match_idx[i] - 1]])
-                                    peaks_chosen.append(mz_peaks[match_idx[i] -
-                                                                 1])
-                                    peaks_total_height += source[mz_peaks[
-                                        match_idx[i] - 1]]
-
-            box_dist_total = 0
-            for i in range(1, len(integration_box_centers)):
-                box_dist_total += (integration_box_centers[i] -
-                                   integration_box_centers[i - 1])
-
-            if len(integration_box_centers) == 1:
-                peak_error = (peak_error / peaks_total_height /
-                              (box_dist_total / (len(integration_box_centers))))
-            else:
-                if len(integration_box_centers) > 1:
-                    peak_error = (peak_error / peaks_total_height /
-                                  (box_dist_total /
-                                   (len(integration_box_centers) - 1)))
-                else:
-                    peak_error = 100000
-            return peak_error, peaks_chosen

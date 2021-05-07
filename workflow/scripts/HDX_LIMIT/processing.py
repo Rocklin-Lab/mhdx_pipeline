@@ -176,6 +176,8 @@ class TensorGenerator:
             self.n_factors_high = 3
         if not hasattr(self, "gauss_params"):
             self.gauss_params = (3, 1)
+        if not hasattr(self, "bins_per_isotope_peak"):
+            self.bins_per_isotope_peak = 7
 
         self.tensor = io.limit_read(self.filename)
         self.lib_idx = int(
@@ -200,10 +202,12 @@ class TensorGenerator:
         self.mz_highs = self.library_info["obs_mz"].values[i] + (
             self.total_isotopes / self.library_info["charge"].values[i])
 
-        self.low_lims = self.mz_centers * (
+        low_mz_limits = self.mz_centers * (
             (1000000.0 - self.ppm_radius) / 1000000.0)
-        self.high_lims = self.mz_centers * (
+        high_mz_limits = self.mz_centers * (
             (1000000.0 + self.ppm_radius) / 1000000.0)
+
+        self.integrated_mz_limits = np.stack((low_mz_limits, high_mz_limits)).T
 
         # Instantitate DataTensor
         self.DataTensor = datatypes.DataTensor(
@@ -218,12 +222,16 @@ class TensorGenerator:
             dts=self.tensor[1],
             seq_out=self.tensor[2],
             int_seq_out=None,
+            integrated_mz_limits = self.integrated_mz_limits,
+            bins_per_isotope_peak = self.bins_per_isotope_peak
+
         )
 
-        self.DataTensor.lows = searchsorted(self.DataTensor.mz_labels,
-                                            self.low_lims)
-        self.DataTensor.highs = searchsorted(self.DataTensor.mz_labels,
-                                             self.high_lims)
+        #self.DataTensor.lows = searchsorted(self.DataTensor.mz_labels,
+        #                                    self.low_lims)
+        #self.DataTensor.highs = searchsorted(self.DataTensor.mz_labels,
+        #                                     self.high_lims)
+        
         # Consider separating factorize from init
         # self.DataTensor.factorize(gauss_params=(3,1))
 
