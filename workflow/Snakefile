@@ -92,10 +92,11 @@ rule generate_tensor_ics:
         "config/config.yaml"
     output:
         "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
+        "resources/factor_data/{lib_idx}_{file}.cpickle.zlib.factor"
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output}"
+        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_data_out_path {output[1]}"
 
 
 rule optimize_paths:
