@@ -834,7 +834,7 @@ class PathOptimizer:
             if (current_rate / previous_rate) > 1.2:
                 sd += (current_rate / previous_rate)**2.0
             previous_rate = current_rate
-        return sd / len(ics), back / len(ics
+        return sd / len(ics), back / len(ics)
 
     def int_mz_rot_fit(self, ics):
         # Compares i to i-1 from ics[2]
