@@ -9,6 +9,9 @@ from nn_fac import ntf
 from scipy.signal import find_peaks
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.measurements import center_of_mass
+import scipy as sp
+from scipy.optimize import curve_fit
+from sklearn.metrics import mean_squared_error
 
 
 class DataTensor:
@@ -786,16 +789,45 @@ class IsotopeCluster:
         self.baseline_integrated_mz = np.asarray(baseline_int_mz)
 
         # Cache int_mz and rt scoring values
+        # Compute baseline_integrated_mz_com, baseline_integrated_mz_std, baseline_integrated_mz_FWHM and baseline_integrated_mz_rmse from Gaussian Fit
+        # Define functions for Gaussian fit BEGIN
+        def gaussian_function(x, H, A, x0, sigma):
+            return H + A * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+
+        def gauss_fit(x, y):
+            mean = sum(x * y) / sum(y)
+            sigma = np.sqrt(sum(y * (x - mean) ** 2) / sum(y))
+            nonzeros = [index for index, value in enumerate(list(y)) if value!=0]
+            popt, pcov = curve_fit(gaussian_function, x, y, p0=[0, max(y), mean, sigma], bounds=([0, 0, nonzeros[0], 0], [np.inf, np.inf, nonzeros[-1], np.inf]))
+            return popt
+
+        def params_from_gaussian_fit(self):
+            try:
+                xdata = [i for i in range(len(self.baseline_integrated_mz))]
+                ydata = self.baseline_integrated_mz
+                H, A, x0, sigma = gauss_fit(xdata, ydata)
+                y_gaussian_fit = gaussian_function(xdata, *gauss_fit(xdata, ydata))
+                rmse = mean_squared_error(ydata/max(ydata), y_gaussian_fit/max(y_gaussian_fit), squared=False)
+                com = x0
+                std = sigma
+                FWHM = 2*np.sqrt(2*np.log(2))*std
+                return rmse, com, std, FWHM
+            except:
+                return 100, 100, 100, 100
+            # Define functions for Gaussian fit END       
+        
+        
         self.baseline_integrated_mz_norm = self.baseline_integrated_mz / np.linalg.norm(
             self.baseline_integrated_mz)
-        self.baseline_integrated_mz_com = center_of_mass(
-            self.baseline_integrated_mz)[
-                0]  # COM in IC integrated bin dimension
-        self.baseline_integrated_mz_std = (np.average(
-            (np.arange(len(self.baseline_integrated_mz)) -
-             self.baseline_integrated_mz_com)**2,
-            weights=self.baseline_integrated_mz,
-        )**0.5)
+        #self.baseline_integrated_mz_com = center_of_mass(
+        #    self.baseline_integrated_mz)[
+        #        0]  # COM in IC integrated bin dimension
+        #self.baseline_integrated_mz_std = (np.average(
+        #    (np.arange(len(self.baseline_integrated_mz)) -
+        #     self.baseline_integrated_mz_com)**2,
+        #    weights=self.baseline_integrated_mz,
+        #)**0.5)
+        self.baseline_integrated_mz_rmse, self.baseline_integrated_mz_com, self.baseline_integrated_std, self.baseline_integrated_mz_FWWHM = params_from_gaussian_fit(self)
 
         self.rt_norm = self.rts / np.linalg.norm(self.rts)
         self.rt_com = center_of_mass(self.rts)[0]
