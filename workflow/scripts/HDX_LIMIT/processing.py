@@ -1,5 +1,6 @@
 import os
 import sys
+import psutil
 import copy
 import math
 import molmass
@@ -20,6 +21,127 @@ from bokeh.io import save, output_file
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.sources import ColumnDataSource, CDSView
 from bokeh.models.filters import Filter, GroupFilter, IndexFilter
+
+
+class FactorData(object):
+    """
+    object class to store factor rts, dts, and mzs
+    """
+
+    def __init__(self):
+        self.factor_num = None
+        self.factor_rt = None
+        self.factor_dt = None
+        self.factor_mz = None
+        self.factor_integrated_mz = None
+
+
+class FactorAllData(object):
+    """
+    Object class to store factor data
+    """
+
+    def __init__(self):
+        """
+        container for storing factor data
+        """
+        self.name = None
+        self.charge_state = None
+        self.timepoint_index = None
+        self.timepoint_label = None
+        self.retention_labels = None
+        self.drift_labels = None
+        self.mz_labels = None
+        self.low_mz_bounds = None
+        self.high_mz_bounds = None
+        self.tensor_3d_grid = None
+        self.gauss_params = None
+        self.num_factors = None
+        self.factor_data = []
+
+
+def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
+    """
+    function to store factor data to factor data class
+    :param data_tensor:
+    :param gauss_params:
+    :param timepoint_label:
+    :return:
+    """
+    factor_data_class = FactorAllData()
+    factor_data_class.name = data_tensor.DataTensor.name
+    factor_data_class.charge_state = data_tensor.DataTensor.charge_states[0]
+    factor_data_class.timepoint_index = data_tensor.DataTensor.timepoint_idx
+    factor_data_class.timepoint_label = timepoint_label
+    factor_data_class.retention_labels = data_tensor.DataTensor.retention_labels
+    factor_data_class.drift_labels = data_tensor.DataTensor.drift_labels
+    factor_data_class.mz_labels = data_tensor.DataTensor.mz_labels
+    factor_data_class.low_mz_bounds = data_tensor.DataTensor.lows
+    factor_data_class.high_mz_bounds = data_tensor.DataTensor.highs
+    factor_data_class.tensor_3d_grid = data_tensor.DataTensor.full_grid_out
+    factor_data_class.gauss_params = gauss_params
+    factor_data_class.num_factors = len(data_tensor.DataTensor.factors)
+
+    for num, factor in enumerate(data_tensor.DataTensor.factors):
+        factor_data_ = FactorData()
+        factor_data_.factor_num = num
+        factor_data_.factor_dt = factor.dts
+        factor_data_.factor_rt = factor.rts
+        factor_data_.factor_mz = factor.mz_data
+        factor_data_.factor_integrated_mz = factor.integrated_mz_baseline
+        factor_data_class.factor_data.append(factor_data_)
+
+    return factor_data_class
+
+
+def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors,
+                            factor_output_fpath=None,
+                            timepoint_label=None):
+    """
+    generate data tensor from a given tensor file path, library info file path, and timepoint index
+    :param tensor_fpath: tensor file path
+    :param library_info_fpath: library info file path
+    :param timepoint_index: timepoint index int
+    :param gauss_params: gaussian filter params in tuple (rt_sigma, dt_sigma)
+    :param n_factors: maximum number of factors to be considered.
+    :param timepoint_label: timepoint label (in sec, hr, min, etc)
+    :return: data_tensor
+    """
+
+    #memory calculations
+    process = psutil.Process(os.getpid())
+    # memory before init
+    print("Pre-Tensor-Initialization: " + str(process.memory_info().rss /
+                                       (1024 * 1024 * 1024)))
+
+    # data tensor initialization
+    data_tensor = TensorGenerator(filename=tensor_fpath,
+                                  library_info=library_info_df,
+                                  timepoint_index=timepoint_index)
+
+    print("Post-Tensor-Pre-Factor-Initialization: " + str(process.memory_info().rss /
+                                        (1024 * 1024 * 1024)))
+
+    print('Factorizing ... ')
+
+    data_tensor.DataTensor.factorize(n_factors=n_factors,
+                                     gauss_params=gauss_params)
+
+    # profile memory after factorization
+    print("Post-Factorization: " + str(process.memory_info().rss /
+                                       (1024 * 1024 * 1024)))
+
+    # create factor data object
+    factor_data_object = create_factor_data_object(data_tensor=data_tensor,
+                                                   gauss_params=gauss_params,
+                                                   timepoint_label=timepoint_label)
+
+    # save factor data object
+    if factor_output_fpath != None:
+        io.limit_write(factor_data_object, factor_output_fpath)
+
+    return data_tensor
+
 
 
 class TensorGenerator:
