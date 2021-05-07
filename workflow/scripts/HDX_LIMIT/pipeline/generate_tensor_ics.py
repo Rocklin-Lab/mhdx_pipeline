@@ -44,8 +44,6 @@ def main(library_info_path,
             if fn in tensor_input_path:
                 my_tp = tp
 
-    process = psutil.Process(os.getpid())
-
     data_tensor = generate_tensor_factors(tensor_fpath=tensor_input_path,
                                           library_info_df=library_info,
                                           timepoint_index=my_tp,
@@ -54,28 +52,6 @@ def main(library_info_path,
                                           factor_output_fpath=factor_out_path,
                                           timepoint_label=None)
 
-    ##################
-    ##################
-    #### previous version. Keeping it until I test the new one. SD
-    # # memory before init
-    # print("Pre-Initialization: " + str(process.memory_info().rss /
-    #                                    (1024 * 1024 * 1024)))
-    #
-    # # init TG
-    # tg = TensorGenerator(tensor_input_path, my_tp, library_info)
-    #
-    # # profile memory after init
-    # print("Post-Initialization: " + str(process.memory_info().rss /
-    #                                     (1024 * 1024 * 1024)))
-    #
-    # # factorize internal DT
-    # tg.DataTensor.factorize(gauss_params=gauss_params)
-    #
-    # # profile memory after factorization
-    # print("Post-Factorization: " + str(process.memory_info().rss /
-    #                                    (1024 * 1024 * 1024)))
-
-    # output ICs as flat list
     all_ics = []
     for factor in data_tensor.DataTensor.factors:
         for ic in factor.isotope_clusters:

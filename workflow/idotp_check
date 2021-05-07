@@ -86,7 +86,7 @@ rule idotp_check:
         lambda wildcards: idotp_check_inputs(wildcards.i),
     output:
         "resources/idotp_filter/{i}_idotp_check.csv",
-        expand("resources/factor_data/{{i}}_{file}.factor", file=config[0])
+        expand("resources/factor_data/{{i}}_{file}.cpickle.zlib.factor", file=config[0])
     benchmark:
         "results/benchmarks/idotp_check.{i}.benchmark.txt"
     run:
