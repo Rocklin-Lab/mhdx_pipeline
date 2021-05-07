@@ -1,5 +1,6 @@
 import os
 import sys
+import psutil
 import copy
 import math
 import molmass
@@ -20,6 +21,93 @@ from bokeh.io import save, output_file
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.sources import ColumnDataSource, CDSView
 from bokeh.models.filters import Filter, GroupFilter, IndexFilter
+
+
+
+def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
+    """
+    function to store factor data to factor data class
+    :param data_tensor:
+    :param gauss_params:
+    :param timepoint_label:
+    :return:
+    """
+
+    factor_data_dict = dict()
+
+    factor_data_dict['name'] = data_tensor.DataTensor.name
+    factor_data_dict['charge_state'] = data_tensor.DataTensor.charge_states[0]
+    factor_data_dict['timepoint_index'] = data_tensor.DataTensor.timepoint_idx
+    factor_data_dict['timepoint_label'] = timepoint_label
+    factor_data_dict['retention_labels'] = data_tensor.DataTensor.retention_labels
+    factor_data_dict['drift_labels'] = data_tensor.DataTensor.drift_labels
+    factor_data_dict['mz_labels'] = data_tensor.DataTensor.mz_labels
+    factor_data_dict['bins_per_isotope_peak'] = data_tensor.DataTensor.bins_per_isotope_peak
+    factor_data_dict['tensor_3d_grid'] = data_tensor.DataTensor.full_grid_out
+    factor_data_dict['gauss_params'] = gauss_params
+    factor_data_dict['num_factors'] = len(data_tensor.DataTensor.factors)
+    factor_data_dict['factors'] = []
+
+    for num, factor in enumerate(data_tensor.DataTensor.factors):
+        factor_dict = dict()
+        factor_dict['factor_num'] = num
+        factor_dict['factor_dt'] = factor.dts
+        factor_dict['factor_rt'] = factor.rts
+        factor_dict['factor_mz'] = factor.mz_data
+        factor_dict['factor_integrated_mz'] = factor.integrated_mz_baseline
+        factor_data_dict['factors'].append(factor_dict)
+
+    return factor_data_dict
+
+
+def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors,
+                            factor_output_fpath=None,
+                            timepoint_label=None):
+    """
+    generate data tensor from a given tensor file path, library info file path, and timepoint index
+    :param tensor_fpath: tensor file path
+    :param library_info_fpath: library info file path
+    :param timepoint_index: timepoint index int
+    :param gauss_params: gaussian filter params in tuple (rt_sigma, dt_sigma)
+    :param n_factors: maximum number of factors to be considered.
+    :param timepoint_label: timepoint label (in sec, hr, min, etc)
+    :return: data_tensor
+    """
+
+    #memory calculations
+    process = psutil.Process(os.getpid())
+    # memory before init
+    print("Pre-Tensor-Initialization: " + str(process.memory_info().rss /
+                                       (1024 * 1024 * 1024)))
+
+    # data tensor initialization
+    data_tensor = TensorGenerator(filename=tensor_fpath,
+                                  library_info=library_info_df,
+                                  timepoint_index=timepoint_index)
+
+    print("Post-Tensor-Pre-Factor-Initialization: " + str(process.memory_info().rss /
+                                        (1024 * 1024 * 1024)))
+
+    print('Factorizing ... ')
+
+    data_tensor.DataTensor.factorize(n_factors=n_factors,
+                                     gauss_params=gauss_params)
+
+    # profile memory after factorization
+    print("Post-Factorization: " + str(process.memory_info().rss /
+                                       (1024 * 1024 * 1024)))
+
+    # create factor data object
+    factor_data_object = create_factor_data_object(data_tensor=data_tensor,
+                                                   gauss_params=gauss_params,
+                                                   timepoint_label=timepoint_label)
+
+    # save factor data object
+    if factor_output_fpath != None:
+        io.limit_write(factor_data_object, factor_output_fpath)
+
+    return data_tensor
+
 
 
 class TensorGenerator:
@@ -54,6 +142,8 @@ class TensorGenerator:
             self.n_factors_high = 3
         if not hasattr(self, "gauss_params"):
             self.gauss_params = (3, 1)
+        if not hasattr(self, "bins_per_isotope_peak"):
+            self.bins_per_isotope_peak = 7
 
         self.tensor = io.limit_read(self.filename)
         self.lib_idx = int(
@@ -78,10 +168,12 @@ class TensorGenerator:
         self.mz_highs = self.library_info["obs_mz"].values[i] + (
             self.total_isotopes / self.library_info["charge"].values[i])
 
-        self.low_lims = self.mz_centers * (
+        low_mz_limits = self.mz_centers * (
             (1000000.0 - self.ppm_radius) / 1000000.0)
-        self.high_lims = self.mz_centers * (
+        high_mz_limits = self.mz_centers * (
             (1000000.0 + self.ppm_radius) / 1000000.0)
+
+        self.integrated_mz_limits = np.stack((low_mz_limits, high_mz_limits)).T
 
         # Instantitate DataTensor
         self.DataTensor = datatypes.DataTensor(
@@ -96,12 +188,16 @@ class TensorGenerator:
             dts=self.tensor[1],
             seq_out=self.tensor[2],
             int_seq_out=None,
+            integrated_mz_limits = self.integrated_mz_limits,
+            bins_per_isotope_peak = self.bins_per_isotope_peak
+
         )
 
-        self.DataTensor.lows = searchsorted(self.DataTensor.mz_labels,
-                                            self.low_lims)
-        self.DataTensor.highs = searchsorted(self.DataTensor.mz_labels,
-                                             self.high_lims)
+        #self.DataTensor.lows = searchsorted(self.DataTensor.mz_labels,
+        #                                    self.low_lims)
+        #self.DataTensor.highs = searchsorted(self.DataTensor.mz_labels,
+        #                                     self.high_lims)
+        
         # Consider separating factorize from init
         # self.DataTensor.factorize(gauss_params=(3,1))
 
@@ -142,6 +238,9 @@ class PathOptimizer:
         self.rt_ground_rmse_weight = 10
         self.dt_ground_rmse_weight = 10
         self.auc_ground_rmse_weight = 20
+        self.rmses_sum_weight = 1 
+        self.maxint_sum_weight = 1
+        self.int_mz_FWHM_rmse_weight = 1
 
         # Set internal variables
         self.name = name
@@ -804,10 +903,12 @@ class PathOptimizer:
         return sd / len(major_species_centroids)
 
     def delta_mz_rate(self, ics, timepoints=None):
+    # Two penalizations are computed: [0] if the ic is too fast (sd) and [1] if the ic goes backwards (back)
 
         if timepoints is None:
             timepoints = self.timepoints
-
+        
+        back = 0
         sd = 0
         previous_rate = (ics[1].baseline_integrated_mz_com -
                          ics[0].baseline_integrated_mz_com) / (timepoints[1] -
@@ -817,7 +918,7 @@ class PathOptimizer:
             new_com = ics[i].baseline_integrated_mz_com
             if new_com < ics[
                     i - 1].baseline_integrated_mz_com:  # if we went backwards
-                sd += (100 *
+                back += (100 *
                        (new_com - ics[i - 1].baseline_integrated_mz_com)**2.0
                       )  # penalize for going backwards
                 new_com = (
@@ -829,7 +930,7 @@ class PathOptimizer:
             if (current_rate / previous_rate) > 1.2:
                 sd += (current_rate / previous_rate)**2.0
             previous_rate = current_rate
-        return sd / len(ics)
+        return sd / len(ics), back / len(ics)
 
     def int_mz_rot_fit(self, ics):
         # Compares i to i-1 from ics[2]
@@ -895,6 +996,28 @@ class PathOptimizer:
                     sd += (ic.log_baseline_auc -
                            undeut_grounds[key].log_baseline_auc)**2
         return math.sqrt(np.mean(sd))
+    
+    def rmses_sum(ics):
+        rmses = 0
+        for ic in ics:
+            rmses += 100*ic.baseline_integrated_mz_rmse
+        return rmses
+  
+    def maxint_sum(ics):
+        maxint = 0
+        for ic in ics:
+            maxint += max(ic.baseline_integrated_mz)
+            return 100000/maxint
+  
+    def int_mz_FWHM_rmse(ics):
+        sd = 0
+        for i in range(2, len(ics)):
+            sd += (
+                ics[i].baseline_integrated_mz_FWHM - ics[i - 1].baseline_integrated_mz_FWHM
+            ) ** 2.0
+ 
+        return math.sqrt(sd)
+    
 
     # Eventually put defaults here as else statements
     def set_score_weights(
@@ -928,22 +1051,47 @@ class PathOptimizer:
             self.dt_ground_rmse_weight = dt_ground_rmse_weight
         if auc_ground_rmse_weight != None:
             self.auc_ground_rmse_weight = auc_ground_rmse_weight
+        if rmses_sum_weight != None:
+            self.rmses_sum_weight = rmses_sum_weight
+        if maxint_sum_weight != None:
+            self.maxint_sum_weight = maxint_sum_weight
+        if int_mz_FWHM_rmse_weight != None:
+             self.int_mz_FWHM_rmse_weight  = int_mz_FWHM_rmse_weight
+            
 
     def combo_score(self, ics):
+        coeffs = [1.7331330816863306,
+                  1.8279294604480563,
+                  1.253516574780788,
+                  1.253516574780788,
+                  0.1437773152156825,
+                  1.8219429028285896,
+                  0.775616753877507,
+                  0.9623855886298811,
+                  0.3231014751705914,
+                  1.0611233913847378,
+                  0.43853197459601656,
+                  1.79011362219571]
 
         return sum([
-            self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
-            self.baseline_peak_error_weight * self.baseline_peak_error(ics),
-            self.delta_mz_rate_weight * self.delta_mz_rate(ics),
+            coeffs[0] * self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
+            coeffs[1] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
+            coeffs[2] * self.delta_mz_rate_weight * self.delta_mz_rate(ics)[0],
+            coeffs[3] * self.delta_mz_rate_weight * self.delta_mz_rate(ics)[1],
             # self.int_mz_rot_fit_weight*self.int_mz_rot_fit(ics),
-            self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
-            self.dt_ground_fit_weight * self.dt_ground_fit(ics),
-            self.rt_ground_fit_weight * self.rt_ground_fit(ics),
-            self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
-            self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
+            coeffs[4] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
+            coeffs[5] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
+            coeffs[6] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
+            coeffs[7] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
+            coeffs[8] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
+            coeffs[9] * self.rmses_sum_weight * self.rmses_sum(ics),
+            coeffs[10] * self.maxint_sum_weight * self.maxint_sum(ics),
+            coeffs[11] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics)
         ])
-
+           
+                                         
     def report_score(self, ics):
+    # TODO Add additional scores to this function                                    
 
         return {
             "int_mz_std_rmse": (self.int_mz_std_rmse_weight,

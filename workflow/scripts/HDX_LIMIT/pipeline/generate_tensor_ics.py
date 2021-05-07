@@ -6,7 +6,7 @@ import argparse
 import pandas as pd
 
 sys.path.append(os.getcwd() + "/workflow/scripts/")
-from HDX_LIMIT.processing import TensorGenerator
+from HDX_LIMIT.processing import TensorGenerator, generate_tensor_factors
 from HDX_LIMIT.io import limit_write
 
 
@@ -14,8 +14,10 @@ def main(library_info_path,
          tensor_input_path,
          timepoints_dict,
          isotope_clusters_out_path=None,
+         factor_out_path=None,
          return_flag=False,
-         gauss_params=(3, 1)):
+         gauss_params=(3, 1),
+         n_factors=15):
     """Performs nonnegative tensor factorization to deconvolute input tensor, identifies IsotopeCluster objects, 
     and optionally returns or writes output list of IsotopeClusters.
 
@@ -44,27 +46,38 @@ def main(library_info_path,
 
     process = psutil.Process(os.getpid())
 
-    # memory before init
-    print("Pre-Initialization: " + str(process.memory_info().rss /
-                                       (1024 * 1024 * 1024)))
+    data_tensor = generate_tensor_factors(tensor_fpath=tensor_input_path,
+                                          library_info_df=library_info,
+                                          timepoint_index=my_tp,
+                                          gauss_params=gauss_params,
+                                          n_factors=n_factors,
+                                          factor_output_fpath=factor_out_path,
+                                          timepoint_label=None)
 
-    # init TG
-    tg = TensorGenerator(tensor_input_path, my_tp, library_info)
-
-    # profile memory after init
-    print("Post-Initialization: " + str(process.memory_info().rss /
-                                        (1024 * 1024 * 1024)))
-
-    # factorize internal DT
-    tg.DataTensor.factorize(gauss_params=gauss_params)
-
-    # profile memory after factorization
-    print("Post-Factorization: " + str(process.memory_info().rss /
-                                       (1024 * 1024 * 1024)))
+    ##################
+    ##################
+    #### previous version. Keeping it until I test the new one. SD
+    # # memory before init
+    # print("Pre-Initialization: " + str(process.memory_info().rss /
+    #                                    (1024 * 1024 * 1024)))
+    #
+    # # init TG
+    # tg = TensorGenerator(tensor_input_path, my_tp, library_info)
+    #
+    # # profile memory after init
+    # print("Post-Initialization: " + str(process.memory_info().rss /
+    #                                     (1024 * 1024 * 1024)))
+    #
+    # # factorize internal DT
+    # tg.DataTensor.factorize(gauss_params=gauss_params)
+    #
+    # # profile memory after factorization
+    # print("Post-Factorization: " + str(process.memory_info().rss /
+    #                                    (1024 * 1024 * 1024)))
 
     # output ICs as flat list
     all_ics = []
-    for factor in tg.DataTensor.factors:
+    for factor in data_tensor.DataTensor.factors:
         for ic in factor.isotope_clusters:
             all_ics.append(ic)
 
@@ -72,7 +85,7 @@ def main(library_info_path,
         limit_write(all_ics, isotope_clusters_out_path)
 
     if return_flag:
-        out_dict["TensorGenerator"] = tg
+        out_dict["TensorGenerator"] = data_tensor
         return out_dict
 
 
@@ -97,6 +110,10 @@ if __name__ == "__main__":
         "--isotope_clusters_out_path",
         help="path/to/output.cpickle.zlib, list of IsotopeClusters")
     parser.add_argument(
+        "-of",
+        "--factor_data_out_path",
+        help="path/to/output.cpickle.zlib.factor, FactorData")
+    parser.add_argument(
         "-r",
         "--return_flag",
         type=bool,
@@ -110,6 +127,13 @@ if __name__ == "__main__":
         default=(3, 1),
         help="determines intensity of gaussian smoothing in rt and dt dimensions"
     )
+    parser.add_argument(
+        "-n",
+        "--n_factors",
+        type=int,
+        default=15,
+        help="maximum number of factors for factorization of the data tensor"
+    )
     args = parser.parse_args()
 
     # open timepoints .yaml into dict for main()
@@ -119,5 +143,6 @@ if __name__ == "__main__":
          tensor_input_path=args.tensor_input_path,
          timepoints_dict=open_timepoints,
          isotope_clusters_out_path=args.isotope_clusters_out_path,
+         factor_out_path=args.factor_data_out_path,
          return_flag=args.return_flag,
          gauss_params=args.gauss_params)
