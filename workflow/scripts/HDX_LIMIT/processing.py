@@ -23,41 +23,6 @@ from bokeh.models.sources import ColumnDataSource, CDSView
 from bokeh.models.filters import Filter, GroupFilter, IndexFilter
 
 
-class FactorData(object):
-    """
-    object class to store factor rts, dts, and mzs
-    """
-
-    def __init__(self):
-        self.factor_num = None
-        self.factor_rt = None
-        self.factor_dt = None
-        self.factor_mz = None
-        self.factor_integrated_mz = None
-
-
-class FactorAllData(object):
-    """
-    Object class to store factor data
-    """
-
-    def __init__(self):
-        """
-        container for storing factor data
-        """
-        self.name = None
-        self.charge_state = None
-        self.timepoint_index = None
-        self.timepoint_label = None
-        self.retention_labels = None
-        self.drift_labels = None
-        self.mz_labels = None
-        self.bins_per_isotope_peak = None
-        self.tensor_3d_grid = None
-        self.gauss_params = None
-        self.num_factors = None
-        self.factor_data = []
-
 
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     """
@@ -67,29 +32,32 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     :param timepoint_label:
     :return:
     """
-    factor_data_class = FactorAllData()
-    factor_data_class.name = data_tensor.DataTensor.name
-    factor_data_class.charge_state = data_tensor.DataTensor.charge_states[0]
-    factor_data_class.timepoint_index = data_tensor.DataTensor.timepoint_idx
-    factor_data_class.timepoint_label = timepoint_label
-    factor_data_class.retention_labels = data_tensor.DataTensor.retention_labels
-    factor_data_class.drift_labels = data_tensor.DataTensor.drift_labels
-    factor_data_class.mz_labels = data_tensor.DataTensor.mz_labels
-    factor_data_class.bins_per_isotope_peak = data_tensor.DataTensor.bins_per_isotope_peak
-    factor_data_class.tensor_3d_grid = data_tensor.DataTensor.full_grid_out
-    factor_data_class.gauss_params = gauss_params
-    factor_data_class.num_factors = len(data_tensor.DataTensor.factors)
+
+    factor_data_dict = dict()
+
+    factor_data_dict['name'] = data_tensor.DataTensor.name
+    factor_data_dict['charge_state'] = data_tensor.DataTensor.charge_states[0]
+    factor_data_dict['timepoint_index'] = data_tensor.DataTensor.timepoint_idx
+    factor_data_dict['timepoint_label'] = timepoint_label
+    factor_data_dict['retention_labels'] = data_tensor.DataTensor.retention_labels
+    factor_data_dict['drift_labels'] = data_tensor.DataTensor.drift_labels
+    factor_data_dict['mz_labels'] = data_tensor.DataTensor.mz_labels
+    factor_data_dict['bins_per_isotope_peak'] = data_tensor.DataTensor.bins_per_isotope_peak
+    factor_data_dict['tensor_3d_grid'] = data_tensor.DataTensor.full_grid_out
+    factor_data_dict['gauss_params'] = gauss_params
+    factor_data_dict['num_factors'] = len(data_tensor.DataTensor.factors)
+    factor_data_dict['factors'] = []
 
     for num, factor in enumerate(data_tensor.DataTensor.factors):
-        factor_data_ = FactorData()
-        factor_data_.factor_num = num
-        factor_data_.factor_dt = factor.dts
-        factor_data_.factor_rt = factor.rts
-        factor_data_.factor_mz = factor.mz_data
-        factor_data_.factor_integrated_mz = factor.integrated_mz_baseline
-        factor_data_class.factor_data.append(factor_data_)
+        factor_dict = dict()
+        factor_dict['factor_num'] = num
+        factor_dict['factor_dt'] = factor.dts
+        factor_dict['factor_rt'] = factor.rts
+        factor_dict['factor_mz'] = factor.mz_data
+        factor_dict['factor_integrated_mz'] = factor.integrated_mz_baseline
+        factor_data_dict['factors'].append(factor_dict)
 
-    return factor_data_class
+    return factor_data_dict
 
 
 def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors,
