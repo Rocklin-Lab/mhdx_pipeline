@@ -16,6 +16,7 @@ import _pickle as cpickle
 import pickle as pk
 from collections import Counter
 
+print("__name__ = "__name__)
 
 def load_pickle_file(pickle_fpath):
     """Loads a pickle file (without any dependence on other classes or objects or functions).
@@ -321,6 +322,28 @@ def main(library_info_path,
 
 if __name__ == "__main__":
 
+    if "snakemake" in globals():
+        polyfit_calibration_dict = None
+        indices = None
+        open_timepoints = yaml.load(open(snakemake.input[2], "rb").read(), Loader=yaml.Loader)
+        # Check for optional arguments.
+        if len(snakemake.inputs) > 3:
+            # Is the 4th argument polyfit dict? 
+            if ".pk" in snakemake.input[3]:
+                polyfit_calibration_dict = snakemake.input[3]
+                if len(snakemake.inputs) > 4:
+                    indices = pd.read_csv(snakemake.inputs[4])['index'].values
+            # The 4th arg is indices
+            else:
+                indices = pd.read_csv(snakemake.inputs[3])['index'].values
+
+        main(library_info_path=snakemake.input[0],
+             mzml_gz_path=snakemake.input[1],
+             timepoints_dict=open_timepoints,
+             outputs=snakemake.output,
+             polyfit_calibration_dict=polyfit_calibration_dict,
+             indices=indices)
+
     # set expected command line arguments
     parser = argparse.ArgumentParser()
     # inputs
@@ -390,13 +413,19 @@ if __name__ == "__main__":
             parser.print_help()
             sys.exit()
         else:
+            library_info = pd.read_csv(args.library_info_path)
+            mzml = args.mzml_gz_path.split("/")[-1][:-3]
             if args.indices is not None:
-                library_info = pd.read_csv(args.library_info_path)
-                mzml = args.mzml_gz_path.split("/")[-1][:-3]
-                args.outputs = [
+                args.outputs = ",".join([
                     args.output_directory + str(i) + "_" + mzml
                     for i in args.indices
-                ]
+                ])
+            else:
+                args.outputs = ",".join([
+                    args.output_directory + str(i) + "_" + mzml
+                    for i in range(len(library_info))
+                ])
+
     open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
     args.outputs=arg.outputs.split(",")
 

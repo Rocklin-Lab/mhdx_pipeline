@@ -40,7 +40,7 @@ def main(all_idotp_csv_inputs,
     # re-order indices
     filter_passing_indices = sorted(filter_passing_indices)
     # add passing indices to output dict
-    out_dict["filter_passing_indices"] = filter_passing_indices
+    out_dict["index"] = filter_passing_indices
     # make df output option
     out_df = pd.DataFrame.from_dict(out_dict)
 
