@@ -46,7 +46,7 @@ if config['polyfit_calibration']:
             )
         output:
             expand(
-                "resources/tensors/{idx}_{{mzml}}.gz.cpickle.zlib",
+                "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
                 idx=range(len(library_info))
             )
         benchmark:

@@ -16,7 +16,7 @@ import _pickle as cpickle
 import pickle as pk
 from collections import Counter
 
-print("__name__ = "__name__)
+print("__name__ = "+__name__)
 
 def load_pickle_file(pickle_fpath):
     """Loads a pickle file (without any dependence on other classes or objects or functions).
@@ -233,8 +233,8 @@ def main(library_info_path,
             #print("scan read error: "+str(scan_number))
             #spectrum = np.array([[0, 0]])
 
-            for i in scan_to_lines[
-                    scan_number]:  # iterate over each library_info index that needs to read the scan
+            # Iterate over each library_info index that needs to read the scan.
+            for i in scan_to_lines[scan_number]:  
                 print("Library Index: " + str(i) + " Len Output: " +
                       str(len(output_scans[i])))
                 obs_mz_values = library_info["obs_mz"].values[i]
@@ -281,8 +281,8 @@ def main(library_info_path,
                         # save to file if outputs provided
                         if outputs is not None:
                             my_out = [
-                                out for out in outputs if "/" + str(i) + "_" +
-                                mzml + ".gz.cpickle.zlib" in out
+                                out for out in outputs if "resources/tensors/" + str(i) + "_" +
+                                mzml + ".gz.cpickle.zlib" == out
                             ][0]
                             print("My_out: " + str(my_out))
                             with open(my_out, "wb") as file:
@@ -304,6 +304,7 @@ def main(library_info_path,
                             output_scans[i] = [
                             ]  # to avoid duplication of tensors in return-only state
                 except:
+                    ipdb.set_trace()
                     print("error in output block on scan: " + str(scan_number) +
                           " , for line: " + str(i))
                     sys.exit(0)
@@ -328,12 +329,10 @@ if __name__ == "__main__":
         open_timepoints = yaml.load(open(snakemake.input[2], "rb").read(), Loader=yaml.Loader)
         # Check for optional arguments.
         if len(snakemake.inputs) > 3:
-            # Is the 4th argument polyfit dict? 
             if ".pk" in snakemake.input[3]:
                 polyfit_calibration_dict = snakemake.input[3]
                 if len(snakemake.inputs) > 4:
                     indices = pd.read_csv(snakemake.inputs[4])['index'].values
-            # The 4th arg is indices
             else:
                 indices = pd.read_csv(snakemake.inputs[3])['index'].values
 
@@ -343,99 +342,99 @@ if __name__ == "__main__":
              outputs=snakemake.output,
              polyfit_calibration_dict=polyfit_calibration_dict,
              indices=indices)
+    else:
+        # set expected command line arguments
+        parser = argparse.ArgumentParser()
+        # inputs
+        parser.add_argument("library_info_path", help="path/to/library_info.csv")
+        parser.add_argument("mzml_gz_path", help="path/to/file.mzML.gz")
+        parser.add_argument(
+            "timepoints_yaml",
+            help=
+            "path/to/file.yaml containing list of hdx timepoints in integer seconds which are also keys mapping to lists of each timepoint's .mzML file, can pass config/config.yaml - for Snakemake context"
+        )
+        parser.add_argument(
+            "-u",
+            "--high_mass_margin",
+            default=17,
+            help=
+            "radius around expected rt to extend extraction window in rt-dimension")
+        parser.add_argument(
+            "-l",
+            "--low_mass_margin",
+            default=10,
+            help=
+            "integrated-mz-bin magnitude of margin behind the POI monoisotopic mass, to avoid signal truncation"
+        )
+        parser.add_argument(
+            "-r",
+            "--rt_radius",
+            default=0.4,
+            help=
+            "integrated-m/z-bin magnitude of margin beyond estimated full-deuteration, to avoid signal truncation"
+        )
+        parser.add_argument(
+            "-d",
+            "--dt_radius_scale",
+            default=0.06,
+            help=
+            "scale factor for radius around expected dt to extend extraction window in dt-dimension"
+        )
+        parser.add_argument(
+            "-c",
+            "--polyfit_calibration_dict",
+            help=
+            "path/to/file_mz_calib_dict.pk, provide if using polyfit mz recalibration"
+        )
+        # outputs
+        parser.add_argument("-o",
+                            "--outputs",
+                            nargs="*",
+                            help="explicit list of string outputs to be created")
+        parser.add_argument(
+            "-i",
+            "--indices",
+            nargs="*",
+            type=int,
+            help="subset of library_info to extract tensors for, use with -o or -t")
+        parser.add_argument(
+            "-t",
+            "--output_directory",
+            help=
+            "path/to/output_dir/ to generate outputs automatically, using without -i will extract all charged species from library_info, overridden by -o"
+        )
+        # parse given arguments
+        args = parser.parse_args()
 
-    # set expected command line arguments
-    parser = argparse.ArgumentParser()
-    # inputs
-    parser.add_argument("library_info_path", help="path/to/library_info.csv")
-    parser.add_argument("mzml_gz_path", help="path/to/file.mzML.gz")
-    parser.add_argument(
-        "timepoints_yaml",
-        help=
-        "path/to/file.yaml containing list of hdx timepoints in integer seconds which are also keys mapping to lists of each timepoint's .mzML file, can pass config/config.yaml - for Snakemake context"
-    )
-    parser.add_argument(
-        "-u",
-        "--high_mass_margin",
-        default=17,
-        help=
-        "radius around expected rt to extend extraction window in rt-dimension")
-    parser.add_argument(
-        "-l",
-        "--low_mass_margin",
-        default=10,
-        help=
-        "integrated-mz-bin magnitude of margin behind the POI monoisotopic mass, to avoid signal truncation"
-    )
-    parser.add_argument(
-        "-r",
-        "--rt_radius",
-        default=0.4,
-        help=
-        "integrated-m/z-bin magnitude of margin beyond estimated full-deuteration, to avoid signal truncation"
-    )
-    parser.add_argument(
-        "-d",
-        "--dt_radius_scale",
-        default=0.06,
-        help=
-        "scale factor for radius around expected dt to extend extraction window in dt-dimension"
-    )
-    parser.add_argument(
-        "-c",
-        "--polyfit_calibration_dict",
-        help=
-        "path/to/file_mz_calib_dict.pk, provide if using polyfit mz recalibration"
-    )
-    # outputs
-    parser.add_argument("-o",
-                        "--outputs",
-                        nargs="*",
-                        help="explicit list of string outputs to be created")
-    parser.add_argument(
-        "-i",
-        "--indices",
-        nargs="*",
-        type=int,
-        help="subset of library_info to extract tensors for, use with -o or -t")
-    parser.add_argument(
-        "-t",
-        "--output_directory",
-        help=
-        "path/to/output_dir/ to generate outputs automatically, using without -i will extract all charged species from library_info, overridden by -o"
-    )
-    # parse given arguments
-    args = parser.parse_args()
-
-    # generate explicit output paths and open timepoints .yaml
-    if args.outputs is None:
-        if args.output_directory is None:
-            parser.print_help()
-            sys.exit()
-        else:
-            library_info = pd.read_csv(args.library_info_path)
-            mzml = args.mzml_gz_path.split("/")[-1][:-3]
-            if args.indices is not None:
-                args.outputs = ",".join([
-                    args.output_directory + str(i) + "_" + mzml
-                    for i in args.indices
-                ])
+        # generate explicit output paths and open timepoints .yaml
+        if args.outputs is None:
+            if args.output_directory is None:
+                parser.print_help()
+                sys.exit()
             else:
-                args.outputs = ",".join([
-                    args.output_directory + str(i) + "_" + mzml
-                    for i in range(len(library_info))
-                ])
+                library_info = pd.read_csv(args.library_info_path)
+                mzml = args.mzml_gz_path.split("/")[-1][:-3]
+                if args.indices is not None:
+                    args.outputs = ",".join([
+                        args.output_directory + str(i) + "_" + mzml + ".gz.cpickle.zlib"
+                        for i in args.indices
+                    ])
+                else:
+                    args.outputs = ",".join([
+                        args.output_directory + str(i) + "_" + mzml + ".gz.cpickle.zlib"
+                        for i in range(len(library_info))
+                    ])
 
-    open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
-    args.outputs=arg.outputs.split(",")
+        open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
+        args.outputs=args.outputs.split(",")
 
-    main(library_info_path=args.library_info_path,
-         mzml_gz_path=args.mzml_gz_path,
-         timepoints_dict=open_timepoints,
-         outputs=args.outputs,
-         low_mass_margin=args.low_mass_margin,
-         high_mass_margin=args.high_mass_margin,
-         rt_radius=args.rt_radius,
-         dt_radius_scale=args.dt_radius_scale,
-         polyfit_calibration_dict=args.polyfit_calibration_dict,
-         indices=args.indices)
+        main(library_info_path=args.library_info_path,
+             mzml_gz_path=args.mzml_gz_path,
+             timepoints_dict=open_timepoints,
+             outputs=args.outputs,
+             low_mass_margin=args.low_mass_margin,
+             high_mass_margin=args.high_mass_margin,
+             rt_radius=args.rt_radius,
+             dt_radius_scale=args.dt_radius_scale,
+             polyfit_calibration_dict=args.polyfit_calibration_dict,
+             indices=args.indices)
