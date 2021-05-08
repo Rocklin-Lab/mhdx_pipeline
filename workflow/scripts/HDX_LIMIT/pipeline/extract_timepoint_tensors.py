@@ -414,12 +414,12 @@ if __name__ == "__main__":
                 mzml = args.mzml_gz_path.split("/")[-1][:-3]
                 if args.indices is not None:
                     args.outputs = ",".join([
-                        args.output_directory + str(i) + "_" + mzml + ".gz.cpickle.zlib"
+                        args.output_directory + str(i) + "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
                         for i in args.indices
                     ])
                 else:
                     args.outputs = ",".join([
-                        args.output_directory + str(i) + "_" + mzml + ".gz.cpickle.zlib"
+                        args.output_directory + str(i) + "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
                         for i in range(len(library_info))
                     ])
 
