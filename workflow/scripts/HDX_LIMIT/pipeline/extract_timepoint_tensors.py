@@ -279,7 +279,7 @@ def main(library_info_path,
                         # save to file if outputs provided
                         if outputs is not None:
                             my_out = [
-                                out for out in outputs if "resources/tensors/" + str(i) + "_" +
+                                out for out in outputs if "resources/tensors/" + str(i) + "/" + str(i) + "_" +
                                 mzml + ".gz.cpickle.zlib" == out
                             ][0]
                             print("My_out: " + str(my_out))
@@ -413,11 +413,21 @@ if __name__ == "__main__":
                 library_info = pd.read_csv(args.library_info_path)
                 mzml = args.mzml_gz_path.split("/")[-1][:-3]
                 if args.indices is not None:
+                    # Only make subdirs for indices to be used
+                    for i in indices:
+                        if not os.path.isdir(args.output_directory+str(i)+"/"):
+                            os.mkdir(args.output_directory+str(i)+"/")
+                    # Make subset outputs
                     args.outputs = ",".join([
                         args.output_directory + str(i) + "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
                         for i in args.indices
                     ])
                 else:
+                    # Make all subdirs
+                    for i in range(len(library_info)):
+                        if not os.path.isdir(args.output_directory+str(i)+"/"):
+                            os.mkdir(args.output_directory+str(i)+"/")
+                    # Make an output for each line in library_info
                     args.outputs = ",".join([
                         args.output_directory + str(i) + "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
                         for i in range(len(library_info))
