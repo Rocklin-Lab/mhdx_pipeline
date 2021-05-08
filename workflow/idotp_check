@@ -52,12 +52,8 @@ if config['polyfit_calibration']:
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
 
-        run:
-            outputs = [output[i] for i in range(len(output))]
-            shell('''
-                ulimit -s 65532;
-                python workflow/scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py {input[0]} {input[1]} {input[2]}--polyfit_calibration_dict {input[3]} --outputs {outputs}
-            ''')
+        script:
+            "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
 
 else:
     rule extract_tensors:
@@ -72,12 +68,8 @@ else:
             )
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
-        run:
-            outputs = ",".join([output[i] for i in range(len(output))])
-            shell('''
-                ulimit -s 65532;
-                python workflow/scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py {input[0]} {input[1]} {input[2]} --outputs {outputs}
-            ''')
+        script:
+            "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
 
 rule idotp_check:
     # TODO: docstring
