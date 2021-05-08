@@ -21,12 +21,12 @@ def idotp_check_inputs(i):
     if len(config[0]) > 1:
         for file in config[0]:
             idx_inputs.append(
-                "resources/tensors/" + str(i) + "_" + file + ".gz.cpickle.zlib"
+                "resources/tensors/" + str(i) + "/" + str(i) + "_" + file + ".gz.cpickle.zlib"
             )
     else:
         file = config[0][0]
         idx_inputs.append(
-            "resources/tensors/" + str(i) + "_" + file + ".gz.cpickle.zlib"
+            "resources/tensors/" + str(i) + "/" + str(i) + "_" + file + ".gz.cpickle.zlib"
         )
     return idx_inputs
 
