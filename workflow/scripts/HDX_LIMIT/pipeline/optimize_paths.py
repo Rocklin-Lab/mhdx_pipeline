@@ -6,7 +6,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-sys.path.append(os.getcwd() + "/workflow/scripts/auxiliary/")
+sys.path.append(os.getcwd() + "/workflow/scripts/")
 from HDX_LIMIT.io import limit_read, limit_write
 from HDX_LIMIT.processing import PathOptimizer
 
