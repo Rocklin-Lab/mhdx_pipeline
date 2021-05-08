@@ -326,13 +326,13 @@ if __name__ == "__main__":
         indices = None
         open_timepoints = yaml.load(open(snakemake.input[2], "rb").read(), Loader=yaml.Loader)
         # Check for optional arguments.
-        if len(snakemake.inputs) > 3:
+        if len(snakemake.input) > 3:
             if ".pk" in snakemake.input[3]:
                 polyfit_calibration_dict = snakemake.input[3]
-                if len(snakemake.inputs) > 4:
-                    indices = pd.read_csv(snakemake.inputs[4])['index'].values
+                if len(snakemake.input) > 4:
+                    indices = pd.read_csv(snakemake.input[4])['index'].values
             else:
-                indices = pd.read_csv(snakemake.inputs[3])['index'].values
+                indices = pd.read_csv(snakemake.input[3])['index'].values
 
         main(library_info_path=snakemake.input[0],
              mzml_gz_path=snakemake.input[1],

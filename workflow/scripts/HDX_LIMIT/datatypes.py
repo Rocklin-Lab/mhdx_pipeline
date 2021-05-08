@@ -1,10 +1,12 @@
 import os
 import time
+import sys
 import math
 import copy
 import psutil
 import peakutils
 import numpy as np
+sys.path.append("/projects/p30802/suggie/workfolder/hdx_ms_pipeline/envs/hdx_limit_pyenv_2/lib/python3.7/site-packages")
 from nn_fac import ntf
 from scipy.signal import find_peaks
 from scipy.ndimage.filters import gaussian_filter
