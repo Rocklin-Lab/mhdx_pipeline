@@ -6,7 +6,7 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
-library_info = pd.read_csv("resources/library_info/library_info.csv")[:20]
+library_info = pd.read_csv("resources/library_info/library_info.csv")
 names = list(set(library_info["name"].values))
 
 # mzml list
