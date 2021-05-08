@@ -275,12 +275,14 @@ class Factor:
         self.outer_rtdt = sum(sum(np.outer(self.rts, self.dts)))
 
         # This can be a shared function
-        self.integrated_mz_baseline = peakutils.baseline(
-            np.asarray(self.integrated_mz_data),
-            6)  # 6 degree curve seems to work well
-        self.baseline_subtracted_integrated_mz = (self.integrated_mz_data -
-                                                  self.integrated_mz_baseline)
-
+        #self.integrated_mz_baseline = peakutils.baseline(
+        #    np.asarray(self.integrated_mz_data),
+        #    6)  # 6 degree curve seems to work well
+        #       
+        #self.baseline_subtracted_integrated_mz = (self.integrated_mz_data -
+        #                                          self.integrated_mz_baseline)
+        self.baseline_subtracted_integrated_mz = self.integrated_mz_data
+        
         # Writes to self.isotope_clusters
         self.find_isotope_clusters(
             5, height=0.5
