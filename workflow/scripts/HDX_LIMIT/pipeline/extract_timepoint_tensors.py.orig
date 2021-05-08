@@ -16,6 +16,12 @@ import _pickle as cpickle
 import pickle as pk
 from collections import Counter
 
+<<<<<<< HEAD
+print("__name__ = "+__name__)
+=======
+#print("__name__ = "__name__) <- gabe comment: not sure what this was but not formatted correctly?
+>>>>>>> 814afa597198fbbf3d872e09d3907798909c146d
+
 def load_pickle_file(pickle_fpath):
     """Loads a pickle file (without any dependence on other classes or objects or functions).
 
