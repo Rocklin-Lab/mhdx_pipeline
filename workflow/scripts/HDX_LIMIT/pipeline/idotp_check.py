@@ -6,7 +6,6 @@ import math
 import copy
 import pickle
 import pymzml
-import molmass
 import argparse
 import importlib.util
 import numpy as np
@@ -21,6 +20,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 
 sys.path.append(os.getcwd() + "/workflow/scripts/")
+import molmass
 
 from HDX_LIMIT.processing import TensorGenerator, generate_tensor_factors
 
