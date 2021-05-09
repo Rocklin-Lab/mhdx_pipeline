@@ -92,6 +92,8 @@ if __name__ == "__main__":
         args.all_idotp_csv_inputs = sorted(
             list(glob.glob(args.input_dir_path + "*idotp_check.csv")))
 
-    main(args.all_idotp_csv_inputs,
+    all_idotp_csv_inputs = args.all_idotp_csv_inputs.split(' ')
+
+    main(all_idotp_csv_inputs,
          out_path=args.out_path,
          idotp_cutoff=args.idotp_cutoff)
