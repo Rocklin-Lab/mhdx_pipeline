@@ -173,6 +173,44 @@ class DataTensor:
 
             if n_factors > 1:
                 last_corr_check = corr_check(nnf1)
+                
+        pmem(str(n_itr) + " Post-Factorization")
+        n_itr += 1
+        # Create Factor objects
+        factors = []
+        t = time.time()
+        # print('Saving Factor Objects... T+'+str(t-t0))
+        for i in range(n_factors):
+            pmem(str(n_itr) + " Start Factor " + str(i))
+            n_itr += 1
+            factors.append(
+                Factor(
+                    source_file=self.source_file,
+                    tensor_idx=self.tensor_idx,
+                    timepoint_idx=self.timepoint_idx,
+                    name=self.name,
+                    charge_states=self.charge_states,
+                    rts=nnf1[0].T[i],
+                    dts=nnf1[1].T[i],
+                    mz_data=nnf1[2].T[i],
+                    retention_labels=self.retention_labels,
+                    drift_labels=self.drift_labels,
+                    mz_labels=self.mz_labels,
+
+                    factor_idx=i,
+                    n_factors=n_factors,
+                    bins_per_isotope_peak = self.bins_per_isotope_peak,
+                    n_concatenated=self.n_concatenated,
+                    concat_dt_idxs=concat_dt_idxs,
+                ))
+            pmem(str(n_itr) + " End Factor " + str(i))
+            n_itr += 1
+        pmem(str(n_itr) + " Factor Initialization End")
+        n_itr += 1
+        self.factors = factors
+        pmem(str(n_itr) + " Script End")
+        # t = time.time()
+        # print('Done: T+'+str(t-t0))
 
 
 ###
