@@ -98,6 +98,6 @@ rule idotp_filter:
     run:
         inputs = [input[i] for i in range(1, len(input))]
         shell('''
-            "python workflow/HDX_LIMIT/pipeline/idotp_filter.py {input[0]} --all_idotp_csv_inputs {inputs} --out_path {output}"
+            python workflow/scripts/HDX_LIMIT/pipeline/idotp_filter.py --all_idotp_csv_inputs "{inputs}" --out_path {output}
         ''')
 
