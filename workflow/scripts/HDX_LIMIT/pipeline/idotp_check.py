@@ -4,6 +4,7 @@ import glob
 import zlib
 import math
 import copy
+import ipdb
 import pickle
 import pymzml
 import argparse
@@ -223,15 +224,17 @@ if __name__ == "__main__":
     )
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
     parser.add_argument(
-        "-l"
+        "-l",
         "--undeut_tensor_path_list",
         nargs="+",
         help=
         "list of paths to undeuterated tensor outputs from extract_tensors.py")
-    parser.add_argument("-o" ,"--output_path", help="path/to/file for main .csv output")
+    parser.add_argument("-d", "--input_directory", help="path/to/dir/ containing undeuterated tensor inputs")
+    parser.add_argument("-r", "--rt_group_name", help="rt-group name to capture for idotp check")
+    parser.add_argument("-o", "--output_path", help="path/to/file for main .csv output")
     parser.add_argument("-f", "--factor_output_path", help="path/to/file for factor data .factor output")
 
-    parser.add_argument("--factor_plot_output_path", help="path/to/file for factor data plot output .pdf")
+    parser.add_argument("-p", "--factor_plot_output_path", help="path/to/file for factor data plot output .pdf")
     parser.add_argument(
         "-n",
         "--n_factors",
@@ -247,6 +250,15 @@ if __name__ == "__main__":
         help="parameters for smoothing rt and dt dimensions"
     )
     args = parser.parse_args()
+    #ipdb.set_trace()
+    if args.undeut_tensor_path_list is None:
+        if args.input_directory is None or args.rt_group_name is None:
+            parser.print_help()
+            sys.exit()
+        #ipdb.set_trace()
+        library_info = pd.read_csv(args.library_info_path)
+        args.undeut_tensor_path_list = [fn for i in library_info.loc[library_info["name"]==args.rt_group_name].index.values for fn in glob.glob(args.input_directory+str(i)+"/*.zlib")]
+
     #### example of user inputs rather than from snakemake ####
     # library_info_path = '/Users/smd4193/Documents/MS_data/library_info.csv'
     # ins = ['/Users/smd4193/Documents/MS_data/1_20200922_lib15_2_0sec_01.mzML.gz.cpickle.zlib']
