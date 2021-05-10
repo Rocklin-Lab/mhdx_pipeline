@@ -33,7 +33,7 @@ def plot_factor_row(fig, gs, retention_labels, drift_labels, mz_labels, bins_per
     # plot rt dt heat map
     ax = fig.add_subplot(gs[row_number, 0])
     sns.heatmap(factor_rt_dt_grid, cbar=False, cmap='Blues')
-    plt.xlabel('retention (minutes)', labellpad=-10)
+    plt.xlabel('retention (minutes)', labelpad=-10)
     plt.ylabel('%s\n\ndrift (ms)' % name)
     ax.set_xticks([0, len(retention_labels)])
     ax.set_yticks([0, len(drift_labels)])
@@ -68,7 +68,7 @@ def plot_factor_row(fig, gs, retention_labels, drift_labels, mz_labels, bins_per
     # plot integrated mz data
 
     ax = fig.add_subplot(gs[row_number, 2])
-    plt.plot(factor_integrated_mz, linewidth=0.5, marker='o', markersize=10)
+    plt.plot(factor_integrated_mz, linewidth=0.5, marker='o', markersize=3)
     plt.xticks(range(0, len(factor_integrated_mz) + 5, 5))
     ax.set_yticks([])
     ax.tick_params(length=3, pad=3)
@@ -308,3 +308,8 @@ def plot_factor_from_commandline():
 if __name__ == '__main__':
 
     plot_factor_from_commandline()
+
+    # # to run it by modifying the script
+    # factor_file_path = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/factor.factor'
+    # output_path = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/factor.factor.pdf'
+    # plot_factor_data_from_data_dict_file(factor_file_path, output_path=output_path)
