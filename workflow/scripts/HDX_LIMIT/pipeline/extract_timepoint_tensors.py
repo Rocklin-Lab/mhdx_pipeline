@@ -418,23 +418,22 @@ if __name__ == "__main__":
                         if not os.path.isdir(args.output_directory+str(i)+"/"):
                             os.mkdir(args.output_directory+str(i)+"/")
                     # Make subset outputs
-                    args.outputs = ",".join([
+                    args.outputs = [
                         args.output_directory + str(i) + "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
                         for i in args.indices
-                    ])
+                    ]
                 else:
                     # Make all subdirs
                     for i in range(len(library_info)):
                         if not os.path.isdir(args.output_directory+str(i)+"/"):
                             os.mkdir(args.output_directory+str(i)+"/")
                     # Make an output for each line in library_info
-                    args.outputs = ",".join([
+                    args.outputs = [
                         args.output_directory + str(i) + "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
                         for i in range(len(library_info))
-                    ])
+                    ]
 
         open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
-        args.outputs=args.outputs.split(",")
 
         main(library_info_path=args.library_info_path,
              mzml_gz_path=args.mzml_gz_path,
