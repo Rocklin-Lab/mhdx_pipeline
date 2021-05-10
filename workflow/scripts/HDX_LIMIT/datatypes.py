@@ -594,7 +594,7 @@ class IsotopeCluster:
         #     self.baseline_integrated_mz_com)**2,
         #    weights=self.baseline_integrated_mz,
         #)**0.5)
-        self.baseline_integrated_mz_rmse, self.baseline_integrated_mz_com, self.baseline_integrated_std, self.baseline_integrated_mz_FWHM = params_from_gaussian_fit(self)
+        self.baseline_integrated_mz_rmse, self.baseline_integrated_mz_com, self.baseline_integrated_mz_std, self.baseline_integrated_mz_FWHM = params_from_gaussian_fit(self)
 
         self.rt_norm = self.rts / np.linalg.norm(self.rts)
         self.rt_com = center_of_mass(self.rts)[0]
