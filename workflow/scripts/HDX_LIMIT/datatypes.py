@@ -6,7 +6,6 @@ import copy
 import psutil
 import peakutils
 import numpy as np
-sys.path.append("/projects/p30802/suggie/workfolder/hdx_ms_pipeline/envs/hdx_limit_pyenv_2/lib/python3.7/site-packages")
 from nn_fac import ntf
 from scipy.signal import find_peaks
 from scipy.ndimage.filters import gaussian_filter
@@ -20,7 +19,7 @@ from scipy.stats import norm
 class DataTensor:
 
     def __init__(self, source_file, tensor_idx, timepoint_idx, name,
-                 total_mass_window, n_concatenated, charge_states, integrated_mz_limits, **kwargs):
+                 total_mass_window, n_concatenated, charge_states, integrated_mz_limits, bins_per_isotope_peak, **kwargs):
 
         ###Set Common Attributes###
 
@@ -33,6 +32,7 @@ class DataTensor:
         self.n_concatenated = n_concatenated
         self.charge_states = charge_states
         self.integrated_mz_limits = integrated_mz_limits
+        self.bins_per_isotope_peak = bins_per_isotope_peak
 
         # Keyword Args
         if kwargs is not None:
@@ -53,8 +53,6 @@ class DataTensor:
                 self.concat_dt_idxs = kwargs["concat_dt_idxs"]
             if "concatenated_grid" in kws:
                 self.concatenated_grid = kwargs["concatenated_grid"]
-            if "bins_per_isotope_peak" in kws:
-                self.bins_per_isotope_peak = kwargs["bins_per_isotope_peak"]
 
 
         ###Compute Instance Values###
