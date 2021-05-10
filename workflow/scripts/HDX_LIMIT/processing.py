@@ -1005,19 +1005,19 @@ class PathOptimizer:
                            undeut_grounds[key].log_baseline_auc)**2
         return math.sqrt(np.mean(sd))
     
-    def rmses_sum(ics):
+    def rmses_sum(self, ics):
         rmses = 0
         for ic in ics:
             rmses += 100*ic.baseline_integrated_mz_rmse
         return rmses
   
-    def maxint_sum(ics):
+    def maxint_sum(self, ics):
         maxint = 0
         for ic in ics:
             maxint += max(ic.baseline_integrated_mz)
             return 100000/maxint
   
-    def int_mz_FWHM_rmse(ics):
+    def int_mz_FWHM_rmse(self, ics):
         sd = 0
         for i in range(2, len(ics)):
             sd += (
