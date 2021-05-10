@@ -158,7 +158,7 @@ class DataTensor:
         
         last_corr_check = 1.0
         n_factors += 1
-        while n_factors > 2 and last_corr_check > 0.1:
+        while n_factors > 2 and last_corr_check > 0.17:
             n_factors -= 1
             pmem(str(n_itr) + " " + str(n_factors) + " Factors " + " Start")
             t1 = time.time()
