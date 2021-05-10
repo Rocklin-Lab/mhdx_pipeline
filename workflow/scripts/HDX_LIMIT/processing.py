@@ -292,7 +292,8 @@ class PathOptimizer:
 
             # add ic to bin list closest to center
             for ic in tp:
-                center_dict[np.round(ic.baseline_integrated_mz_com)].append(ic)
+                center_dict[  min([len(tp[0].baseline_integrated_mz)-1,
+                                   np.round(ic.baseline_integrated_mz_com)])  ].append(ic)
 
             # score all ics in each int_mz bin, keep only those that are not worse than another IC in all dimensions
             low_score_keys = ["rt_ground_err", "dt_ground_err", "peak_err"]
