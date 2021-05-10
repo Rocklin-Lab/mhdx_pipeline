@@ -223,11 +223,12 @@ if __name__ == "__main__":
     )
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
     parser.add_argument(
-        "undeut_tensor_path_list",
+        "-l"
+        "--undeut_tensor_path_list",
         nargs="+",
         help=
         "list of paths to undeuterated tensor outputs from extract_tensors.py")
-    parser.add_argument("output_path", help="path/to/file for main .csv output")
+    parser.add_argument("-o" ,"--output_path", help="path/to/file for main .csv output")
     parser.add_argument("-f", "--factor_output_path", help="path/to/file for factor data .factor output")
 
     parser.add_argument("--factor_plot_output_path", help="path/to/file for factor data plot output .pdf")
