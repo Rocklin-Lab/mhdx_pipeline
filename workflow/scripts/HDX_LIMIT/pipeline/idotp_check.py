@@ -228,12 +228,9 @@ if __name__ == "__main__":
         help=
         "list of paths to undeuterated tensor outputs from extract_tensors.py")
     parser.add_argument("output_path", help="path/to/file for main .csv output")
-<<<<<<< HEAD
     parser.add_argument("-f", "--factor_output_path", help="path/to/file for factor data .factor output")
-=======
-    parser.add_argument("factor_output_path", help="path/to/file for factor data .factor output")
-    parser.add_argument("factor_plot_output_path", help="path/to/file for factor data plot output .pdf")
->>>>>>> fe6b92e7e4f8f44a694edc33c0f7c0e3bba3c4a0
+
+    parser.add_argument("--factor_plot_output_path", help="path/to/file for factor data plot output .pdf")
     parser.add_argument(
         "-n",
         "--n_factors",
