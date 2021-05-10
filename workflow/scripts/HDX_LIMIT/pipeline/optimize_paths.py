@@ -47,7 +47,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path,
 
 
 def main(library_info_path,
-         all_tensor_input_paths,
+         all_ic_input_paths,
          timepoints,
          return_flag=False,
          rt_group_name=None,
@@ -62,7 +62,7 @@ def main(library_info_path,
 
     Args:
         library_info_path (str): path/to/library_info.csv
-        all_tensor_input_paths (list of strings): list of paths/to/files.cpickle.zlib for all lists of IsotopeClusters from generate_tensor_ics.py
+        all_ic_input_paths (list of strings): list of paths/to/files.cpickle.zlib for all lists of IsotopeClusters from generate_tensor_ics.py
         timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
         return_flag: option to return main output in python, for notebook context
         rt_group_name (str): library_info['name'] value
@@ -85,7 +85,7 @@ def main(library_info_path,
 
     if rt_group_name is None:
         name = library_info.iloc[int(
-            all_tensor_input_paths[0][0].split("/")[-1].split("_")[0])]["name"]
+            all_ic_input_paths[0][0].split("/")[-1].split("_")[0])]["name"]
     else:
         name = rt_group_name
 
@@ -94,7 +94,7 @@ def main(library_info_path,
     for tp in timepoints["timepoints"]:
         tp_buf = []
         for fn in timepoints[tp]:
-            for file in all_tensor_input_paths:
+            for file in all_ic_input_paths:
                 if fn.split(
                         ".")[0] in file:  # only match filename without .mzML
                     ics = limit_read(file)  # expects list of ics
