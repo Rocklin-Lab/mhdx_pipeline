@@ -19,10 +19,10 @@
 
 
 #Name for pipeline run:
-"run_name": "210210_Mix1"
+"run_name": "180604_Mix2_MES_nonlin_05_21_2020"
 
 #Path to .csv file where each row is a library protein name followed by its sequence
-"names_and_seqs": "resources/library_info/GJR_2017_HX_mix1_proc.csv"
+"names_and_seqs": "resources/library_info/new_HX_order.csv"
 
 ########################################
 ###############TIMEPOINTS###############
@@ -45,27 +45,26 @@
 #in seconds, in ascending order, including 0
 timepoints:
   - 0
-  - 5
-  - 8
-  - 13
-  - 20
-  - 30
-  - 60
-  - 100
-  - 180
-  - 300
-  - 480
-  - 780
-  - 1140
-  - 1980
-  - 3420
-  - 4800
-  - 9600
-  - 16080
-  - 28200
-  - 48000
-  - 66240
-  - 96600
+  - 10
+  - 16
+  - 26
+  - 40
+  - 65
+  - 105
+  - 160
+  - 270
+  - 430
+  - 690
+  - 1050
+  - 1680
+  - 2640
+  - 4200
+  - 6600
+  - 11400
+  - 18900
+  - 33600
+  - 62220
+  - 100800
 
 
 
@@ -93,51 +92,51 @@ timepoints:
 
 #If you provide .mzML or .mzML.gz files the pipeline will recognize this and skip upstream jobs to start as far downstream as possible.
 
-0:
-  - "031418_Mix1_highconc_UNfix.mzML"
-5:
-  - "031418_Mix1_highconc_5s.mzML"
-8:
-  - "031418_Mix1_highconc_8s.mzML"
-13:
-  - "031418_Mix1_highconc_13s.mzML"
-20:
-  - "031418_Mix1_highconc_20s.mzML"
-30:
-  - "031418_Mix1_highconc_30s.mzML"
-60:
-  - "031318_Mix1_highconc_HX_1min.mzML"
-100:
-  - "031418_Mix1_highconc_100s.mzML"
-180:
-  - "031418_Mix1_highconc_3m.mzML"
-300:
-  - "031418_Mix1_highconc_5min.mzML"
-480:
-  - "031418_Mix1_highconc_8m.mzML"
-780:
-  - "031418_Mix1_highconc_13m.mzML"
-1140:
-  - "031418_Mix1_highconc_19min.mzML"
-1980:
-  - "031418_Mix1_highconc_33min.mzML"
-3420:
-  - "031418_Mix1_highconc_57m.mzML"
-4800:
-  - "031418_Mix1_highconc_80min.mzML"
-9600:
-  - "031418_Mix1_highconc_2hr40m.mzML"
-16080:
-  - "031418_Mix1_highconc_4hr28m.mzML"
-28200:
-  - "031418_Mix1_highconc_7hr50min.mzML"
-48000:
-  - "031418_Mix1_highconc_13hr20min.mzML"
-66240:
-  - "031418_Mix1_highconc_18hr24m.mzML"
-96600:
-  - "031418_Mix1_highconc_26hr50m.mzML"
 
+0: 
+  - "180604_Mix2_MES_nonlin_UN.mzML"
+  - "180604_Mix2_MES_nonlin_UN2.mzML"
+  - "180604_Mix2_MES_nonlin_UN3.mzML"
+10:
+  - "180604_Mix2_MES_nonlin_10s.mzML"
+16:
+  - "180604_Mix2_MES_nonlin_16s.mzML"
+26:
+  - "180604_Mix2_MES_nonlin_26s.mzML"
+40:
+  - "180604_Mix2_MES_nonlin_40s.mzML"
+65:
+  - "180604_Mix2_MES_nonlin_65s.mzML"
+105:
+  - "180604_Mix2_MES_nonlin_105s.mzML"
+160:
+  - "180604_Mix2_MES_nonlin_160s.mzML"
+270:
+  - "180604_Mix2_MES_nonlin_4m30.mzML"
+430:
+  - "180604_Mix2_MES_nonlin_7m10.mzML"
+690:
+  - "180604_Mix2_MES_nonlin_11m30s.mzML"
+1050:
+  - "180604_Mix2_MES_nonlin_17m30s.mzML"
+1680:
+  - "180604_Mix2_MES_nonlin_28m.mzML"
+2640:
+  - "180604_Mix2_MES_nonlin_44m.mzML"
+4200:
+  - "180604_Mix2_MES_nonlin_70m.mzML"
+6600:
+  - "180604_Mix2_MES_nonlin_1hr50.mzML"
+11400:
+  - "180604_Mix2_MES_nonlin_3hr10.mzML"
+18900:
+  - "180604_Mix2_MES_nonlin_5hr15.mzML"
+33600:
+  - "180604_Mix2_MES_nonlin_9hr20.mzML"
+62220:
+  - "180604_Mix2_MES_nonlin_17hr45.mzML"
+100800:
+  - "180604_Mix2_MES_nonlin_28hr.mzML"
 
 
 
@@ -158,7 +157,7 @@ timepoints:
 ### Main Snakefile ###
 
 #path to old data for comparison, !!!set to null to make None in python!!! this will be default or removed from full release, requires ending '/' for dir
-"old_data_dir": "resources/old_data/fit_noslow/"
+"old_data_dir": "/projects/p30802/digs_old/HX/180604_mix2_MES/hx_fits/"
 
 #boundaries on tensor size in each dimension (LC-time in decimal minutes, IMS time in ms, M/Z by mass-units)
 "rt_radius": 0.4

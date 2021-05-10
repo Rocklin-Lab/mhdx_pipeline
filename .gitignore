@@ -4,6 +4,7 @@ analysis/*
 !analysis/README.md
 !config
 !config/*
+config/config.yaml
 !resources
 !resources/*
 !results
