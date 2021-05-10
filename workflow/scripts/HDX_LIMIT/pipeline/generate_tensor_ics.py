@@ -15,6 +15,7 @@ def main(library_info_path,
          timepoints_dict,
          isotope_clusters_out_path=None,
          factor_out_path=None,
+         factor_plot_output_path=None,
          return_flag=False,
          gauss_params=(3, 1),
          n_factors=15):
@@ -50,6 +51,7 @@ def main(library_info_path,
                                           gauss_params=gauss_params,
                                           n_factors=n_factors,
                                           factor_output_fpath=factor_out_path,
+                                          factor_plot_output_path=factor_plot_output_path,
                                           timepoint_label=None)
 
     all_ics = []
@@ -90,6 +92,10 @@ if __name__ == "__main__":
         "--factor_data_out_path",
         help="path/to/output.cpickle.zlib.factor, FactorData")
     parser.add_argument(
+        "-po",
+        "--factor_plot_out_path",
+        help="path/to/output.cpickle.zlib.factor.pdf, FactorData Plot output .pdf")
+    parser.add_argument(
         "-r",
         "--return_flag",
         type=bool,
@@ -120,5 +126,6 @@ if __name__ == "__main__":
          timepoints_dict=open_timepoints,
          isotope_clusters_out_path=args.isotope_clusters_out_path,
          factor_out_path=args.factor_data_out_path,
+         factor_plot_output_path=args.factor_plot_out_path,
          return_flag=args.return_flag,
          gauss_params=args.gauss_params)
