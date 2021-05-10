@@ -201,11 +201,11 @@ if __name__ == "__main__":
         if args.input_directory_path is not None and args.rt_group_name is not None:
             args.all_ic_input_paths = optimize_paths_inputs(
                 args.library_info_path, args.input_directory_path,
-                args.rt_group_name, args.timepoints)
+                args.rt_group_name, args.timepoints_yaml)
         else:
             parser.print_help()
             sys.exit()
-    open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read())
+    open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
 
     main(library_info_path=args.library_info_path,
          all_ic_input_paths=args.all_ic_input_paths,
