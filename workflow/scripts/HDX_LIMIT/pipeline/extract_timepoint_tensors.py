@@ -302,7 +302,6 @@ def main(library_info_path,
                             output_scans[i] = [
                             ]  # to avoid duplication of tensors in return-only state
                 except:
-                    ipdb.set_trace()
                     print("error in output block on scan: " + str(scan_number) +
                           " , for line: " + str(i))
                     sys.exit(0)

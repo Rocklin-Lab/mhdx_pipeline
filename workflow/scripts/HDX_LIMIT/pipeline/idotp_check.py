@@ -224,17 +224,21 @@ if __name__ == "__main__":
         help=
         "list of paths to undeuterated tensor outputs from extract_tensors.py")
     parser.add_argument("output_path", help="path/to/file for main .csv output")
-    parser.add_argument("factor_output_path", help="path/to/file for factor data .factor output")
+    parser.add_argument("-f", "--factor_output_path", help="path/to/file for factor data .factor output")
     parser.add_argument(
+        "-n",
         "--n_factors",
         default=15,
         help=
         "high number of factors to use in non_negative_parafac decomposition, counts down until correlation constraint is reached - see DataTensor.factorize()"
     )
-    parser.add_argument("--gauss_params",
-                        type=tuple,
-                        default=(3, 1),
-                        help="parameters for smoothing rt and dt dimensions")
+    parser.add_argument(
+        "-g",
+        "--gauss_params",
+        type=tuple,
+        default=(3, 1),
+        help="parameters for smoothing rt and dt dimensions"
+    )
     args = parser.parse_args()
     #### example of user inputs rather than from snakemake ####
     # library_info_path = '/Users/smd4193/Documents/MS_data/library_info.csv'
