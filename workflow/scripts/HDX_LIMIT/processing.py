@@ -10,7 +10,7 @@ from scipy.stats import gmean
 from HDX_LIMIT import io, datatypes
 from numpy import linspace, cumsum, searchsorted
 
-from plot_factor_data import plot_factor_data_from_data_dict
+from HDX_LIMIT.plot_factor_data import plot_factor_data_from_data_dict
 
 ### BOKEH ###
 from bokeh.plotting import figure
