@@ -5,6 +5,7 @@ import math
 import argparse
 import numpy as np
 import pandas as pd
+import yaml
 
 sys.path.append(os.getcwd() + "/workflow/scripts/")
 from HDX_LIMIT.io import limit_read, limit_write
@@ -196,6 +197,8 @@ if __name__ == "__main__":
                         help="path/to/file to save rt/dt error measurement")
     args = parser.parse_args()
 
+    timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
+    
     # generate explicit inputs and open timpoints .yaml
     if args.all_ic_input_paths is None:
         if args.input_directory_path is not None and args.rt_group_name is not None:
@@ -205,11 +208,11 @@ if __name__ == "__main__":
         else:
             parser.print_help()
             sys.exit()
-    open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
+
 
     main(library_info_path=args.library_info_path,
          all_ic_input_paths=args.all_ic_input_paths,
-         timepoints=open_timepoints,
+         timepoints=timepoints,
          rt_group_name=args.rt_group_name,
          old_data_dir=args.old_data_dir,
          html_plot_out_path=args.html_plot_out_path,
