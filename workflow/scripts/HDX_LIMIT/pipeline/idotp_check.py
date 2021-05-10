@@ -92,6 +92,7 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
 def gen_tensors_factorize(library_info_df,
                           undeut_tensor_path_list,
                           factor_output_path,
+                          factor_plot_output_path,
                           timepoint_index=0,
                           n_factors=15,
                           gauss_params=(3, 1)):
@@ -121,6 +122,7 @@ def gen_tensors_factorize(library_info_df,
                                               gauss_params=gauss_params,
                                               n_factors=n_factors,
                                               factor_output_fpath=factor_output_path,
+                                              factor_plot_output_path=factor_plot_output_path,
                                               timepoint_label=None)
 
         for factor in data_tensor.DataTensor.factors:
@@ -163,6 +165,7 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
 def main(library_info_path,
          undeut_tensor_path_list,
          factor_output_path=None,
+         factor_plot_output_path=None,
          output_path=None,
          return_flag=None,
          n_factors=15,
@@ -193,6 +196,7 @@ def main(library_info_path,
         library_info_df=library_info,
         undeut_tensor_path_list=undeut_tensor_path_list,
         factor_output_path=factor_output_path,
+        factor_plot_output_path=factor_plot_output_path,
         n_factors=n_factors,
         gauss_params=gauss_params)
 
@@ -225,6 +229,7 @@ if __name__ == "__main__":
         "list of paths to undeuterated tensor outputs from extract_tensors.py")
     parser.add_argument("output_path", help="path/to/file for main .csv output")
     parser.add_argument("factor_output_path", help="path/to/file for factor data .factor output")
+    parser.add_argument("factor_plot_output_path", help="path/to/file for factor data plot output .pdf")
     parser.add_argument(
         "--n_factors",
         default=15,
@@ -245,4 +250,5 @@ if __name__ == "__main__":
     main(library_info_path=args.library_info_path,
          undeut_tensor_path_list=args.undeut_tensor_path_list,
          factor_output_path=args.factor_output_path,
-         output_path=args.output_path)
+         output_path=args.output_path,
+         factor_plot_output_path=args.factor_plot_output_path)

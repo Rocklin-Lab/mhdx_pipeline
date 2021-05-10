@@ -10,6 +10,8 @@ from scipy.stats import gmean
 from HDX_LIMIT import io, datatypes
 from numpy import linspace, cumsum, searchsorted
 
+from plot_factor_data import plot_factor_data_from_data_dict
+
 ### BOKEH ###
 from bokeh.plotting import figure
 from bokeh.palettes import Spectral6
@@ -62,6 +64,7 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
 
 def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors,
                             factor_output_fpath=None,
+                            factor_plot_output_path=None,
                             timepoint_label=None):
     """
     generate data tensor from a given tensor file path, library info file path, and timepoint index
@@ -97,14 +100,19 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     print("Post-Factorization: " + str(process.memory_info().rss /
                                        (1024 * 1024 * 1024)))
 
-    # create factor data object
-    factor_data_object = create_factor_data_object(data_tensor=data_tensor,
-                                                   gauss_params=gauss_params,
-                                                   timepoint_label=timepoint_label)
+    # create factor data dictionary
+    factor_data_dictionary = create_factor_data_object(data_tensor=data_tensor,
+                                                       gauss_params=gauss_params,
+                                                       timepoint_label=timepoint_label)
 
     # save factor data object
     if factor_output_fpath != None:
-        io.limit_write(factor_data_object, factor_output_fpath)
+        io.limit_write(factor_data_dictionary, factor_output_fpath)
+
+    # plot_factor_data
+    if factor_plot_output_path != None:
+        plot_factor_data_from_data_dict(factor_data=factor_data_dictionary,
+                                        output_path=factor_plot_output_path)
 
     return data_tensor
 
