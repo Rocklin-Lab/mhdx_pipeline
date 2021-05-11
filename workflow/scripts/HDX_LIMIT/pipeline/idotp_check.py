@@ -92,8 +92,8 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
 
 def gen_tensors_factorize(library_info_df,
                           undeut_tensor_path_list,
-                          factor_output_path,
-                          factor_plot_output_path,
+                          factor_output_path_list,
+                          factor_plot_output_path_list,
                           timepoint_index=0,
                           n_factors=15,
                           gauss_params=(3, 1)):
@@ -114,7 +114,7 @@ def gen_tensors_factorize(library_info_df,
     data_tensor_list = []
     undeut_ics_list = []
 
-    for num, undeut_tensor_path in enumerate(undeut_tensor_path_list):
+    for undeut_tensor_path, factor_output_path, factor_plot_output_path in zip(undeut_tensor_path_list, factor_output_path_list, factor_plot_output_path_list):
 
         # gen data tensor and factors
         data_tensor = generate_tensor_factors(tensor_fpath=undeut_tensor_path,
@@ -165,8 +165,8 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
 
 def main(library_info_path,
          undeut_tensor_path_list,
-         factor_output_path=None,
-         factor_plot_output_path=None,
+         factor_output_path_list=None,
+         factor_plot_output_path_list=None,
          output_path=None,
          return_flag=None,
          n_factors=15,
@@ -196,8 +196,8 @@ def main(library_info_path,
     iso_clusters_list, data_tensor_list = gen_tensors_factorize(
         library_info_df=library_info,
         undeut_tensor_path_list=undeut_tensor_path_list,
-        factor_output_path=factor_output_path,
-        factor_plot_output_path=factor_plot_output_path,
+        factor_output_path_list=factor_output_path_list,
+        factor_plot_output_path_list=factor_plot_output_path_list,
         n_factors=n_factors,
         gauss_params=gauss_params)
 
@@ -232,9 +232,9 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--input_directory", help="path/to/dir/ containing undeuterated tensor inputs")
     parser.add_argument("-r", "--rt_group_name", help="rt-group name to capture for idotp check")
     parser.add_argument("-o", "--output_path", help="path/to/file for main .csv output")
-    parser.add_argument("-f", "--factor_output_path", nargs="+", help="path/to/file for factor data .factor output")
+    parser.add_argument("-f", "--factor_output_path_list", nargs="+", help="list of paths/to/file for factor data .factor output")
 
-    parser.add_argument("-p", "--factor_plot_output_path", nargs="+", help="path/to/file for factor data plot output .pdf")
+    parser.add_argument("-p", "--factor_plot_output_path_list", nargs="+", help="list of paths/to/files for factor data plot output .pdf")
     parser.add_argument(
         "-n",
         "--n_factors",
@@ -267,6 +267,6 @@ if __name__ == "__main__":
     # main operation
     main(library_info_path=args.library_info_path,
          undeut_tensor_path_list=args.undeut_tensor_path_list,
-         factor_output_path=args.factor_output_path,
+         factor_output_path_list=args.factor_output_path_list,
          output_path=args.output_path,
-         factor_plot_output_path=args.factor_plot_output_path)
+         factor_plot_output_path_list=args.factor_plot_output_path_list)
