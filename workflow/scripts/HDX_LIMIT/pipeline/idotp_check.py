@@ -232,9 +232,9 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--input_directory", help="path/to/dir/ containing undeuterated tensor inputs")
     parser.add_argument("-r", "--rt_group_name", help="rt-group name to capture for idotp check")
     parser.add_argument("-o", "--output_path", help="path/to/file for main .csv output")
-    parser.add_argument("-f", "--factor_output_path", help="path/to/file for factor data .factor output")
+    parser.add_argument("-f", "--factor_output_path", nargs="+", help="path/to/file for factor data .factor output")
 
-    parser.add_argument("-p", "--factor_plot_output_path", help="path/to/file for factor data plot output .pdf")
+    parser.add_argument("-p", "--factor_plot_output_path", nargs="+", help="path/to/file for factor data plot output .pdf")
     parser.add_argument(
         "-n",
         "--n_factors",
