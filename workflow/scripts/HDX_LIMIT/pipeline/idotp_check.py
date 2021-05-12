@@ -137,7 +137,13 @@ def gen_tensors_factorize(library_info_df,
     """
     data_tensor_list = []
     undeut_ics_list = []
-    
+
+    # Handle optional factor arguments in control structure.
+    if factor_output_path_list is None:
+        factor_output_path_list = [None for i in undeut_tensor_path_list]
+    if factor_plot_output_path_list is None:
+        factor_plot_output_path_list = [None for i in undeut_tensor_path_list]
+
     for undeut_tensor_path, factor_output_path, factor_plot_output_path in zip(
         undeut_tensor_path_list, factor_output_path_list, factor_plot_output_path_list
         ):
@@ -222,7 +228,7 @@ def main(library_info_path,
     prot_cum_peak_gaps = cum_peak_gaps_from_sequence(prot_seq)
     theor_peak_list = (prot_cum_peak_gaps+library_info.iloc[lib_idx]['MW'])/library_info.iloc[lib_idx]["charge"]
 
-    iso_clusters_list, data_tensor_list, theor_peak_list = gen_tensors_factorize(
+    iso_clusters_list, data_tensor_list = gen_tensors_factorize(
         library_info_df=library_info,
         undeut_tensor_path_list=undeut_tensor_path_list,
         factor_output_path_list=factor_output_path_list,
@@ -237,8 +243,8 @@ def main(library_info_path,
     if output_path is not None:
         pd.DataFrame({
             "idotp": max(idotp_list),
-            "theor_peak_list": theor_peak_list,
-            "theor_mz_dist": theor_mz_dist
+            "theor_peak_list": [theor_peak_list],
+            "theor_mz_dist": [theor_mz_dist]
             }, index=[0]).to_csv(output_path)
 
     if return_flag is not None:

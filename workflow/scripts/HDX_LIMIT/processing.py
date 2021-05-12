@@ -86,7 +86,8 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     # data tensor initialization
     data_tensor = TensorGenerator(filename=tensor_fpath,
                                   library_info=library_info_df,
-                                  timepoint_index=timepoint_index)
+                                  timepoint_index=timepoint_index,
+                                  cum_peak_gaps=cum_peak_gaps)
 
     print("Post-Tensor-Pre-Factor-Initialization: " + str(process.memory_info().rss /
                                         (1024 * 1024 * 1024)))
