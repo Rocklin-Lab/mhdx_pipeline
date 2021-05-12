@@ -62,7 +62,7 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     return factor_data_dict
 
 
-def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors, cum_peak_gaps,
+def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors, mz_centers,
                             factor_output_fpath=None,
                             factor_plot_output_path=None,
                             timepoint_label=None):
@@ -87,7 +87,7 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     data_tensor = TensorGenerator(filename=tensor_fpath,
                                   library_info=library_info_df,
                                   timepoint_index=timepoint_index,
-                                  cum_peak_gaps=cum_peak_gaps)
+                                  mz_centers=mz_centers)
 
     print("Post-Tensor-Pre-Factor-Initialization: " + str(process.memory_info().rss /
                                         (1024 * 1024 * 1024)))
@@ -125,14 +125,14 @@ class TensorGenerator:
     hd_mass_diff = 1.006277
     c13_mass_diff = 1.00335
 
-    def __init__(self, filename, timepoint_index, library_info, cum_peak_gaps, **kwargs):
+    def __init__(self, filename, timepoint_index, library_info, mz_centers, **kwargs):
 
         ###Set Instance Attributes###
 
         self.filename = filename
         self.timepoint_index = timepoint_index
         self.library_info = library_info
-        self.cum_peak_gaps = cum_peak_gaps
+        self.mz_centers = mz_centers
 
         if (
                 kwargs is not None
@@ -166,8 +166,6 @@ class TensorGenerator:
         self.total_mass_window = self.low_mass_margin + self.total_isotopes
 
         i = self.lib_idx
-        self.mz_centers = self.library_info["obs_mz"].values[i] + (
-            self.cum_peak_gaps / self.library_info["charge"].values[i])
         self.mz_lows = self.library_info["obs_mz"].values[i] - (
             self.low_mass_margin / self.library_info["charge"].values[i])
         self.mz_highs = self.library_info["obs_mz"].values[i] + (

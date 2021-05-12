@@ -32,7 +32,8 @@ def idotp_check_inputs(i):
 
 rule all:
     input:
-        "resources/idotp_filter/filter_passing_indices.csv"
+        "resources/idotp_filter/filter_passing_indices.csv",
+        "resources/idotp_filter/checked_library_info.csv"
 
 
 if config['polyfit_calibration']:
