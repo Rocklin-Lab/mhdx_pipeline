@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 def main(all_idotp_csv_inputs,
          out_path=None,
+         library_info_out_path=None,
          plot_out_path=None,
          return_flag=False,
          idotp_cutoff=0.95):
@@ -27,20 +28,36 @@ def main(all_idotp_csv_inputs,
 
     """
     out_dict = {}
-
     filter_passing_indices = []
     idotps = []
-    for fn in all_idotp_csv_inputs:
+    theor_peak_gaps = []
+    theor_mz_dists = []
+
+    sorted_inputs = all_idotp_csv_inputs.sorted(key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
+
+    for fn in  sorted_inputs:
         lib_idx = int(fn.split("/")[-1].split("_")[0])
         idpc = pd.read_csv(fn)
         idotps.append(idpc["idotp"].values[0])
+        theor_peak_gaps.append(idpc["theor_peak_list"][0]) # Account for nested list structure
+        theor_mz_dists.append(idpc["theor_mz_dist"][0])
         if idpc["idotp"].values[0] >= idotp_cutoff:
             filter_passing_indices.append(lib_idx)
+
+    # Set values in library_info and write out
+    library_info["idotp"] = idotps
+    library_info["theor_peak_list"] = theor_peak_gaps
+    library_info["theor_mz_dist"] = theor_mz_dists
+
+    if library_info_out_path is not None:
+        library_info.to_csv(library_info_out_path)
 
     # re-order indices
     filter_passing_indices = sorted(filter_passing_indices)
     # add passing indices to output dict
     out_dict["index"] = filter_passing_indices
+    out_dict["theor_peak_list"] = theor_peak_gaps
+    out_dict["theor_mz_dist"] = theor_mz_dists
     # make df output option
     out_df = pd.DataFrame.from_dict(out_dict)
 
@@ -69,7 +86,10 @@ if __name__ == "__main__":
                         "--input_dir_path",
                         help="path/to/dir/ containing idotp_check.csv files")
     parser.add_argument("-o",
-                        "--out_path",
+                        "--indices_out_path",
+                        help="path/to/filter_passing_indices.csv")
+    parser.add_argument("-l",
+                        "--library_info_out_path",
                         help="path/to/filter_passing_indices.csv")
     parser.add_argument("--p",
                         "--plot_out_path",

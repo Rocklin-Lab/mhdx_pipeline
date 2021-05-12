@@ -243,7 +243,7 @@ def main(library_info_path,
     if output_path is not None:
         pd.DataFrame({
             "idotp": max(idotp_list),
-            "theor_peak_list": [theor_peak_list],
+            "theor_peak_list": [theor_peak_list], # Cast as nested list to force into single index
             "theor_mz_dist": [theor_mz_dist]
             }, index=[0]).to_csv(output_path)
 
