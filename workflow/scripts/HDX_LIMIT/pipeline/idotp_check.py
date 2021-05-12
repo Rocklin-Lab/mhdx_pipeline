@@ -19,14 +19,39 @@ from scipy.signal import find_peaks
 from collections import defaultdict as ddict
 from scipy.ndimage.filters import gaussian_filter
 
-
 sys.path.append(os.getcwd() + "/workflow/scripts/")
 import molmass
-
 from HDX_LIMIT.processing import TensorGenerator, generate_tensor_factors
+​
+
+def cum_peak_gaps_from_sequence(sequence):
+    deut = molmass.Formula('D')
+    hyd = molmass.Formula('H')
+​
+    n_exchangable = len(sequence) - 2 - sequence[2:].count('P')
+​
+    f=molmass.Formula(sequence)
+    start = min([x[0] for x in f.spectrum().values()])-0.5
+    n_isotopes = int(len(f.spectrum(minfract=0.0001)))
+​
+    x = np.linspace(start,start+n_isotopes,1000000)
+    y=np.zeros((len(x)))
+​
+    for k in range(n_isotopes):
+        f=molmass.Formula(sequence)
+        if k > 0: f = f - (k * hyd) + (k * deut)
+        peaks = [(x[0], x[1]) for x in f.spectrum().values()]
+​
+        for peak in peaks:
+            y += norm.pdf(x,loc=peak[0], scale=peak[0]*(20/1000000)) * peak[1]
+​
+    peak_pos = find_peaks(y)[0]
+    peak_gaps = x[peak_pos][1:] - x[peak_pos][0:-1]
+    peak_gaps = list(peak_gaps) + ([1.00627301] * (n_exchangable - len(peak_gaps) + int(n_isotopes / 2)))
+​
+    return np.array([0] + list(np.cumsum(peak_gaps)))
 
 
-#todo: later to use this function from hxtools(suggie version)
 def calculate_theoretical_isotope_dist_from_sequence(sequence, n_isotopes=None):
     """Calculate theoretical isotope distribtuion from the given one-letter sequence of a library protein.
 
@@ -50,7 +75,6 @@ def calculate_theoretical_isotope_dist_from_sequence(sequence, n_isotopes=None):
     return isotope_dist
 
 
-#todo: later to use this function from hxtools (suggie version)
 def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array,
                                                         n_isotopes=None):
     """Calculate the isotope distribution from the integrated mz intensitities.
@@ -68,7 +92,6 @@ def calculate_empirical_isotope_dist_from_integrated_mz(integrated_mz_array,
     return isotope_dist
 
 
-#todo: reminder! keep this function in this script rather than coming from hxtools
 def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
     """Calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array.
     
@@ -87,13 +110,14 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
     dot_product = np.linalg.norm(
         np.dot(theo_isotope_dist[0:min_length], emp_isotope_dist[0:min_length])
     ) / np.linalg.norm(theo_isotope_dist) / np.linalg.norm(emp_isotope_dist)
-    return dot_product
+    return dot_product, theo_isotope_dist
 
 
 def gen_tensors_factorize(library_info_df,
                           undeut_tensor_path_list,
                           factor_output_path_list,
                           factor_plot_output_path_list,
+                          cum_peak_gaps,
                           timepoint_index=0,
                           n_factors=15,
                           gauss_params=(3, 1)):
@@ -113,8 +137,10 @@ def gen_tensors_factorize(library_info_df,
     """
     data_tensor_list = []
     undeut_ics_list = []
-
-    for undeut_tensor_path, factor_output_path, factor_plot_output_path in zip(undeut_tensor_path_list, factor_output_path_list, factor_plot_output_path_list):
+    
+    for undeut_tensor_path, factor_output_path, factor_plot_output_path in zip(
+        undeut_tensor_path_list, factor_output_path_list, factor_plot_output_path_list
+        ):
 
         # gen data tensor and factors
         data_tensor = generate_tensor_factors(tensor_fpath=undeut_tensor_path,
@@ -122,6 +148,7 @@ def gen_tensors_factorize(library_info_df,
                                               timepoint_index=timepoint_index,
                                               gauss_params=gauss_params,
                                               n_factors=n_factors,
+                                              cum_peak_gaps=cum_peak_gaps,
                                               factor_output_fpath=factor_output_path,
                                               factor_plot_output_path=factor_plot_output_path,
                                               timepoint_label=None)
@@ -138,8 +165,7 @@ def gen_tensors_factorize(library_info_df,
 
 
 def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
-    """ 
-    Calculate normalized dot product [0-1] of undeuterated IsotopeCluster.baseline_subtracted_int_mz to sequence determined theoretical distribution
+    """Calculate normalized dot product [0-1] of undeuterated IsotopeCluster.baseline_subtracted_int_mz to sequence determined theoretical distribution
     
     Parameters:
     sequence (str): sequence of the protein-of-interest in single-letter format
@@ -155,12 +181,12 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
 
     for index, isotope_clusters in enumerate(undeut_isotope_clusters):
         integrated_mz_array = isotope_clusters.baseline_integrated_mz
-        dot_product = calculate_isotope_dist_dot_product(
+        dot_product, theor_mz_dist = calculate_isotope_dist_dot_product(
             sequence=sequence, undeut_integrated_mz_array=integrated_mz_array)
         dot_product_list.append(dot_product)
         integrated_mz_list.append(integrated_mz_array)
 
-    return dot_product_list, integrated_mz_list
+    return dot_product_list, integrated_mz_list, theor_mz_dist
 
 
 def main(library_info_path,
@@ -191,21 +217,29 @@ def main(library_info_path,
     print(undeut_tensor_path_list)
     lib_idx = int(undeut_tensor_path_list[0].split("/")[-1].split("_")[0])
     library_info = pd.read_csv(library_info_path)
-    my_seq = library_info.iloc[lib_idx]["sequence"]
+    prot_name = library_info_df.iloc[lib_idx]["name"]
+    prot_seq = library_info_df.iloc[lib_idx]["sequence"]
+    prot_cum_peak_gaps = cum_peak_gaps_from_sequence(prot_seq)
+    theor_peak_list = (cum_peak_gaps+library_info_df.iloc[lib_idx]['MW'])/library_info_df.iloc[lib_idx]["charge"]
 
-    iso_clusters_list, data_tensor_list = gen_tensors_factorize(
+    iso_clusters_list, data_tensor_list, theor_peak_list = gen_tensors_factorize(
         library_info_df=library_info,
         undeut_tensor_path_list=undeut_tensor_path_list,
         factor_output_path_list=factor_output_path_list,
         factor_plot_output_path_list=factor_plot_output_path_list,
+        cum_peak_gaps=prot_cum_peak_gaps,
         n_factors=n_factors,
         gauss_params=gauss_params)
 
-    idotp_list, integrated_mz_list = calc_dot_prod_for_isotope_clusters(
-        sequence=my_seq, undeut_isotope_clusters=iso_clusters_list)
+    idotp_list, integrated_mz_list, theor_mz_dist = calc_dot_prod_for_isotope_clusters(
+        sequence=prot_seq, undeut_isotope_clusters=iso_clusters_list)
 
     if output_path is not None:
-        pd.DataFrame({"idotp": max(idotp_list)}, index=[0]).to_csv(output_path)
+        pd.DataFrame({
+            "idotp": max(idotp_list),
+            "theor_peak_list": theor_peak_list,
+            "theor_mz_dist": theor_mz_dist
+            }, index=[0]).to_csv(output_path)
 
     if return_flag is not None:
         return {
@@ -250,7 +284,6 @@ if __name__ == "__main__":
         help="parameters for smoothing rt and dt dimensions"
     )
     args = parser.parse_args()
-    #ipdb.set_trace()
     if args.undeut_tensor_path_list is None:
         if args.input_directory is None or args.rt_group_name is None:
             parser.print_help()

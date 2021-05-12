@@ -62,7 +62,7 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     return factor_data_dict
 
 
-def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors,
+def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors, cum_peak_gaps,
                             factor_output_fpath=None,
                             factor_plot_output_path=None,
                             timepoint_label=None):
@@ -124,13 +124,14 @@ class TensorGenerator:
     hd_mass_diff = 1.006277
     c13_mass_diff = 1.00335
 
-    def __init__(self, filename, timepoint_index, library_info, **kwargs):
+    def __init__(self, filename, timepoint_index, library_info, cum_peak_gaps, **kwargs):
 
         ###Set Instance Attributes###
 
         self.filename = filename
         self.timepoint_index = timepoint_index
         self.library_info = library_info
+        self.cum_peak_gaps = cum_peak_gaps
 
         if (
                 kwargs is not None
@@ -162,11 +163,6 @@ class TensorGenerator:
             self.library_info["name"] == self.name]["sequence"].values[0])
         self.total_isotopes = self.max_peak_center + self.high_mass_margin
         self.total_mass_window = self.low_mass_margin + self.total_isotopes
-
-        self.est_peak_gaps = (
-            [0] + list(linspace(self.c13_mass_diff, self.hd_mass_diff, 7)) +
-            [self.hd_mass_diff for x in range(self.total_isotopes - 8)])
-        self.cum_peak_gaps = cumsum(self.est_peak_gaps)
 
         i = self.lib_idx
         self.mz_centers = self.library_info["obs_mz"].values[i] + (
