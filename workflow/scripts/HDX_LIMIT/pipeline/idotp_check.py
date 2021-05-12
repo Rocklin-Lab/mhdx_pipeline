@@ -22,33 +22,33 @@ from scipy.ndimage.filters import gaussian_filter
 sys.path.append(os.getcwd() + "/workflow/scripts/")
 import molmass
 from HDX_LIMIT.processing import TensorGenerator, generate_tensor_factors
-​
+
 
 def cum_peak_gaps_from_sequence(sequence):
     deut = molmass.Formula('D')
     hyd = molmass.Formula('H')
-​
+
     n_exchangable = len(sequence) - 2 - sequence[2:].count('P')
-​
+
     f=molmass.Formula(sequence)
     start = min([x[0] for x in f.spectrum().values()])-0.5
     n_isotopes = int(len(f.spectrum(minfract=0.0001)))
-​
+
     x = np.linspace(start,start+n_isotopes,1000000)
     y=np.zeros((len(x)))
-​
+
     for k in range(n_isotopes):
         f=molmass.Formula(sequence)
         if k > 0: f = f - (k * hyd) + (k * deut)
         peaks = [(x[0], x[1]) for x in f.spectrum().values()]
-​
+
         for peak in peaks:
             y += norm.pdf(x,loc=peak[0], scale=peak[0]*(20/1000000)) * peak[1]
-​
+
     peak_pos = find_peaks(y)[0]
     peak_gaps = x[peak_pos][1:] - x[peak_pos][0:-1]
     peak_gaps = list(peak_gaps) + ([1.00627301] * (n_exchangable - len(peak_gaps) + int(n_isotopes / 2)))
-​
+
     return np.array([0] + list(np.cumsum(peak_gaps)))
 
 
@@ -217,10 +217,10 @@ def main(library_info_path,
     print(undeut_tensor_path_list)
     lib_idx = int(undeut_tensor_path_list[0].split("/")[-1].split("_")[0])
     library_info = pd.read_csv(library_info_path)
-    prot_name = library_info_df.iloc[lib_idx]["name"]
-    prot_seq = library_info_df.iloc[lib_idx]["sequence"]
+    prot_name = library_info.iloc[lib_idx]["name"]
+    prot_seq = library_info.iloc[lib_idx]["sequence"]
     prot_cum_peak_gaps = cum_peak_gaps_from_sequence(prot_seq)
-    theor_peak_list = (cum_peak_gaps+library_info_df.iloc[lib_idx]['MW'])/library_info_df.iloc[lib_idx]["charge"]
+    theor_peak_list = (cum_peak_gaps+library_info.iloc[lib_idx]['MW'])/library_info.iloc[lib_idx]["charge"]
 
     iso_clusters_list, data_tensor_list, theor_peak_list = gen_tensors_factorize(
         library_info_df=library_info,
