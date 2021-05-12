@@ -117,7 +117,7 @@ def gen_tensors_factorize(library_info_df,
                           undeut_tensor_path_list,
                           factor_output_path_list,
                           factor_plot_output_path_list,
-                          cum_peak_gaps,
+                          mz_centers,
                           timepoint_index=0,
                           n_factors=15,
                           gauss_params=(3, 1)):
@@ -154,7 +154,7 @@ def gen_tensors_factorize(library_info_df,
                                               timepoint_index=timepoint_index,
                                               gauss_params=gauss_params,
                                               n_factors=n_factors,
-                                              cum_peak_gaps=cum_peak_gaps,
+                                              mz_centers=mz_centers,
                                               factor_output_fpath=factor_output_path,
                                               factor_plot_output_path=factor_plot_output_path,
                                               timepoint_label=None)
@@ -226,14 +226,14 @@ def main(library_info_path,
     prot_name = library_info.iloc[lib_idx]["name"]
     prot_seq = library_info.iloc[lib_idx]["sequence"]
     prot_cum_peak_gaps = cum_peak_gaps_from_sequence(prot_seq)
-    theor_peak_list = (prot_cum_peak_gaps+library_info.iloc[lib_idx]['MW'])/library_info.iloc[lib_idx]["charge"]
+    mz_centers = (prot_cum_peak_gaps+library_info.iloc[lib_idx]['MW'])/library_info.iloc[lib_idx]["charge"]
 
     iso_clusters_list, data_tensor_list = gen_tensors_factorize(
         library_info_df=library_info,
         undeut_tensor_path_list=undeut_tensor_path_list,
         factor_output_path_list=factor_output_path_list,
         factor_plot_output_path_list=factor_plot_output_path_list,
-        cum_peak_gaps=prot_cum_peak_gaps,
+        mz_centers=mz_centers,
         n_factors=n_factors,
         gauss_params=gauss_params)
 
