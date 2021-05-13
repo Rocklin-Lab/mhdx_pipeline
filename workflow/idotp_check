@@ -79,16 +79,17 @@ rule idotp_check:
         lambda wildcards: idotp_check_inputs(wildcards.i),
     output:
         "resources/idotp_check/{i}_idotp_check.csv",
+        "results/plots/idotp_distribution.png"
         expand("resources/factor_data/{{i}}_{file}.cpickle.zlib.factor", file=config[0]),
         expand("results/plots/factors/{{i}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
     benchmark:
         "results/benchmarks/idotp_check.{i}.benchmark.txt"
     run:
         inputs = [input[i] for i in range(1, len(input))]
-        outputs_factor_dict = [output[i] for i in range(1, len(output)) if output[i].endswith(".factor")]
-        outputs_factor_plot = [output[i] for i in range(1, len(output)) if output[i].endswith(".factor.pdf")]
+        outputs_factor_dict = [output[i] for i in range(2, len(output)) if output[i].endswith(".factor")]
+        outputs_factor_plot = [output[i] for i in range(2, len(output)) if output[i].endswith(".factor.pdf")]
         shell('''
-            python workflow/scripts/HDX_LIMIT/pipeline/idotp_check.py {input[0]} --undeut_tensor_path_list {inputs} --output_path {output[0]} --factor_output_path {outputs_factor_dict} --factor_plot_output_path {outputs_factor_plot}
+            python workflow/scripts/HDX_LIMIT/pipeline/idotp_check.py {input[0]} --undeut_tensor_path_list {inputs} --output_path {output[0]} --plot_output_path {output[1]} --factor_output_path {outputs_factor_dict} --factor_plot_output_path {outputs_factor_plot}
         ''')
 
 rule idotp_filter:
