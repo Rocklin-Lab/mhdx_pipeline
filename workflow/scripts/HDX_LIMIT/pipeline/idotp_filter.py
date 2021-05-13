@@ -63,7 +63,7 @@ def main(library_info_path,
     out_dict["mz_centers"] = mz_centers
     out_dict["theor_mz_dist"] = theor_mz_dists
 
-    out_df = pd.DataFrame.from_dict({"index": filter_passing_indices}, index=False)
+    out_df = pd.DataFrame.from_dict({"index": filter_passing_indices})
 
     if plot_out_path is not None:
         sns.displot(idotps)
