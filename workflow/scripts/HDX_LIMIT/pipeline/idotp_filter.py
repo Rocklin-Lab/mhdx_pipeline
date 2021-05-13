@@ -8,8 +8,9 @@ mpl.use("Agg")
 import matplotlib.pyplot as plt
 
 
-def main(all_idotp_csv_inputs,
-         out_path=None,
+def main(library_info_path,
+         all_idotp_csv_inputs,
+         indices_out_path=None,
          library_info_out_path=None,
          plot_out_path=None,
          return_flag=False,
@@ -27,6 +28,8 @@ def main(all_idotp_csv_inputs,
         out_dict (dict) = dictionary containing "filter_passing_indices"
 
     """
+    library_info = pd.read_csv(library_info_path)
+
     out_dict = {}
     filter_passing_indices = []
     idotps = []
@@ -74,46 +77,66 @@ def main(all_idotp_csv_inputs,
 
 if __name__ == "__main__":
 
-    # set expected command line arguments
-    parser = argparse.ArgumentParser(
-        description=
-        "Reads all rt-group idotp csvs and returns or saves a list of indices with idotp >= idotp_cutoff."
-    )
-    parser.add_argument("-i",
-                        "--all_idotp_csv_inputs",
-                        help="list of all idotp check .csv outputs to be read")
-    parser.add_argument("-d",
-                        "--input_dir_path",
-                        help="path/to/dir/ containing idotp_check.csv files")
-    parser.add_argument("-o",
-                        "--indices_out_path",
-                        help="path/to/filter_passing_indices.csv")
-    parser.add_argument("-l",
-                        "--library_info_out_path",
-                        help="path/to/filter_passing_indices.csv")
-    parser.add_argument("--p",
-                        "--plot_out_path",
-                        help="path/to/idotp_distribution.png")
-    parser.add_argument(
-        "-c",
-        "--idotp_cutoff",
-        type=float,
-        default=0.95,
-        help=
-        "lower limit on dot-product between theoretical integrated m/z of POI and int. m/z of observed signal in question. Float in range [0,1], default 0.95 "
-    )
-    args = parser.parse_args()
+    if "snakemake" in globals():
+        library_info_path = snakemake.input.pop(0)
+        all_idotp_csv_inputs = snakemake.input
 
-    if args.all_idotp_csv_inputs is None and args.input_dir_path is None:
-        parser.print_help()
-        sys.exit()
+        indices_out_path = snakemake.output[0]
+        library_info_out_path =  snakemake.output[1]
+        plot_out_path = snakemake.output[2]
 
-    if args.all_idotp_csv_inputs is None and args.input_dir_path is not None:
-        args.all_idotp_csv_inputs = sorted(
-            list(glob.glob(args.input_dir_path + "*idotp_check.csv")))
 
-    all_idotp_csv_inputs = args.all_idotp_csv_inputs.split(' ')
+        main(library_info_path=library_info_path,
+             all_idotp_csv_inputs=all_idotp_csv_inputs,
+             indices_out_path=indices_out_path,
+             library_info_out_path=library_info_out_path,
+             plot_out_path=plot_out_path)
 
-    main(all_idotp_csv_inputs,
-         out_path=args.out_path,
-         idotp_cutoff=args.idotp_cutoff)
+    else:
+        # set expected command line arguments
+        parser = argparse.ArgumentParser(
+            description=
+            "Reads all rt-group idotp csvs and returns or saves a list of indices with idotp >= idotp_cutoff."
+        )
+        parser.add_argument("library_info_path", help="list of all idotp check .csv outputs to be read")
+        parser.add_argument("-i",
+                            "--all_idotp_csv_inputs",
+                            help="list of all idotp check .csv outputs to be read")
+        parser.add_argument("-d",
+                            "--input_dir_path",
+                            help="path/to/dir/ containing idotp_check.csv files")
+        parser.add_argument("-o",
+                            "--indices_out_path",
+                            help="path/to/filter_passing_indices.csv")
+        parser.add_argument("-l",
+                            "--library_info_out_path",
+                            help="path/to/filter_passing_indices.csv")
+        parser.add_argument("--p",
+                            "--plot_out_path",
+                            help="path/to/idotp_distribution.png")
+        parser.add_argument(
+            "-c",
+            "--idotp_cutoff",
+            type=float,
+            default=0.95,
+            help=
+            "lower limit on dot-product between theoretical integrated m/z of POI and int. m/z of observed signal in question. Float in range [0,1], default 0.95 "
+        )
+        args = parser.parse_args()
+
+        if args.all_idotp_csv_inputs is None and args.input_dir_path is None:
+            parser.print_help()
+            sys.exit()
+
+        if args.all_idotp_csv_inputs is None and args.input_dir_path is not None:
+            args.all_idotp_csv_inputs = sorted(
+                list(glob.glob(args.input_dir_path + "*idotp_check.csv")))
+
+        all_idotp_csv_inputs = args.all_idotp_csv_inputs.split(' ')
+
+        main(library_info_path=args.library_info_path,
+             all_idotp_csv_inputs=args.all_idotp_csv_inputs,
+             indices_out_path=args.indices_out_path,
+             library_info_out_path = args.library_info_out_path,
+             plot_out_path=args.plot_out_path,
+             idotp_cutoff=args.idotp_cutoff)
