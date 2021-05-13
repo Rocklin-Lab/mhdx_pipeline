@@ -99,26 +99,26 @@ def main(library_info_path,
                         ".")[0] in file:  # only match filename without .mzML
                     ics = limit_read(file)  # expects list of ics
                     # create lists needed to compute correlation matrix
-                    all_baseline_integrated_mz = []
-                    all_rts = []
-                    charge_list = []
+                    # all_baseline_integrated_mz = []
+                    # all_rts = []
+                    # charge_list = []
                     for ic in ics:
                         tp_buf.append(ic)
                         # Append baseline_integrated_mz and rts to lists
-                        all_baseline_integrated_mz.append(ic.baseline_integrated_mz)
-                        all_rts.append(ic.rts)
-                        charge_list.append(ic.charge_states[0])
+                        # all_baseline_integrated_mz.append(ic.baseline_integrated_mz)
+                        # all_rts.append(ic.rts)
+                        # charge_list.append(ic.charge_states[0])
                     # Compute correlation matrices
-                    charge_list = np.array(charge_list)
-                    mz_corrmat = np.corrcoef(all_baseline_integrated_mz)
-                    rt_corrmat = np.corrcoef(all_rts)
-                    minimum_corrmat = np.minimum(mz_corrmat, rt_corrmat)
+                    # charge_list = np.array(charge_list)
+                    # mz_corrmat = np.corrcoef(all_baseline_integrated_mz)
+                    # rt_corrmat = np.corrcoef(all_rts)
+                    # minimum_corrmat = np.minimum(mz_corrmat, rt_corrmat)
                     # Set nearest_neighbor_correlation attribute
-                    for column, ic in enumerate(tp):
-                        ic.nearest_neighbor_correlation = max(
-                            minimum_corrmat[column][charge_list != ic.charge_states[0]]
-                        )
-                    limit_write(ics, file)
+                    # for column, ic in enumerate(tp):
+                    #     ic.nearest_neighbor_correlation = max(
+                    #         minimum_corrmat[column][charge_list != ic.charge_states[0]]
+                    #     )
+                    # limit_write(ics, file)
         atc.append(tp_buf)
 
     p1 = PathOptimizer(
