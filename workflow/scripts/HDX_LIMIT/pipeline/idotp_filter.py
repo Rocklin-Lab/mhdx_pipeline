@@ -70,8 +70,8 @@ def main(library_info_path,
         plt.axvline(idotp_cutoff, 0, 1)
         plt.savefig(plot_out_path)
 
-    if out_path is not None:
-        out_df.to_csv(out_path)
+    if indices_out_path is not None:
+        out_df.to_csv(indices_out_path)
 
     if return_flag:
         return out_dict
