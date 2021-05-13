@@ -24,6 +24,12 @@ from bokeh.models.callbacks import CustomJS
 from bokeh.models.sources import ColumnDataSource, CDSView
 from bokeh.models.filters import Filter, GroupFilter, IndexFilter
 
+import scipy as sp
+from scipy.optimize import curve_fit
+from sklearn.metrics import mean_squared_error
+from scipy.stats import norm
+
+
 
 
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
@@ -454,6 +460,27 @@ class PathOptimizer:
         self.undeut_grounds = out
         self.undeut_ground_dot_products = charge_fits
 
+    def gaussian_function(self, x, H, A, x0, sigma):
+        return H + A * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+
+    def gauss_fit(self, x, y):
+        mean = sum(x * y) / sum(y)
+        sigma = np.sqrt(sum(y * (x - mean) ** 2) / sum(y))
+        nonzeros = [index for index, value in enumerate(list(y)) if value != 0]
+        popt, pcov = curve_fit(self.gaussian_function, x, y, p0=[0, max(y), mean, sigma],
+                               bounds=([0, 0, nonzeros[0], 0], [np.inf, np.inf, nonzeros[-1], np.inf]))
+        return popt
+
+    def rmse_from_gaussian_fit(self, distribution):
+        try:
+            xdata = [i for i in range(len(distribution))]
+            ydata = distribution
+            y_gaussian_fit = self.gaussian_function(xdata, *self.gauss_fit(xdata, ydata))
+            rmse = mean_squared_error(ydata / max(ydata), y_gaussian_fit / max(y_gaussian_fit), squared=False)
+            return rmse
+        except:
+            return 100
+
     def precalculate_fit_to_ground(self,
                                    all_tp_clusters=None,
                                    undeut_grounds=None):
@@ -465,78 +492,14 @@ class PathOptimizer:
 
         for timepoint in all_tp_clusters:
             for ic in timepoint:
-                dt_ground_errs = []
-                rt_ground_errs = []
-                dt_ground_fits = []
-                rt_ground_fits = []
-
-                # TODO: Rework this to make better sense
-
-                for i in range(ic.n_concatenated):
-
-                    if ic.charge_states[i] in undeut_grounds.keys():
-                        undeut = undeut_grounds[ic.charge_states[i]]
-
-                        rt_ground_errs.append(ic.rt_com - undeut.rt_com)
-
-                        # Trys all dt_coms (for concatenated tensors) keeps best error
-                        dt_errs = []
-                        for j in range(len(undeut.dt_coms)):
-                            dt_errs.append(ic.dt_coms[i] - undeut.dt_coms[j])
-                        dt_ground_errs.append(dt_errs[np.argmin(
-                            [abs(x) for x in dt_errs])])
-
-                        diff = len(ic.dt_norms[i]) - len(
-                            undeut_grounds[ic.charge_states[i]].dt_norms[0])
-                        if diff == 0:
-                            dt_ground_fits.append(
-                                np.dot(
-                                    ic.dt_norms[i],
-                                    undeut_grounds[
-                                        ic.charge_states[i]].dt_norms[0],
-                                ))
-                        else:
-                            if diff > 0:
-                                u_buff = copy.copy(undeut_grounds[
-                                    ic.charge_states[i]].dt_norms[0])
-                                u_buff = np.append(u_buff, [0] * diff)
-                                dt_ground_fits.append(
-                                    np.dot(ic.dt_norms[i], u_buff))
-                            else:
-                                dt_ground_fits.append(
-                                    np.dot(
-                                        ic.dt_norms[i],
-                                        undeut_grounds[ic.charge_states[i]].
-                                        dt_norms[0][:diff],
-                                    ))
-
-                        diff = len(ic.rt_norm) - len(
-                            undeut_grounds[ic.charge_states[0]].rt_norm)
-                        if diff == 0:
-                            rt_ground_fits.append(
-                                np.dot(
-                                    ic.rt_norm,
-                                    undeut_grounds[ic.charge_states[0]].rt_norm,
-                                ))
-                        else:
-                            if diff > 0:
-                                u_buff = copy.copy(
-                                    undeut_grounds[ic.charge_states[0]].rt_norm)
-                                u_buff = np.append(u_buff, [0] * diff)
-                                rt_ground_fits.append(np.dot(
-                                    ic.rt_norm, u_buff))
-                            else:
-                                rt_ground_fits.append(
-                                    np.dot(
-                                        ic.rt_norm,
-                                        undeut_grounds[
-                                            ic.charge_states[0]].rt_norm[:diff],
-                                    ))
-
-                ic.dt_ground_err = np.average(dt_ground_errs)
-                ic.rt_ground_err = np.average(rt_ground_errs)
-                ic.dt_ground_fit = gmean(dt_ground_fits)
-                ic.rt_ground_fit = gmean(rt_ground_fits)
+                undeut = undeut_grounds[ic.charge_states[0]]
+                ic.dt_ground_err = ic.dt_coms[0] - undeut.dt_coms[0]
+                ic.rt_ground_err = ic.rt_com - undeut.rt_com
+                ic.dt_ground_fit = max(
+                    np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
+                ic.rt_ground_fit = max(np.correlate(undeut.rt_norm, ic.rt_norm, mode='full'))
+                ic.dt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.dt_norms[0])
+                ic.rt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.rt_norm)
 
     def generate_sample_paths(self):
         starts = np.linspace(0, 0.7, 8)
@@ -1035,6 +998,9 @@ class PathOptimizer:
         rt_ground_rmse_weight=None,
         dt_ground_rmse_weight=None,
         auc_ground_rmse_weight=None,
+        rmses_sum_weight=None,
+        maxint_sum_weight=None,
+        int_mz_FWHM_rmse_weight=None
     ):
 
         if int_mz_std_rmse_weight != None:
