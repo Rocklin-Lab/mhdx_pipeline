@@ -30,7 +30,7 @@ def main(all_idotp_csv_inputs,
     out_dict = {}
     filter_passing_indices = []
     idotps = []
-    theor_peak_gaps = []
+    mz_centers = []
     theor_mz_dists = []
 
     sorted_inputs = all_idotp_csv_inputs.sorted(key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
@@ -39,14 +39,14 @@ def main(all_idotp_csv_inputs,
         lib_idx = int(fn.split("/")[-1].split("_")[0])
         idpc = pd.read_csv(fn)
         idotps.append(idpc["idotp"].values[0])
-        theor_peak_gaps.append(idpc["theor_peak_list"][0]) # Account for nested list structure
+        mz_centers.append(idpc["mz_centers"][0]) # Account for nested list structure
         theor_mz_dists.append(idpc["theor_mz_dist"][0])
         if idpc["idotp"].values[0] >= idotp_cutoff:
             filter_passing_indices.append(lib_idx)
 
     # Set values in library_info and write out
     library_info["idotp"] = idotps
-    library_info["theor_peak_list"] = theor_peak_gaps
+    library_info["mz_centers"] = mz_centers
     library_info["theor_mz_dist"] = theor_mz_dists
 
     if library_info_out_path is not None:
@@ -56,7 +56,7 @@ def main(all_idotp_csv_inputs,
     filter_passing_indices = sorted(filter_passing_indices)
     # add passing indices to output dict
     out_dict["index"] = filter_passing_indices
-    out_dict["theor_peak_list"] = theor_peak_gaps
+    out_dict["mz_centers"] = mz_centers
     out_dict["theor_mz_dist"] = theor_mz_dists
     # make df output option
     out_df = pd.DataFrame.from_dict(out_dict)
