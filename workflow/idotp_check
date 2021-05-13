@@ -99,7 +99,6 @@ rule idotp_filter:
         "resources/idotp_filter/filter_passing_indices.csv",
         "resources/idotp_filter/checked_library_info.csv",
         "results/plots/idotp_distribution.png"
-
     run:
         inputs = [input[i] for i in range(1, len(input))]
         shell('''
