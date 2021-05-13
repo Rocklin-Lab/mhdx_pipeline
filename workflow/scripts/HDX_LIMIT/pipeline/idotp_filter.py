@@ -58,11 +58,12 @@ def main(library_info_path,
     # re-order indices
     filter_passing_indices = sorted(filter_passing_indices)
     # add passing indices to output dict
-    out_dict["index"] = filter_passing_indices
+
+    out_dict["filter_passing_indices"] = filter_passing_indices
     out_dict["mz_centers"] = mz_centers
     out_dict["theor_mz_dist"] = theor_mz_dists
-    # make df output option
-    out_df = pd.DataFrame.from_dict(out_dict)
+
+    out_df = pd.DataFrame.from_dict({"index": filter_passing_indices}, index=False)
 
     if plot_out_path is not None:
         sns.displot(idotps)
