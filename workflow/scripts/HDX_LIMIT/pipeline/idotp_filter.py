@@ -36,9 +36,9 @@ def main(library_info_path,
     mz_centers = []
     theor_mz_dists = []
 
-    sorted_inputs = all_idotp_csv_inputs.sort(key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
+    sorted_inputs = sorted(all_idotp_csv_inputs, key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
 
-    for fn in  sorted_inputs:
+    for fn in sorted_inputs:
         lib_idx = int(fn.split("/")[-1].split("_")[0])
         idpc = pd.read_csv(fn)
         idotps.append(idpc["idotp"].values[0])
@@ -66,6 +66,7 @@ def main(library_info_path,
 
     if plot_out_path is not None:
         sns.displot(idotps)
+        plt.axvline(idotp_cutoff, 0, 1)
         plt.savefig(plot_out_path)
 
     if out_path is not None:
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 
     if "snakemake" in globals():
         library_info_path = snakemake.input.pop(0)
-        all_idotp_csv_inputs = list(snakemake.input)
+        all_idotp_csv_inputs = snakemake.input[1:]
 
         indices_out_path = snakemake.output[0]
         library_info_out_path =  snakemake.output[1]
