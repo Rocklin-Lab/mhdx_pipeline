@@ -36,7 +36,7 @@ def main(library_info_path,
     mz_centers = []
     theor_mz_dists = []
 
-    sorted_inputs = all_idotp_csv_inputs.sorted(key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
+    sorted_inputs = all_idotp_csv_inputs.sort(key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
 
     for fn in  sorted_inputs:
         lib_idx = int(fn.split("/")[-1].split("_")[0])
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     if "snakemake" in globals():
         library_info_path = snakemake.input.pop(0)
-        all_idotp_csv_inputs = snakemake.input
+        all_idotp_csv_inputs = list(snakemake.input)
 
         indices_out_path = snakemake.output[0]
         library_info_out_path =  snakemake.output[1]
