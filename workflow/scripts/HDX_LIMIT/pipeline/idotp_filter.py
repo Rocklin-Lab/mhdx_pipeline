@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     if "snakemake" in globals():
         library_info_path = snakemake.input.pop(0)
-        all_idotp_csv_inputs = snakemake.input[1:]
+        all_idotp_csv_inputs = snakemake.input
 
         indices_out_path = snakemake.output[0]
         library_info_out_path =  snakemake.output[1]
