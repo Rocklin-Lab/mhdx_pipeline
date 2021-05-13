@@ -226,7 +226,7 @@ def main(library_info_path,
     prot_name = library_info.iloc[lib_idx]["name"]
     prot_seq = library_info.iloc[lib_idx]["sequence"]
     prot_cum_peak_gaps = cum_peak_gaps_from_sequence(prot_seq)
-    mz_centers = (prot_cum_peak_gaps+/library_info.iloc[lib_idx]["charge"]) + library_info.iloc[lib_idx]['obs_mz'])
+    mz_centers = (prot_cum_peak_gaps/library_info.iloc[lib_idx]["charge"]) + library_info.iloc[lib_idx]['obs_mz']
 
     iso_clusters_list, data_tensor_list = gen_tensors_factorize(
         library_info_df=library_info,
