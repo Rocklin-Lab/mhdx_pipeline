@@ -13,7 +13,7 @@ library_info = pd.read_csv("resources/library_info/library_info.csv")
 proc = glob.glob("resources/ic_time_series/*.zlib")
 # names = [fn.split('_')[:-3] for fn in proc]
 names = list(set(library_info["name"].values))
-indices = pd.read_csv("resources/idotp_filter/filter_passing_indices.csv")['index'].values
+idotp_check_indices = pd.read_csv("resources/idotp_filter/filter_passing_indices.csv")['index'].values
 
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
@@ -22,14 +22,13 @@ rule all:
         #expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
 
 
-def optimize_paths_inputs(name, library_info):
+def optimize_paths_inputs(name, library_info, idotp_check_indices):
     # Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
     name_inputs = []
-    idxs = library_info.index[library_info["name"] == name].tolist()
     for key in config["timepoints"]:
         if len(config[key]) > 1:
             for file in config[key]:
-                for idx in idxs:
+                for idx in idotp_check_indices:
                     name_inputs.append(
                         "resources/subtensor_ics/"
                         + str(idx)
@@ -41,7 +40,7 @@ def optimize_paths_inputs(name, library_info):
                     )  # TODO: This may break when using .raw as first input, investigate
         else:
             file = config[key][0]
-            for idx in idxs:
+            for idx in idotp_check_indices:
                 name_inputs.append(
                     "resources/subtensor_ics/"
                     + str(idx)
@@ -67,7 +66,7 @@ if config['polyfit_calibration']:
         output:
             expand(
                 "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=indices
+                idx=idotp_check_indices
             )
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
@@ -84,7 +83,7 @@ else:
         output:
             expand(
                 "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=indices
+                idx=idotp_check_indices
             ),
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
@@ -96,7 +95,7 @@ rule generate_tensor_ics:
     # TODO: docstring
     input:
         library_info_fn,
-        expand("resources/tensors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib", lib_idx=indices, file=[fn for tp in config["timepoints"] for fn in config[tp]]),
+        expand("resources/tensors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib", lib_idx=idotp_check_indices, file=[fn for tp in config["timepoints"] for fn in config[tp]]),
         "config/config.yaml"
     output:
         "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
@@ -111,7 +110,7 @@ rule generate_tensor_ics:
 rule optimize_paths:
     input:
         library_info_fn,
-        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info),
+        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info, idotp_check_indices),
     output:
         "results/plots/ic_time_series/html/{name}_time_series.html",
         "resources/ic_time_series/{name}_winner.cpickle.zlib",
