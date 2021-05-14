@@ -46,6 +46,17 @@ def optimize_paths_inputs(library_info_path, input_directory_path,
     return name_inputs
 
 
+def gen_correlate_matrix(list_of_arrays):
+
+    corr_matrix = np.zeros((len(list_of_arrays), len(list_of_arrays)))
+
+    for ind1, arr1 in enumerate(list_of_arrays):
+        for ind2, arr2 in enumerate(list_of_arrays):
+            corr_matrix[ind1, ind2] = np.correlate(arr1, arr2, mode='valid')
+
+    return corr_matrix
+
+
 def main(library_info_path,
          all_ic_input_paths,
          timepoints,
@@ -116,8 +127,10 @@ def main(library_info_path,
 
         charge_list = np.array(charge_list)
         mz_corrmat = np.corrcoef(all_baseline_integrated_mz)
-        rt_corrmat = np.corrcoef(all_rts)
-        rt_correl_mat = np.correlate(all_rts[0], all_rts[1], mode='valid')
+        # rt_corrmat = np.corrcoef(all_rts)
+        rt_correlate_mat = gen_correlate_matrix(all_rts)
+        print('heho')
+        # rt_correl_mat = np.correlate(all_rts[0], all_rts[1], mode='valid')
         minimum_corrmat = np.minimum(mz_corrmat, rt_corrmat)
         for column, ic in enumerate(ics):
             try:
