@@ -914,9 +914,9 @@ class PathOptimizer:
         
         back = 0
         sd = 0
-        previous_rate = (ics[1].baseline_integrated_mz_com -
+        previous_rate = max([(ics[1].baseline_integrated_mz_com -
                          ics[0].baseline_integrated_mz_com) / (timepoints[1] -
-                                                               timepoints[0])
+                                                               timepoints[0]), 0.1])
         for i in range(2, len(ics)):
             # if previous_rate == 0: diagnostic for /0 error
             new_com = ics[i].baseline_integrated_mz_com
