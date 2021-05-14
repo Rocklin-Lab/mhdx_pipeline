@@ -390,10 +390,8 @@ if __name__ == "__main__":
                             help="explicit list of string outputs to be created")
         parser.add_argument(
             "-i",
-            "--indices",
-            nargs="*",
-            type=int,
-            help="subset of library_info to extract tensors for, use with -o or -t")
+            "--indices_csv",
+            help="filter_passing_indices.csv with 'index' argument, subset of library_info to extract tensors for, use with -o or -t")
         parser.add_argument(
             "-t",
             "--output_directory",
@@ -411,7 +409,8 @@ if __name__ == "__main__":
             else:
                 library_info = pd.read_csv(args.library_info_path)
                 mzml = args.mzml_gz_path.split("/")[-1][:-3]
-                if args.indices is not None:
+                if args.indices_csv is not None:
+                    indices = pd.read_csv(args.indices_csv)["index"].values
                     # Only make subdirs for indices to be used
                     for i in indices:
                         if not os.path.isdir(args.output_directory+str(i)+"/"):

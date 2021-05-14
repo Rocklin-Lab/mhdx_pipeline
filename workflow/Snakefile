@@ -59,14 +59,16 @@ if config['polyfit_calibration']:
         input:
             library_info_fn,
             "resources/mzml/{mzml}.gz",
+            "config/config.yaml",
             expand(
                 "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
-            )
+            ),
+            "resources/idotp_filter/filter_passing_indices.csv"
         output:
             expand(
                 "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
                 idx=range(len(library_info))
-            ),
+            )
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         
@@ -77,6 +79,8 @@ else:
         input:
             library_info_fn,
             "resources/mzml/{mzml}.gz",
+            "config/config.yaml",
+            "resources/idotp_filter/filter_passing_indices.csv"
         output:
             expand(
                 "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
@@ -96,7 +100,7 @@ rule generate_tensor_ics:
         "config/config.yaml"
     output:
         "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
-        "resources/factor_data/{lib_idx}_{file}.cpickle.zlib.factor"
+        "resources/factor_data/{lib_idx}_{file}.cpickle.zlib.factor",
         "results/plots/factors/{lib_idx}_{file}.cpickle.zlib.factor.pdf"
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
