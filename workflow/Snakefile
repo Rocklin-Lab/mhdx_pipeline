@@ -13,7 +13,7 @@ library_info = pd.read_csv("resources/library_info/library_info.csv")
 proc = glob.glob("resources/ic_time_series/*.zlib")
 # names = [fn.split('_')[:-3] for fn in proc]
 names = list(set(library_info["name"].values))
-
+indices = pd.read_csv("resources/idotp_filter/filter_passing_indices.csv")['index'].values
 
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
@@ -67,7 +67,7 @@ if config['polyfit_calibration']:
         output:
             expand(
                 "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=range(len(library_info))
+                idx=indices
             )
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
@@ -84,7 +84,7 @@ else:
         output:
             expand(
                 "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=range(len(library_info))
+                idx=indices
             ),
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
@@ -96,7 +96,7 @@ rule generate_tensor_ics:
     # TODO: docstring
     input:
         library_info_fn,
-        "resources/tensors/{lib_idx}_{file}.cpickle.zlib",
+        expand("resources/tensors/{lib_idx}_{file}.cpickle.zlib", lib_idx=indices, file=[fn for tp in config["timepoints"] for fn in config[tp]]),
         "config/config.yaml"
     output:
         "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
