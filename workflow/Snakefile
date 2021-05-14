@@ -96,7 +96,7 @@ rule generate_tensor_ics:
     # TODO: docstring
     input:
         library_info_fn,
-        expand("resources/tensors/{lib_idx}_{file}.cpickle.zlib", lib_idx=indices, file=[fn for tp in config["timepoints"] for fn in config[tp]]),
+        expand("resources/tensors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib", lib_idx=indices, file=[fn for tp in config["timepoints"] for fn in config[tp]]),
         "config/config.yaml"
     output:
         "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
