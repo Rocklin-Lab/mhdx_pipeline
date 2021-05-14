@@ -31,7 +31,8 @@ def optimize_paths_inputs(name, library_info, idotp_check_indices):
     for key in config["timepoints"]:
         if len(config[key]) > 1:
             for file in config[key]:
-                for idx in idotp_check_indices:
+                passing_indices = [i for i in library_info.loc[library_info["name"]==name].index if i in idotp_check_indices]
+                for idx in passing_indices:
                     name_inputs.append(
                         "resources/subtensor_ics/"
                         + str(idx)
@@ -43,7 +44,8 @@ def optimize_paths_inputs(name, library_info, idotp_check_indices):
                     )  
         else:
             file = config[key][0]
-            for idx in idotp_check_indices:
+            passing_indices = [i for i in library_info.loc[library_info["name"]==name].index if i in idotp_check_indices]
+            for idx in passing_indices:
                 name_inputs.append(
                     "resources/subtensor_ics/"
                     + str(idx)
