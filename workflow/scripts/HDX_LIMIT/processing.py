@@ -24,6 +24,12 @@ from bokeh.models.callbacks import CustomJS
 from bokeh.models.sources import ColumnDataSource, CDSView
 from bokeh.models.filters import Filter, GroupFilter, IndexFilter
 
+import scipy as sp
+from scipy.optimize import curve_fit
+from sklearn.metrics import mean_squared_error
+from scipy.stats import norm
+
+
 
 
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
@@ -234,7 +240,8 @@ class PathOptimizer:
         # Set score weights
         self.int_mz_std_rmse_weight = 1
         self.baseline_peak_error_weight = 100
-        self.delta_mz_rate_weight = 1.65  # was 2
+        self.delta_mz_rate_backward_weight = 1.65  # was 2
+        self.delta_mz_rate_forward_weight = 1.65  # was 2
         self.int_mz_rot_fit_weight = 5
         self.dt_ground_fit_weight = 25
         self.rt_ground_fit_weight = 5
@@ -454,6 +461,27 @@ class PathOptimizer:
         self.undeut_grounds = out
         self.undeut_ground_dot_products = charge_fits
 
+    def gaussian_function(self, x, H, A, x0, sigma):
+        return H + A * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+
+    def gauss_fit(self, x, y):
+        mean = sum(x * y) / sum(y)
+        sigma = np.sqrt(sum(y * (x - mean) ** 2) / sum(y))
+        nonzeros = [index for index, value in enumerate(list(y)) if value != 0]
+        popt, pcov = curve_fit(self.gaussian_function, x, y, p0=[0, max(y), mean, sigma],
+                               bounds=([0, 0, nonzeros[0], 0], [np.inf, np.inf, nonzeros[-1], np.inf]))
+        return popt
+
+    def rmse_from_gaussian_fit(self, distribution):
+        try:
+            xdata = [i for i in range(len(distribution))]
+            ydata = distribution
+            y_gaussian_fit = self.gaussian_function(xdata, *self.gauss_fit(xdata, ydata))
+            rmse = mean_squared_error(ydata / max(ydata), y_gaussian_fit / max(y_gaussian_fit), squared=False)
+            return rmse
+        except:
+            return 100
+
     def precalculate_fit_to_ground(self,
                                    all_tp_clusters=None,
                                    undeut_grounds=None):
@@ -465,78 +493,14 @@ class PathOptimizer:
 
         for timepoint in all_tp_clusters:
             for ic in timepoint:
-                dt_ground_errs = []
-                rt_ground_errs = []
-                dt_ground_fits = []
-                rt_ground_fits = []
-
-                # TODO: Rework this to make better sense
-
-                for i in range(ic.n_concatenated):
-
-                    if ic.charge_states[i] in undeut_grounds.keys():
-                        undeut = undeut_grounds[ic.charge_states[i]]
-
-                        rt_ground_errs.append(ic.rt_com - undeut.rt_com)
-
-                        # Trys all dt_coms (for concatenated tensors) keeps best error
-                        dt_errs = []
-                        for j in range(len(undeut.dt_coms)):
-                            dt_errs.append(ic.dt_coms[i] - undeut.dt_coms[j])
-                        dt_ground_errs.append(dt_errs[np.argmin(
-                            [abs(x) for x in dt_errs])])
-
-                        diff = len(ic.dt_norms[i]) - len(
-                            undeut_grounds[ic.charge_states[i]].dt_norms[0])
-                        if diff == 0:
-                            dt_ground_fits.append(
-                                np.dot(
-                                    ic.dt_norms[i],
-                                    undeut_grounds[
-                                        ic.charge_states[i]].dt_norms[0],
-                                ))
-                        else:
-                            if diff > 0:
-                                u_buff = copy.copy(undeut_grounds[
-                                    ic.charge_states[i]].dt_norms[0])
-                                u_buff = np.append(u_buff, [0] * diff)
-                                dt_ground_fits.append(
-                                    np.dot(ic.dt_norms[i], u_buff))
-                            else:
-                                dt_ground_fits.append(
-                                    np.dot(
-                                        ic.dt_norms[i],
-                                        undeut_grounds[ic.charge_states[i]].
-                                        dt_norms[0][:diff],
-                                    ))
-
-                        diff = len(ic.rt_norm) - len(
-                            undeut_grounds[ic.charge_states[0]].rt_norm)
-                        if diff == 0:
-                            rt_ground_fits.append(
-                                np.dot(
-                                    ic.rt_norm,
-                                    undeut_grounds[ic.charge_states[0]].rt_norm,
-                                ))
-                        else:
-                            if diff > 0:
-                                u_buff = copy.copy(
-                                    undeut_grounds[ic.charge_states[0]].rt_norm)
-                                u_buff = np.append(u_buff, [0] * diff)
-                                rt_ground_fits.append(np.dot(
-                                    ic.rt_norm, u_buff))
-                            else:
-                                rt_ground_fits.append(
-                                    np.dot(
-                                        ic.rt_norm,
-                                        undeut_grounds[
-                                            ic.charge_states[0]].rt_norm[:diff],
-                                    ))
-
-                ic.dt_ground_err = np.average(dt_ground_errs)
-                ic.rt_ground_err = np.average(rt_ground_errs)
-                ic.dt_ground_fit = gmean(dt_ground_fits)
-                ic.rt_ground_fit = gmean(rt_ground_fits)
+                undeut = undeut_grounds[ic.charge_states[0]]
+                ic.dt_ground_err = ic.dt_coms[0] - undeut.dt_coms[0]
+                ic.rt_ground_err = ic.rt_com - undeut.rt_com
+                ic.dt_ground_fit = max(
+                    np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
+                ic.rt_ground_fit = max(np.correlate(undeut.rt_norm, ic.rt_norm, mode='full'))
+                ic.dt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.dt_norms[0])
+                ic.rt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.rt_norm)
 
     def generate_sample_paths(self):
         starts = np.linspace(0, 0.7, 8)
@@ -912,9 +876,9 @@ class PathOptimizer:
         if timepoints is None:
             timepoints = self.timepoints
         
-        back = 0
-        sd = 0
-        previous_rate = max([(ics[1].baseline_integrated_mz_com -
+        backward = 0
+        forward = 0
+        previous_rate = (ics[1].baseline_integrated_mz_com -
                          ics[0].baseline_integrated_mz_com) / (timepoints[1] -
                                                                timepoints[0]), 0.1])
         for i in range(2, len(ics)):
@@ -922,7 +886,7 @@ class PathOptimizer:
             new_com = ics[i].baseline_integrated_mz_com
             if new_com < ics[
                     i - 1].baseline_integrated_mz_com:  # if we went backwards
-                back += (100 *
+                backward += (100 *
                        (new_com - ics[i - 1].baseline_integrated_mz_com)**2.0
                       )  # penalize for going backwards
                 new_com = (
@@ -932,9 +896,9 @@ class PathOptimizer:
                 (new_com - ics[i - 1].baseline_integrated_mz_com), 0.1
             ]) / (timepoints[i] - timepoints[i - 1])
             if (current_rate / previous_rate) > 1.2:
-                sd += (current_rate / previous_rate)**2.0
+                forward += (current_rate / previous_rate)**2.0
             previous_rate = current_rate
-        return sd / len(ics), back / len(ics)
+        return backward / len(ics), forward / len(ics),
 
     def int_mz_rot_fit(self, ics):
         # Compares i to i-1 from ics[2]
@@ -1028,21 +992,26 @@ class PathOptimizer:
         self,
         int_mz_std_rmse_weight=None,
         baseline_peak_error_weight=None,
-        delta_mz_rate_weight=None,
+        delta_mz_rate_backward_weight=None,
+        delta_mz_rate_forward_weight=None,
         int_mz_rot_fit_weight=None,
-        rt_ground_fit_weight=None,
         dt_ground_fit_weight=None,
         rt_ground_rmse_weight=None,
         dt_ground_rmse_weight=None,
         auc_ground_rmse_weight=None,
+        rmses_sum_weight=None,
+        maxint_sum_weight=None,
+        int_mz_FWHM_rmse_weight=None
     ):
 
         if int_mz_std_rmse_weight != None:
             self.int_mz_std_rmse_weight = int_mz_std_rmse_weight
         if baseline_peak_error_weight != None:
             self.baseline_peak_error_weight = baseline_peak_error_weight
-        if delta_mz_rate_weight != None:
-            self.delta_mz_rate_weight = delta_mz_rate_weight
+        if delta_mz_rate_backward_weight != None:
+            self.delta_mz_rate_backward_weight = delta_mz_rate_backward_weight
+        if delta_mz_rate_forward_weight != None:
+            self.delta_mz_rate_forward_weight = delta_mz_rate_forward_weight
         if int_mz_rot_fit_weight != None:
             self.int_mz_rot_fit_weight = int_mz_rot_fit_weight
         if rt_ground_fit_weight != None:
@@ -1080,8 +1049,8 @@ class PathOptimizer:
         return sum([
             coeffs[0] * self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
             coeffs[1] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
-            coeffs[2] * self.delta_mz_rate_weight * self.delta_mz_rate(ics)[0],
-            coeffs[3] * self.delta_mz_rate_weight * self.delta_mz_rate(ics)[1],
+            coeffs[2] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
+            coeffs[3] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
             # self.int_mz_rot_fit_weight*self.int_mz_rot_fit(ics),
             coeffs[4] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
             coeffs[5] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
@@ -1104,8 +1073,10 @@ class PathOptimizer:
                 self.baseline_peak_error_weight,
                 self.baseline_peak_error(ics),
             ),
-            "delta_mz_rate":
-                (self.delta_mz_rate_weight, self.delta_mz_rate(ics)),
+            "delta_mz_rate_backard":
+                (self.delta_mz_rate_backward_weight, self.delta_mz_rate(ics)[0]),
+            "delta_mz_rate_foward":
+                (self.delta_mz_rate_forward_weight, self.delta_mz_rate(ics)[1]),
             # self.int_mz_rot_fit_weight*self.int_mz_rot_fit(ics),
             "dt_ground_rmse": (self.dt_ground_rmse_weight,
                                self.dt_ground_rmse(ics)),
@@ -1117,6 +1088,12 @@ class PathOptimizer:
                                self.rt_ground_rmse(ics)),
             "auc_ground_rmse": (self.auc_ground_rmse_weight,
                                 self.auc_ground_rmse(ics)),
+            "rmses_sum": (self.rmses_sum_weight,
+                                self.rmses_sum(ics)),
+            "maxint_sum": (self.maxint_sum_weight,
+                          self.maxint_sum(ics)),
+            "int_mz_FWHM_rmse": (self.int_mz_FWHM_rmse_weight,
+                          self.int_mz_FWHM_rmse(ics)),
         }
 
     def bokeh_plot(self, outpath):

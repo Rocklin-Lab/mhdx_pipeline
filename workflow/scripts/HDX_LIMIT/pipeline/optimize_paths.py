@@ -94,7 +94,7 @@ def main(library_info_path,
     for tp in timepoints["timepoints"]:
         tp_buf = []
         for fn in timepoints[tp]:
-            for file in all_ic_input_paths:
+            for file in all_ic_input_paths[0]:
                 if fn.split(
                         ".")[0] in file:  # only match filename without .mzML
                     ics = limit_read(file)  # expects list of ics
@@ -117,6 +117,7 @@ def main(library_info_path,
         charge_list = np.array(charge_list)
         mz_corrmat = np.corrcoef(all_baseline_integrated_mz)
         rt_corrmat = np.corrcoef(all_rts)
+        rt_correl_mat = np.correlate(all_rts[0], all_rts[1], mode='valid')
         minimum_corrmat = np.minimum(mz_corrmat, rt_corrmat)
         for column, ic in enumerate(ics):
             try:
