@@ -240,7 +240,8 @@ class PathOptimizer:
         # Set score weights
         self.int_mz_std_rmse_weight = 1
         self.baseline_peak_error_weight = 100
-        self.delta_mz_rate_weight = 1.65  # was 2
+        self.delta_mz_rate_backward_weight = 1.65  # was 2
+        self.delta_mz_rate_forward_weight = 1.65  # was 2
         self.int_mz_rot_fit_weight = 5
         self.dt_ground_fit_weight = 25
         self.rt_ground_fit_weight = 5
@@ -875,8 +876,8 @@ class PathOptimizer:
         if timepoints is None:
             timepoints = self.timepoints
         
-        back = 0
-        sd = 0
+        backward = 0
+        forward = 0
         previous_rate = (ics[1].baseline_integrated_mz_com -
                          ics[0].baseline_integrated_mz_com) / (timepoints[1] -
                                                                timepoints[0])
@@ -885,7 +886,7 @@ class PathOptimizer:
             new_com = ics[i].baseline_integrated_mz_com
             if new_com < ics[
                     i - 1].baseline_integrated_mz_com:  # if we went backwards
-                back += (100 *
+                backward += (100 *
                        (new_com - ics[i - 1].baseline_integrated_mz_com)**2.0
                       )  # penalize for going backwards
                 new_com = (
@@ -895,9 +896,9 @@ class PathOptimizer:
                 (new_com - ics[i - 1].baseline_integrated_mz_com), 0.1
             ]) / (timepoints[i] - timepoints[i - 1])
             if (current_rate / previous_rate) > 1.2:
-                sd += (current_rate / previous_rate)**2.0
+                forward += (current_rate / previous_rate)**2.0
             previous_rate = current_rate
-        return sd / len(ics), back / len(ics)
+        return backward / len(ics), forward / len(ics),
 
     def int_mz_rot_fit(self, ics):
         # Compares i to i-1 from ics[2]
@@ -991,9 +992,9 @@ class PathOptimizer:
         self,
         int_mz_std_rmse_weight=None,
         baseline_peak_error_weight=None,
-        delta_mz_rate_weight=None,
+        delta_mz_rate_backward_weight=None,
+        delta_mz_rate_forward_weight=None,
         int_mz_rot_fit_weight=None,
-        rt_ground_fit_weight=None,
         dt_ground_fit_weight=None,
         rt_ground_rmse_weight=None,
         dt_ground_rmse_weight=None,
@@ -1007,8 +1008,10 @@ class PathOptimizer:
             self.int_mz_std_rmse_weight = int_mz_std_rmse_weight
         if baseline_peak_error_weight != None:
             self.baseline_peak_error_weight = baseline_peak_error_weight
-        if delta_mz_rate_weight != None:
-            self.delta_mz_rate_weight = delta_mz_rate_weight
+        if delta_mz_rate_backward_weight != None:
+            self.delta_mz_rate_backward_weight = delta_mz_rate_backward_weight
+        if delta_mz_rate_forward_weight != None:
+            self.delta_mz_rate_forward_weight = delta_mz_rate_forward_weight
         if int_mz_rot_fit_weight != None:
             self.int_mz_rot_fit_weight = int_mz_rot_fit_weight
         if rt_ground_fit_weight != None:
@@ -1046,8 +1049,8 @@ class PathOptimizer:
         return sum([
             coeffs[0] * self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
             coeffs[1] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
-            coeffs[2] * self.delta_mz_rate_weight * self.delta_mz_rate(ics)[0],
-            coeffs[3] * self.delta_mz_rate_weight * self.delta_mz_rate(ics)[1],
+            coeffs[2] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
+            coeffs[3] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
             # self.int_mz_rot_fit_weight*self.int_mz_rot_fit(ics),
             coeffs[4] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
             coeffs[5] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
@@ -1070,8 +1073,10 @@ class PathOptimizer:
                 self.baseline_peak_error_weight,
                 self.baseline_peak_error(ics),
             ),
-            "delta_mz_rate":
-                (self.delta_mz_rate_weight, self.delta_mz_rate(ics)),
+            "delta_mz_rate_backard":
+                (self.delta_mz_rate_backward_weight, self.delta_mz_rate(ics)[0]),
+            "delta_mz_rate_foward":
+                (self.delta_mz_rate_forward_weight, self.delta_mz_rate(ics)[1]),
             # self.int_mz_rot_fit_weight*self.int_mz_rot_fit(ics),
             "dt_ground_rmse": (self.dt_ground_rmse_weight,
                                self.dt_ground_rmse(ics)),
@@ -1083,6 +1088,12 @@ class PathOptimizer:
                                self.rt_ground_rmse(ics)),
             "auc_ground_rmse": (self.auc_ground_rmse_weight,
                                 self.auc_ground_rmse(ics)),
+            "rmses_sum": (self.rmses_sum_weight,
+                                self.rmses_sum(ics)),
+            "maxint_sum": (self.maxint_sum_weight,
+                          self.maxint_sum(ics)),
+            "int_mz_FWHM_rmse": (self.int_mz_FWHM_rmse_weight,
+                          self.int_mz_FWHM_rmse(ics)),
         }
 
     def bokeh_plot(self, outpath):
