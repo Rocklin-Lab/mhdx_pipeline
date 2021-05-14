@@ -47,13 +47,16 @@ def optimize_paths_inputs(library_info_path, input_directory_path,
 
 
 def gen_correlate_matrix(list_of_arrays):
+    """
+    generate a correlation matrix
+    :param list_of_arrays: list of arrays
+    :return: correlation matrix
+    """
 
     corr_matrix = np.zeros((len(list_of_arrays), len(list_of_arrays)))
     for ind1, arr1 in enumerate(list_of_arrays):
         for ind2, arr2 in enumerate(list_of_arrays):
-            corr_matrix[ind1, ind2] = max(np.correlate(arr1, arr2))
-
-    # corr_matrix = corr_matrix/np.amax(corr_matrix)
+            corr_matrix[ind1, ind2] = max(np.correlate(arr1/np.linalg.norm(arr1), arr2/np.linalg.norm(arr2)))
 
     return corr_matrix
 
@@ -127,9 +130,7 @@ def main(library_info_path,
             charge_list.append(ic.charge_states[0])
 
         charge_list = np.array(charge_list)
-        # mz_corrmat = np.corrcoef(all_baseline_integrated_mz) # previous corr mat code
-        mz_corrmat = gen_correlate_matrix(all_baseline_integrated_mz)
-        # rt_corrmat = np.corrcoef(all_rts) # previous corr mat code
+        mz_corrmat = np.corrcoef(all_baseline_integrated_mz)
         rt_corrmat = gen_correlate_matrix(all_rts)
         minimum_corrmat = np.minimum(mz_corrmat, rt_corrmat)
         for column, ic in enumerate(ics):
