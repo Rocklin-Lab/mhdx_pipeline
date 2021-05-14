@@ -7,13 +7,15 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
-library_info_fn = "resources/library_info/library_info.csv"
-library_info = pd.read_csv("resources/library_info/library_info.csv")
+library_info_fn = "resources/idotp_filter/checked_library_info.csv"
+library_info = pd.read_csv(library_info_fn)
 
 proc = glob.glob("resources/ic_time_series/*.zlib")
 # names = [fn.split('_')[:-3] for fn in proc]
 names = list(set(library_info["name"].values))
 idotp_check_indices = pd.read_csv("resources/idotp_filter/filter_passing_indices.csv")['index'].values
+names_with_indices = [name for name in names if any(True for idx in library_info.loc[library_info["name"]==name].index if idx in idotp_check_indices)]
+print("Protein Names: "+str(len(names))+", Names with indices: "+str(len(names_with_indices)))
 
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
@@ -37,7 +39,7 @@ def optimize_paths_inputs(name, library_info, idotp_check_indices):
                         + "_"
                         + file
                         + ".gz.cpickle.zlib"
-                    )  # TODO: This may break when using .raw as first input, investigate
+                    )  
         else:
             file = config[key][0]
             for idx in idotp_check_indices:
