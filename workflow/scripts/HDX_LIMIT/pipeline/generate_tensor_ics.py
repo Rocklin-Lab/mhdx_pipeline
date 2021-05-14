@@ -38,7 +38,8 @@ def main(library_info_path,
 
     # open library_info
     library_info = pd.read_csv(library_info_path)
-
+    my_idx = int(tensor_input_path.split("/")[-1].split("_")[0])
+    my_centers = library_info.iloc[my_idx]["mz_centers"].values
     # find timepoint of passed filename by config comparison
     for tp in timepoints_dict["timepoints"]:
         for fn in timepoints_dict[tp]:
@@ -50,6 +51,7 @@ def main(library_info_path,
                                           timepoint_index=my_tp,
                                           gauss_params=gauss_params,
                                           n_factors=n_factors,
+                                          mz_centers=my_centers,
                                           factor_output_fpath=factor_out_path,
                                           factor_plot_output_path=factor_plot_output_path,
                                           timepoint_label=None)

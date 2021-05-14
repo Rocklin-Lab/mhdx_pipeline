@@ -3,6 +3,7 @@ configfile: "config/config.yaml"
 
 
 import glob
+import shutil
 import pandas as pd
 from collections import OrderedDict
 
@@ -55,6 +56,18 @@ def optimize_paths_inputs(name, library_info, idotp_check_indices):
 
     return name_inputs
 
+rule mv_passing_tensors:
+# Move tensors that pass 
+    input:
+        sorted(expand("resources/tensors/{lib_idx}/{lib_idx}_{mzml}.gz.cpickle.zlib", lib_idx=idotp_check_indices, mzml=[fn for fn in config[0]]))
+    output:
+        sorted(expand("resources/passing_tensors/{lib_idx}/{lib_idx}_{mzml}.gz.cpickle.zlib", lib_idx=idotp_check_indices, mzml=[fn for fn in config[0]]))
+    benchmark:
+        "results/benchmarks/mv_passing_tensors.benchmark.txt"
+    run:
+        for fin, fout in zip(input, output):
+            shutil.move(fin, fout)
+
 if config['polyfit_calibration']:
     rule extract_tensors:
         input:
@@ -67,8 +80,8 @@ if config['polyfit_calibration']:
             "resources/idotp_filter/filter_passing_indices.csv"
         output:
             expand(
-                "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=idotp_check_indices
+                "resources/passing_tensors/{lib_idx}/{lib_idx}_{{mzml}}.gz.cpickle.zlib",
+                lib_idx=idotp_check_indices
             )
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
@@ -84,8 +97,8 @@ else:
             "resources/idotp_filter/filter_passing_indices.csv"
         output:
             expand(
-                "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=idotp_check_indices
+                "resources/passing_tensors/{lib_idx}/{lib_idx}_{{mzml}}.gz.cpickle.zlib",
+                lib_idx=idotp_check_indices
             ),
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
@@ -97,22 +110,20 @@ rule generate_tensor_ics:
     # TODO: docstring
     input:
         library_info_fn,
-        expand("resources/tensors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib", lib_idx=idotp_check_indices, file=[fn for tp in config["timepoints"] for fn in config[tp]]),
-        "config/config.yaml"
+        "resources/passing_tensors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib"
     output:
-        "resources/subtensor_ics/{lib_idx}_{file}.cpickle.zlib",
-        "resources/factor_data/{lib_idx}_{file}.cpickle.zlib.factor",
-        "results/plots/factors/{lib_idx}_{file}.cpickle.zlib.factor.pdf"
+        "resources/subtensor_ics/{lib_idx}/{lib_idx}_{file}.cpickle.zlib",
+        "resources/factor_data/{lib_idx}/{lib_idx}_{file}.cpickle.zlib.factor",
+        "results/plots/factors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib.factor.pdf"
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
     shell:
         "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_data_out_path {output[1]} --factor_plot_out_path {output[2]}"
 
-
 rule optimize_paths:
     input:
         library_info_fn,
-        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info, idotp_check_indices),
+        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info, idotp_check_indices) 
     output:
         "results/plots/ic_time_series/html/{name}_time_series.html",
         "resources/ic_time_series/{name}_winner.cpickle.zlib",
