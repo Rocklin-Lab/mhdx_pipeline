@@ -89,7 +89,7 @@ if config['polyfit_calibration']:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         
         script:
-            "workflow/scripts/HDX_LIMIT/pipeline/extract_tensors.py"
+            "scripts/HDX_LIMIT/pipeline/extract_tensors.py"
 else:
     rule extract_tensors:
         input:
@@ -105,7 +105,7 @@ else:
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         script:
-            "workflow/scripts/HDX_LIMIT/pipeline/extract_tensors.py"
+            "scripts/HDX_LIMIT/pipeline/extract_tensors.py"
 
 
 rule generate_tensor_ics:
