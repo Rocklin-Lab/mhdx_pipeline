@@ -291,7 +291,7 @@ def filter_factor_with_dt_rt_gauss_mse(factor_list, rt_mse_cutoff=0.1, dt_mse_cu
 
 
 
-def filter_factor_with_dt_rt_gauss_r2(factor_list, rt_r2_cutoff=0.90, dt_r2_cutoff=0.90): # todo: see what a good value is here to filter
+def filter_factor_with_dt_rt_gauss_r2(factor_list, rt_r2_cutoff=0.91, dt_r2_cutoff=0.91): # todo: see what a good value is here to filter
     """
     curate factor based on rt and dt gauss fit
     :param factor_list:
@@ -309,8 +309,8 @@ def filter_factor_with_dt_rt_gauss_r2(factor_list, rt_r2_cutoff=0.90, dt_r2_cuto
         factor_dt_ind = np.arange(len(factor['factor_dt']))
         dt_gauss_fit = fit_gaussian(factor_dt_ind, factor['factor_dt'], data_label='dt')
 
-        if rt_gauss_fit['fit_linregress_r2'] > rt_r2_cutoff:
-            if dt_gauss_fit['fit_linregress_r2'] > dt_r2_cutoff:
+        if rt_gauss_fit['fit_linregress_r2'] >= rt_r2_cutoff:
+            if dt_gauss_fit['fit_linregress_r2'] >= dt_r2_cutoff:
 
                 filtered_factor_list.append(factor)
 
@@ -385,7 +385,7 @@ def gen_isotope_cluster(tensor_fpath, library_info_fpath, timepoints_yaml, gauss
 
         if filter_factors:
             # factors = filter_factor_with_dt_rt_gauss_mse(factors, dt_mse_cutoff=0.1, rt_mse_cutoff=0.1)
-            factors = filter_factor_with_dt_rt_gauss_r2(factors, dt_r2_cutoff=0.9, rt_r2_cutoff=0.9)
+            factors = filter_factor_with_dt_rt_gauss_r2(factors, dt_r2_cutoff=0.91, rt_r2_cutoff=0.91)
 
         factor_data_dictionary['factors'] = factors
 

@@ -677,8 +677,9 @@ class PathOptimizer:
             return {
                 "int_mz_std_rmse":
                     self.int_mz_std_rmse(series) * self.int_mz_std_rmse_weight,
-                "delta_mz_rate":
-                    self.delta_mz_rate(series) * self.delta_mz_rate_weight,
+                "delta_mz_rate_backward":
+                    self.delta_mz_rate(series)[0] * self.delta_mz_rate_backward_weight,
+                "delta_mz_rate_forward": self.delta_mz_rate(series)[1] * self.delta_mz_rate_forward_weight,
                 "dt_ground_rmse":
                     self.dt_ground_rmse(series) * self.dt_ground_rmse_weight,
                 "rt_ground_rmse":
@@ -698,8 +699,10 @@ class PathOptimizer:
             return (
                 winner_scores["int_mz_std_rmse"] -
                 substituted_scores["int_mz_std_rmse"],
-                winner_scores["delta_mz_rate"] -
-                substituted_scores["delta_mz_rate"],
+                winner_scores["delta_mz_rate_backward"] -
+                substituted_scores["delta_mz_rate_backward"],
+                winner_scores["delta_mz_rate_forward"] -
+                substituted_scores["delta_mz_rate_forward"],
                 winner_scores["dt_ground_rmse"] -
                 substituted_scores["dt_ground_rmse"],
                 winner_scores["rt_ground_rmse"] -
@@ -729,7 +732,8 @@ class PathOptimizer:
                 ic.rt_ground_err,
                 ic.dt_ground_err,
                 winner_scores["int_mz_std_rmse"],
-                winner_scores["delta_mz_rate"],
+                winner_scores["delta_mz_rate_backward"],
+                winner_scores["delta_mz_rate_forward"],
                 winner_scores["dt_ground_rmse"],
                 winner_scores["rt_ground_rmse"],
                 winner_scores["dt_ground_fit"],
