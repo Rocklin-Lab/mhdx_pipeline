@@ -251,6 +251,7 @@ class PathOptimizer:
         self.rmses_sum_weight = 1 
         self.maxint_sum_weight = 1
         self.int_mz_FWHM_rmse_weight = 1
+        self.nearest_neighbor_penalty_weight = 1
 
         # Set internal variables
         self.name = name
@@ -677,8 +678,10 @@ class PathOptimizer:
             return {
                 "int_mz_std_rmse":
                     self.int_mz_std_rmse(series) * self.int_mz_std_rmse_weight,
-                "delta_mz_rate":
-                    self.delta_mz_rate(series) * self.delta_mz_rate_weight,
+                "delta_mz_rate_backward":
+                    self.delta_mz_rate(series)[0] * self.delta_mz_rate_backward_weight,
+                "delta_mz_rate_afterward":
+                    self.delta_mz_rate(series)[1] * self.delta_mz_rate_forward_weight,
                 "dt_ground_rmse":
                     self.dt_ground_rmse(series) * self.dt_ground_rmse_weight,
                 "rt_ground_rmse":
@@ -692,14 +695,24 @@ class PathOptimizer:
                     self.baseline_peak_error_weight,
                 "auc_ground_rmse":
                     self.auc_ground_rmse(series) * self.auc_ground_rmse_weight,
+                "rmses_sum":
+                    self.rmses_sum(series) * self.rmses_sum_weight,
+                "maxint_sum":
+                    self.maxint_sum(series) * self.rmses_sum_weight,
+                "int_mz_FWHM_rmse":
+                    self.int_mz_FWHM_rmse(series) * self.int_mz_FWHM_rmse_weight,
+                "nearest_neighbor_penalty":
+                    self.nearest_neighbor_penalty(series) * self.nearest_neighbor_penalty_weight,
             }
 
         def score_diff(winner_scores, substituted_scores):
             return (
                 winner_scores["int_mz_std_rmse"] -
                 substituted_scores["int_mz_std_rmse"],
-                winner_scores["delta_mz_rate"] -
-                substituted_scores["delta_mz_rate"],
+                winner_scores["delta_mz_rate_backward"] -
+                substituted_scores["delta_mz_rate_backward"],
+                winner_scores["delta_mz_rate_forward"] -
+                substituted_scores["delta_mz_rate_forward"],
                 winner_scores["dt_ground_rmse"] -
                 substituted_scores["dt_ground_rmse"],
                 winner_scores["rt_ground_rmse"] -
@@ -712,6 +725,17 @@ class PathOptimizer:
                 substituted_scores["baseline_peak_error"],
                 winner_scores["auc_ground_rmse"] -
                 substituted_scores["auc_ground_rmse"],
+                winner_scores["rmses_sum"]
+                - substituted_scores["rmses_sum"],
+                winner_scores["maxint_sum"]
+                - substituted_scores["maxint_sum"],
+                winner_scores["int_mz_FWHM_rmse"]
+                - substituted_scores["int_mz_FWHM_rmse"],
+                winner_scores["nearest_neighbor_penalty"]
+                - substituted_scores["nearest_neighbor_penalty"],
+
+
+
                 sum([winner_scores[key] for key in winner_scores.keys()]) -
                 sum([
                     substituted_scores[key]
@@ -729,13 +753,18 @@ class PathOptimizer:
                 ic.rt_ground_err,
                 ic.dt_ground_err,
                 winner_scores["int_mz_std_rmse"],
-                winner_scores["delta_mz_rate"],
+                winner_scores["delta_mz_rate_backward"],
+                winner_scores["delta_mz_rate_forward"],
                 winner_scores["dt_ground_rmse"],
                 winner_scores["rt_ground_rmse"],
                 winner_scores["dt_ground_fit"],
                 winner_scores["rt_ground_fit"],
                 winner_scores["baseline_peak_error"],
                 winner_scores["auc_ground_rmse"],
+                winner_scores["rmses_sum"],
+                winner_scores["maxint_sum"],
+                winner_scores["int_mz_FWHM_rmse"],
+                winner_scores["nearest_neighbor_penalty"],
                 0,
             )
 
@@ -984,6 +1013,14 @@ class PathOptimizer:
             ) ** 2.0
  
         return math.sqrt(sd)
+
+    def nearest_neighbor_penalty(self, ics):
+        nn_penalty = 0
+        for ic in ics:
+            nn_penalty += 100 * (
+                np.min([abs(1.0 - ic.nearest_neighbor_correlation), 0.5])
+            ) ** 2.0
+        return nn_penalty
     
 
     # Eventually put defaults here as else statements
@@ -1000,7 +1037,8 @@ class PathOptimizer:
         auc_ground_rmse_weight=None,
         rmses_sum_weight=None,
         maxint_sum_weight=None,
-        int_mz_FWHM_rmse_weight=None
+        int_mz_FWHM_rmse_weight=None,
+        nearest_neighbor_penalty_weight=None
     ):
 
         if int_mz_std_rmse_weight != None:
@@ -1028,22 +1066,15 @@ class PathOptimizer:
         if maxint_sum_weight != None:
             self.maxint_sum_weight = maxint_sum_weight
         if int_mz_FWHM_rmse_weight != None:
-             self.int_mz_FWHM_rmse_weight  = int_mz_FWHM_rmse_weight
+            self.int_mz_FWHM_rmse_weight  = int_mz_FWHM_rmse_weight
+        if nearest_neighbor_penalty_weight != None:
+            self.nearest_neighbor_penalty_weight = nearest_neighbor_penalty_weight
             
-
     def combo_score(self, ics):
-        coeffs = [1.7331330816863306,
-                  1.8279294604480563,
-                  1.253516574780788,
-                  1.253516574780788,
-                  0.1437773152156825,
-                  1.8219429028285896,
-                  0.775616753877507,
-                  0.9623855886298811,
-                  0.3231014751705914,
-                  1.0611233913847378,
-                  0.43853197459601656,
-                  1.79011362219571]
+        coeffs = [0.9481400235551269, 1.0, 0.6857576300966942, 0.6857576300966942,
+                  0.0786558334589346, 0.9967249515098907, 0.4243143790063924, 0.5264894567616325,
+                  0.17675817484302364, 0.5805056564516656, 0.23990639906231667, 0.9793122004592688,
+                  0.10941341245792748]
 
         return sum([
             coeffs[0] * self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
@@ -1058,7 +1089,8 @@ class PathOptimizer:
             coeffs[8] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
             coeffs[9] * self.rmses_sum_weight * self.rmses_sum(ics),
             coeffs[10] * self.maxint_sum_weight * self.maxint_sum(ics),
-            coeffs[11] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics)
+            coeffs[11] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
+            coeffs[12] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
         ])
            
                                          
@@ -1093,6 +1125,8 @@ class PathOptimizer:
                           self.maxint_sum(ics)),
             "int_mz_FWHM_rmse": (self.int_mz_FWHM_rmse_weight,
                           self.int_mz_FWHM_rmse(ics)),
+            "nearest_neighbor_penalty": (self.nearest_neighbor_penalty_weight,
+                                 self.nearest_neighbor_penalty(ics)),
         }
 
     def bokeh_plot(self, outpath):
