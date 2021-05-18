@@ -218,7 +218,7 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
 
 
 
-def rel_height_peak_bounds(centers, int_mz, baseline_threshold=0.2, bound=30):
+def rel_height_peak_bounds(centers, int_mz, baseline_threshold=0.2, bound=20):
         out = []
         baseline = max(int_mz) * baseline_threshold  # TODO: HARDCODE
         print('baseline: ', baseline)
