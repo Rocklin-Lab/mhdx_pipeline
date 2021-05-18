@@ -195,9 +195,9 @@ timepoints:
 
 #factor filter option. 0 for false, 1 for true
 # set the r2 cutoff values for rt and dt data of the factors
-filter_factor: 1
-factor_rt_r2_cutoff: 0.91
-factor_dt_r2_cutoff: 0.91
+"filter_factor": 1
+"factor_rt_r2_cutoff": 0.91
+"factor_dt_r2_cutoff": 0.91
 
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
