@@ -28,8 +28,86 @@ import scipy as sp
 from scipy.optimize import curve_fit
 from sklearn.metrics import mean_squared_error
 from scipy.stats import norm
+from scipy.stats import linregress
 
 
+def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cutoff=0.91):
+
+    filtered_factors = []
+
+    for factor in factor_list:
+        rt_gauss_fit = fit_gaussian(np.arange(len(factor.rts)), factor.rts, data_label='rt')
+
+        dt_gauss_fit = fit_gaussian(np.arange(len(factor.dts)), factor.dts, data_label='dt')
+
+        if rt_gauss_fit['fit_linregress_r2'] >= rt_r2_cutoff:
+            if dt_gauss_fit['fit_linregress_r2'] >= dt_r2_cutoff:
+                filtered_factors.append(factor)
+
+    return filtered_factors
+
+
+
+
+def estimate_gauss_param(ydata, xdata):
+    ymax = np.max(ydata)
+    mean = sum(xdata * ydata) / sum(ydata)
+    sigma = np.sqrt(sum(ydata * (xdata - mean) ** 2) / sum(ydata))
+    non_zeros_ydata_index = np.nonzero(ydata)[0]
+    # init_guess = [0, ymax, mean, sigma]
+    bounds = ([0, 0, non_zeros_ydata_index[0], 0], [np.inf, np.inf, non_zeros_ydata_index[-1], np.inf])
+    maxindex = np.nonzero(ydata == ymax)[0]
+    peakmax_x = xdata[maxindex][0]
+    norm_arr = ydata/max(ydata)
+    bins_for_width = norm_arr[norm_arr > 0.8]
+    width_bin = len(bins_for_width)
+    init_guess = [0, ymax, peakmax_x, width_bin]
+    return init_guess, bounds
+
+
+def gauss_func(x, y0, A, xc, w):
+    rxc = ((x - xc) ** 2) / (2 * (w ** 2))
+    y = y0 + A * (np.exp(-rxc))
+    return y
+
+
+def adjrsquared(r2, param, num):
+    y = 1 - (((1 - r2) * (num - 1)) / (num - param - 1))
+    return y
+
+
+def fit_gaussian(xdata, ydata, data_label='dt'):
+
+    init_guess, bounds = estimate_gauss_param(ydata, xdata)
+
+    gauss_fit_dict = dict()
+    gauss_fit_dict['data_label'] = data_label
+
+    try:
+        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, bounds=bounds, maxfev=1000000)
+        y_fit = gauss_func(xdata, *popt)
+        fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
+        slope, intercept, rvalue, pvalue, stderr = linregress(ydata, y_fit)
+        adj_r2 = adjrsquared(r2=rvalue**2, param=4, num=len(ydata))
+        gauss_fit_dict['gauss_fit_status'] = True
+        gauss_fit_dict['y_baseline'] = popt[0]
+        gauss_fit_dict['y_amp'] = popt[1]
+        gauss_fit_dict['xc'] = popt[2]
+        gauss_fit_dict['width'] = popt[3]
+        gauss_fit_dict['y_fit'] = y_fit
+        gauss_fit_dict['fit_rmse'] = fit_rmse
+        gauss_fit_dict['fit_lingress_slope'] = slope
+        gauss_fit_dict['fit_lingress_intercept'] = intercept
+        gauss_fit_dict['fit_lingress_pvalue'] = pvalue
+        gauss_fit_dict['fit_lingress_stderr'] = stderr
+        gauss_fit_dict['fit_linregress_r2'] = rvalue ** 2
+        gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
+    except:
+        gauss_fit_dict['gauss_fit_status'] = False
+        gauss_fit_dict['fit_rmse'] = 100
+        gauss_fit_dict['fit_linregress_r2'] = 0.0
+
+    return gauss_fit_dict
 
 
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
@@ -71,7 +149,10 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
 def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors, mz_centers,
                             factor_output_fpath=None,
                             factor_plot_output_path=None,
-                            timepoint_label=None):
+                            timepoint_label=None,
+                            filter_factors=True,
+                            filter_fac_rt_r2_cutoff=0.91,
+                            filter_fac_dt_r2_cutoff=0.91):
     """
     generate data tensor from a given tensor file path, library info file path, and timepoint index
     :param tensor_fpath: tensor file path
@@ -106,6 +187,12 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     # profile memory after factorization
     print("Post-Factorization: " + str(process.memory_info().rss /
                                        (1024 * 1024 * 1024)))
+
+    if filter_factors:
+        filtered_factors = filter_factors_on_rt_dt_gauss_fit(factor_list=data_tensor.DataTensor.factors,
+                                                             rt_r2_cutoff=0.91,
+                                                             dt_r2_cutoff=0.91)
+        data_tensor.DataTensor.factors = filtered_factors
 
     # create factor data dictionary
     factor_data_dictionary = create_factor_data_object(data_tensor=data_tensor,
