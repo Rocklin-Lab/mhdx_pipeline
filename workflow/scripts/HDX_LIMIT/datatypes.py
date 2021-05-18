@@ -282,8 +282,29 @@ class Factor:
             5, height=0.5
         )  # heuristic height value, should be high-level param TODO - Will require passage through DataTensor class
 
+
+    def rel_height_peak_bounds(self, centers, int_mz, baseline_threshold, rel_ht_bound):
+        out = []
+        baseline = max(int_mz) * baseline_threshold
+        for center in centers:
+            if int_mz[center] > baseline:
+                i, j = center, center
+                cutoff = int_mz[center] * rel_ht_bound
+                while center - i <= 10 and i - 1 != -1:
+                    i -= 1
+                    if int_mz[i] < cutoff:
+                        break
+                while j - center <= 10 and j + 1 != len(int_mz):
+                    j += 1
+                    if int_mz[j] < cutoff:
+                        break
+                out.append((i, j))
+        return out
+
+
+
     # Uses find_window function to identify portions of the integrated mz dimension that look 'isotope-cluster-like', saves as Factor attribute
-    def find_isotope_clusters(self, peak_width, **kwargs):
+    def find_isotope_clusters(self, prominence_value=0.2, rel_height_peak_bound=0.2, **kwargs):
 
         def rel_height_peak_bounds(centers, int_mz, bound=20):
             out = []
