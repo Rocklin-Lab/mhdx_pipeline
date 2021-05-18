@@ -299,7 +299,7 @@ if __name__ == "__main__":
         "Checks observed undeuterated signal against theoretical isotopic distribution, returns dataframe with highest idotp of all undeut"
     )
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
-    parser.add_argument("config_file_path", help='path/to/config.yaml', default="config/config.yaml")
+    parser.add_argument("config_file_path", help='path/to/config.yaml')
     parser.add_argument(
         "-l",
         "--undeut_tensor_path_list",
