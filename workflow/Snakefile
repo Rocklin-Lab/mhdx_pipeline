@@ -114,8 +114,6 @@ rule generate_tensor_ics:
         "resources/passing_tensors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib"
     output:
         "resources/subtensor_ics/{lib_idx}/{lib_idx}_{file}.cpickle.zlib",
-        "resources/factor_data/{lib_idx}/{lib_idx}_{file}.cpickle.zlib.factor",
-        "results/plots/factors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib.factor.pdf"
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
     shell:
