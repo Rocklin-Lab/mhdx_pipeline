@@ -18,7 +18,10 @@ def main(library_info_path,
          factor_plot_output_path=None,
          return_flag=False,
          gauss_params=(3, 1),
-         n_factors=15):
+         n_factors=15,
+         filter_factors=False,
+         factor_rt_r2_cutoff=0.91,
+         factor_dt_r2_cutoff=0.91):
     """Performs nonnegative tensor factorization to deconvolute input tensor, identifies IsotopeCluster objects, 
     and optionally returns or writes output list of IsotopeClusters.
 
@@ -54,7 +57,10 @@ def main(library_info_path,
                                           mz_centers=my_centers,
                                           factor_output_fpath=factor_out_path,
                                           factor_plot_output_path=factor_plot_output_path,
-                                          timepoint_label=None)
+                                          timepoint_label=None,
+                                          filter_factors=filter_factors,
+                                          factor_rt_r2_cutoff=factor_rt_r2_cutoff,
+                                          factor_dt_r2_cutoff=factor_dt_r2_cutoff)
 
     all_ics = []
     for factor in data_tensor.DataTensor.factors:
@@ -123,6 +129,14 @@ if __name__ == "__main__":
     # open timepoints .yaml into dict for main()
     open_timepoints = yaml.load(open(args.timepoints_yaml, 'rb'), Loader=yaml.Loader)
 
+    filter_factors = False
+    if open_timepoints['filter_factor'] == 1:
+        filter_factors = True
+
+    factor_rt_r2_cutoff = float(open_timepoints['factor_rt_r2_cutoff'])
+    factor_dt_r2_cutoff = float(open_timepoints['factor_dt_r2_cutoff'])
+
+
     main(library_info_path=args.library_info_path,
          tensor_input_path=args.tensor_input_path,
          timepoints_dict=open_timepoints,
@@ -130,4 +144,7 @@ if __name__ == "__main__":
          factor_out_path=args.factor_data_out_path,
          factor_plot_output_path=args.factor_plot_out_path,
          return_flag=args.return_flag,
-         gauss_params=args.gauss_params)
+         gauss_params=args.gauss_params,
+         filter_factors=filter_factors,
+         factor_rt_r2_cutoff=factor_rt_r2_cutoff,
+         factor_dt_r2_cutoff=factor_dt_r2_cutoff)
