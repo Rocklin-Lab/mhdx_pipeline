@@ -32,6 +32,15 @@ from scipy.stats import linregress
 
 
 def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cutoff=0.91):
+    """
+    factor filters based on rt and dt gaussian fit. new factor list is created if the factor rt
+    and factor dt gauss fit r2 value is higher than the cutoff values. If none of the factors pass
+    the filtering criteria, the original factor list is returned
+    :param factor_list: factor list
+    :param rt_r2_cutoff: rt gauss fit r2 cutoff
+    :param dt_r2_cutoff: dt gauss fit r2 cutoff
+    :return: filtered factor list
+    """
 
     filtered_factors = []
 
@@ -44,7 +53,11 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cuto
             if dt_gauss_fit['fit_linregress_r2'] >= dt_r2_cutoff:
                 filtered_factors.append(factor)
 
-    return filtered_factors
+    new_factor_list = filtered_factors
+    if len(filtered_factors) == 0:
+        new_factor_list = factor_list
+
+    return new_factor_list
 
 
 
@@ -150,9 +163,9 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
                             factor_output_fpath=None,
                             factor_plot_output_path=None,
                             timepoint_label=None,
-                            filter_factors=True,
-                            filter_fac_rt_r2_cutoff=0.91,
-                            filter_fac_dt_r2_cutoff=0.91):
+                            filter_factors=False,
+                            factor_rt_r2_cutoff=0.91,
+                            factor_dt_r2_cutoff=0.91):
     """
     generate data tensor from a given tensor file path, library info file path, and timepoint index
     :param tensor_fpath: tensor file path
@@ -190,8 +203,8 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
 
     if filter_factors:
         filtered_factors = filter_factors_on_rt_dt_gauss_fit(factor_list=data_tensor.DataTensor.factors,
-                                                             rt_r2_cutoff=0.91,
-                                                             dt_r2_cutoff=0.91)
+                                                             rt_r2_cutoff=factor_rt_r2_cutoff,
+                                                             dt_r2_cutoff=factor_dt_r2_cutoff)
         data_tensor.DataTensor.factors = filtered_factors
 
     # create factor data dictionary
