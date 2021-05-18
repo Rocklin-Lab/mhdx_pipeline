@@ -116,9 +116,9 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
 
 def gen_tensors_factorize(library_info_df,
                           undeut_tensor_path_list,
-                          factor_output_path_list,
-                          factor_plot_output_path_list,
                           mz_centers,
+                          factor_output_path_list=None,
+                          factor_plot_output_path_list=None,
                           timepoint_index=0,
                           n_factors=15,
                           gauss_params=(3, 1),
