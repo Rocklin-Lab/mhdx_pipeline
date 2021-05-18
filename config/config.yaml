@@ -199,6 +199,20 @@ timepoints:
 "factor_rt_r2_cutoff": 0.91
 "factor_dt_r2_cutoff": 0.91
 
+
+# ic generation options
+# ic_peak_prominence: sets the prominence value for finding peaks in the intergated mz distribution
+# ic_peak_width: sets with width value for finding peaks in the integrated mz distribution
+# ic_rel_height_filter: 0 for false, 1 for true. Whether to filter indices based on relative intensity of mz values within the peak
+# ic_rel_height_filter_baseline: sets baseline threshold for relative height filtering
+# ic_rel_height_threshold: sets the relative peak height to include based on the ht of the peak center
+"ic_peak_prominence": 0.15
+"ic_peak_width": 3
+"ic_rel_height_filter": 1
+"ic_rel_height_filter_baseline": 0.15
+"ic_rel_height_threshold": 0.10
+
+
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
 
