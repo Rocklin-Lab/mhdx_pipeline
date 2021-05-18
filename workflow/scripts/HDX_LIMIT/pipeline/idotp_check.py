@@ -1,6 +1,7 @@
 import os
 import sys
 import glob
+import yaml
 import zlib
 import math
 import copy
@@ -120,7 +121,15 @@ def gen_tensors_factorize(library_info_df,
                           mz_centers,
                           timepoint_index=0,
                           n_factors=15,
-                          gauss_params=(3, 1)):
+                          gauss_params=(3, 1),
+                          filter_factors=False,
+                          factor_rt_r2_cutoff=0.91,
+                          factor_dt_r2_cutoff=0.91,
+                          ic_peak_prominence=0.15,
+                          ic_peak_width=3,
+                          ic_rel_height_filter=False,
+                          ic_rel_height_filter_baseline=0.15,
+                          ic_rel_height_threshold=0.15):
     """Instantiates TensorGenerator and factorizes.
     
     Args:
@@ -157,9 +166,20 @@ def gen_tensors_factorize(library_info_df,
                                               mz_centers=mz_centers,
                                               factor_output_fpath=factor_output_path,
                                               factor_plot_output_path=factor_plot_output_path,
-                                              timepoint_label=None)
+                                              timepoint_label=None,
+                                              filter_factors=filter_factors,
+                                              factor_rt_r2_cutoff=factor_rt_r2_cutoff,
+                                              factor_dt_r2_cutoff=factor_dt_r2_cutoff)
 
         for factor in data_tensor.DataTensor.factors:
+
+            # generate isotope cluster list
+            factor.find_isotope_clusters(prominence=ic_peak_prominence,
+                                         width_val=ic_peak_width,
+                                         rel_height_filter=ic_rel_height_filter,
+                                         baseline_threshold=ic_rel_height_filter_baseline,
+                                         rel_height_threshold=ic_rel_height_threshold)
+
             for isotope_cluster in factor.isotope_clusters:
                 undeut_ics_list.append(
                     isotope_cluster
@@ -202,7 +222,15 @@ def main(library_info_path,
          output_path=None,
          return_flag=None,
          n_factors=15,
-         gauss_params=(3, 1)):
+         gauss_params=(3, 1),
+         filter_factors=False,
+         factor_rt_r2=0.91,
+         factor_dt_r2=0.91,
+         ic_peak_prominence=0.15,
+         ic_peak_width=3,
+         ic_rel_height_filter=True,
+         ic_rel_height_filter_baseline=0.15,
+         ic_rel_height_threshold=0.10):
     """Compares each undeuterated replicate of a charge state to its theoretical distribution as a measure of signal quality.
 
     Args:
@@ -235,7 +263,15 @@ def main(library_info_path,
         factor_plot_output_path_list=factor_plot_output_path_list,
         mz_centers=mz_centers,
         n_factors=n_factors,
-        gauss_params=gauss_params)
+        gauss_params=gauss_params,
+        filter_factors=filter_factors,
+        factor_dt_r2_cutoff=factor_dt_r2,
+        factor_rt_r2_cutoff=factor_rt_r2,
+        ic_peak_prominence=ic_peak_prominence,
+        ic_peak_width=ic_peak_width,
+        ic_rel_height_filter=ic_rel_height_filter,
+        ic_rel_height_filter_baseline=ic_rel_height_filter_baseline,
+        ic_rel_height_threshold=ic_rel_height_threshold)
 
     idotp_list, integrated_mz_list, theor_mz_dist = calc_dot_prod_for_isotope_clusters(
         sequence=prot_seq, undeut_isotope_clusters=iso_clusters_list)
@@ -263,6 +299,7 @@ if __name__ == "__main__":
         "Checks observed undeuterated signal against theoretical isotopic distribution, returns dataframe with highest idotp of all undeut"
     )
     parser.add_argument("library_info_path", help="path/to/library_info.csv")
+    parser.add_argument("config_file_path", help='path/to/config.yaml', default="config/config.yaml")
     parser.add_argument(
         "-l",
         "--undeut_tensor_path_list",
@@ -298,14 +335,36 @@ if __name__ == "__main__":
         library_info = pd.read_csv(args.library_info_path)
         args.undeut_tensor_path_list = [fn for i in library_info.loc[library_info["name"]==args.rt_group_name].index.values for fn in glob.glob(args.input_directory+str(i)+"/*.zlib")]
 
-    #### example of user inputs rather than from snakemake ####
-    # library_info_path = '/Users/smd4193/Documents/MS_data/library_info.csv'
-    # ins = ['/Users/smd4193/Documents/MS_data/1_20200922_lib15_2_0sec_01.mzML.gz.cpickle.zlib']
-    # idotp_output = '/Users/smd4193/Documents/MS_data/1_idotp_check.csv'
+
+    config_dict = yaml.load(open(args.config_file_path, 'rb'), Loader=yaml.Loader)
+
+    filter_factors = False
+    if config_dict["filter_factor"] == 1:
+        filter_factors = True
+
+    factor_rt_r2_cutoff = config_dict["factor_rt_r2_cutoff"]
+    factor_dt_r2_cutoff = config_dict["factor_dt_r2_cutoff"]
+
+    ic_peak_prom = config_dict["ic_peak_prominence"]
+    ic_peak_width = config_dict["ic_peak_width"]
+    ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
+    ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
+
+    ic_rel_ht_filter = False
+    if config_dict["ic_rel_height_filter"] == 1:
+        ic_rel_ht_filter = True
 
     # main operation
     main(library_info_path=args.library_info_path,
          undeut_tensor_path_list=args.undeut_tensor_path_list,
          factor_output_path_list=args.factor_output_path_list,
          output_path=args.output_path,
-         factor_plot_output_path_list=args.factor_plot_output_path_list)
+         factor_plot_output_path_list=args.factor_plot_output_path_list,
+         filter_factors=filter_factors,
+         factor_rt_r2=factor_rt_r2_cutoff,
+         factor_dt_r2=factor_dt_r2_cutoff,
+         ic_peak_prominence=ic_peak_prom,
+         ic_peak_width=ic_peak_width,
+         ic_rel_height_filter=ic_rel_ht_filter,
+         ic_rel_height_filter_baseline=ic_rel_ht_baseline,
+         ic_rel_height_threshold=ic_rel_ht_threshold)

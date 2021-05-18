@@ -218,7 +218,7 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
 
 
 
-def rel_height_peak_bounds(centers, int_mz, baseline_threshold=0.2, bound=30):
+def rel_height_peak_bounds(centers, int_mz, baseline_threshold=0.2, bound=20):
         out = []
         baseline = max(int_mz) * baseline_threshold  # TODO: HARDCODE
         print('baseline: ', baseline)
@@ -648,8 +648,8 @@ def load_factor_data(factor_data_filepath):
 if __name__ == '__main__':
 
     factor_dict_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/factor.factor'
-    tensor_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/tensor_files/_eehee_rd4_0871_tensor_files/113_20210323_lib15_ph6_0sec_01.mzML.gz.cpickle.zlib'
-    library_info_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/library_info/library_info.csv'
+    tensor_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/tensor_files/old_tensor_files/_eehee_rd4_0871_tensor_files/113_20210323_lib15_ph6_0sec_01.mzML.gz.cpickle.zlib'
+    library_info_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/library_info/old_library_info/library_info.csv'
     config_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/config.yaml'
     # factor_data_dict = load_factor_data(factor_dict_fpath)
     # find_isotope_clusters_old(factor_data_dict, output_path=factor_dict_fpath+'oldic.ic')
