@@ -142,21 +142,15 @@ if __name__ == "__main__":
     # open timepoints .yaml into dict for main()
     config_dict = yaml.load(open(args.timepoints_yaml, 'rb'), Loader=yaml.Loader)
 
-    filter_factors = False
-    if config_dict['filter_factor'] == 1:
-        filter_factors = True
-
+    filter_factors = config_dict["filter_factor"]
     factor_rt_r2_cutoff = config_dict["factor_rt_r2_cutoff"]
     factor_dt_r2_cutoff = config_dict["factor_dt_r2_cutoff"]
 
     ic_peak_prom = config_dict["ic_peak_prominence"]
     ic_peak_width = config_dict["ic_peak_width"]
+    ic_rel_ht_filter = config_dict["ic_rel_height_filter"]
     ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
     ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
-
-    ic_rel_ht_filter = False
-    if config_dict["ic_rel_height_filter"] == 1:
-        ic_rel_ht_filter = True
 
 
 
