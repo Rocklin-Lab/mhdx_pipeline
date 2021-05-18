@@ -124,7 +124,12 @@ def gen_tensors_factorize(library_info_df,
                           gauss_params=(3, 1),
                           filter_factors=False,
                           factor_rt_r2_cutoff=0.91,
-                          factor_dt_r2_cutoff=0.91):
+                          factor_dt_r2_cutoff=0.91,
+                          ic_peak_prominence=0.15,
+                          ic_peak_width=3,
+                          ic_rel_height_filter=False,
+                          ic_rel_height_filter_baseline=0.15,
+                          ic_rel_height_threshold=0.15):
     """Instantiates TensorGenerator and factorizes.
     
     Args:
@@ -167,6 +172,14 @@ def gen_tensors_factorize(library_info_df,
                                               factor_dt_r2_cutoff=factor_dt_r2_cutoff)
 
         for factor in data_tensor.DataTensor.factors:
+
+            # generate isotope cluster list
+            factor.find_isotope_clusters(prominence=ic_peak_prominence,
+                                         width_val=ic_peak_width,
+                                         rel_height_filter=ic_rel_height_filter,
+                                         baseline_threshold=ic_rel_height_filter_baseline,
+                                         rel_height_threshold=ic_rel_height_threshold)
+
             for isotope_cluster in factor.isotope_clusters:
                 undeut_ics_list.append(
                     isotope_cluster
@@ -212,7 +225,12 @@ def main(library_info_path,
          gauss_params=(3, 1),
          filter_factors=False,
          factor_rt_r2=0.91,
-         factor_dt_r2=0.91):
+         factor_dt_r2=0.91,
+         ic_peak_prominence=0.15,
+         ic_peak_width=3,
+         ic_rel_height_filter=True,
+         ic_rel_height_filter_baseline=0.15,
+         ic_rel_height_threshold=0.10):
     """Compares each undeuterated replicate of a charge state to its theoretical distribution as a measure of signal quality.
 
     Args:
@@ -248,7 +266,12 @@ def main(library_info_path,
         gauss_params=gauss_params,
         filter_factors=filter_factors,
         factor_dt_r2_cutoff=factor_dt_r2,
-        factor_rt_r2_cutoff=factor_rt_r2)
+        factor_rt_r2_cutoff=factor_rt_r2,
+        ic_peak_prominence=ic_peak_prominence,
+        ic_peak_width=ic_peak_width,
+        ic_rel_height_filter=ic_rel_height_filter,
+        ic_rel_height_filter_baseline=ic_rel_height_filter_baseline,
+        ic_rel_height_threshold=ic_rel_height_threshold)
 
     idotp_list, integrated_mz_list, theor_mz_dist = calc_dot_prod_for_isotope_clusters(
         sequence=prot_seq, undeut_isotope_clusters=iso_clusters_list)
@@ -312,21 +335,24 @@ if __name__ == "__main__":
         library_info = pd.read_csv(args.library_info_path)
         args.undeut_tensor_path_list = [fn for i in library_info.loc[library_info["name"]==args.rt_group_name].index.values for fn in glob.glob(args.input_directory+str(i)+"/*.zlib")]
 
+
     config_dict = yaml.load(open(args.config_file_path, 'rb'), Loader=yaml.Loader)
 
-
     filter_factors = False
-    if config_dict['filter_factor'] == 1:
+    if config_dict["filter_factor"] == 1:
         filter_factors = True
 
-    factor_rt_r2_cutoff = float(config_dict['factor_rt_r2_cutoff'])
-    factor_dt_r2_cutoff = float(config_dict['factor_dt_r2_cutoff'])
+    factor_rt_r2_cutoff = config_dict["factor_rt_r2_cutoff"]
+    factor_dt_r2_cutoff = config_dict["factor_dt_r2_cutoff"]
 
+    ic_peak_prom = config_dict["ic_peak_prominence"]
+    ic_peak_width = config_dict["ic_peak_width"]
+    ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
+    ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
 
-    #### example of user inputs rather than from snakemake ####
-    # library_info_path = '/Users/smd4193/Documents/MS_data/library_info.csv'
-    # ins = ['/Users/smd4193/Documents/MS_data/1_20200922_lib15_2_0sec_01.mzML.gz.cpickle.zlib']
-    # idotp_output = '/Users/smd4193/Documents/MS_data/1_idotp_check.csv'
+    ic_rel_ht_filter = False
+    if config_dict["ic_rel_height_filter"] == 1:
+        ic_rel_ht_filter = True
 
     # main operation
     main(library_info_path=args.library_info_path,
@@ -336,4 +362,9 @@ if __name__ == "__main__":
          factor_plot_output_path_list=args.factor_plot_output_path_list,
          filter_factors=filter_factors,
          factor_rt_r2=factor_rt_r2_cutoff,
-         factor_dt_r2=factor_dt_r2_cutoff)
+         factor_dt_r2=factor_dt_r2_cutoff,
+         ic_peak_prominence=ic_peak_prom,
+         ic_peak_width=ic_peak_width,
+         ic_rel_height_filter=ic_rel_ht_filter,
+         ic_rel_height_filter_baseline=ic_rel_ht_baseline,
+         ic_rel_height_threshold=ic_rel_ht_threshold)
