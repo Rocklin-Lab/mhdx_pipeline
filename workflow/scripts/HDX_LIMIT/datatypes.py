@@ -276,37 +276,52 @@ class Factor:
         #self.baseline_subtracted_integrated_mz = (self.integrated_mz_data -
         #                                          self.integrated_mz_baseline)
         self.baseline_subtracted_integrated_mz = self.integrated_mz_data
-        
+
+        ## old protocol.
         # Writes to self.isotope_clusters
-        self.find_isotope_clusters(
-            5, height=0.5
-        )  # heuristic height value, should be high-level param TODO - Will require passage through DataTensor class
+        # self.find_isotope_clusters()  # heuristic height value, should be high-level param TODO - Will require passage through DataTensor class
+
+        ## now generates self.isotope_clusters upon calling the function self.find_isotope_clusters
+
+
+    def rel_height_peak_bounds(self, centers, norm_integrated_mz, baseline_threshold=0.15, rel_ht_threshold=0.2):
+        out = []
+        for center in centers:
+            if norm_integrated_mz[center] > baseline_threshold:
+                i, j = center, center
+                cutoff = norm_integrated_mz[center] * rel_ht_threshold
+                while center - i <= 10 and i - 1 != -1:
+                    i -= 1
+                    if norm_integrated_mz[i] < cutoff:
+                        break
+                while j - center <= 10 and j + 1 != len(norm_integrated_mz):
+                    j += 1
+                    if norm_integrated_mz[j] < cutoff:
+                        break
+                out.append((i, j))
+        return out
+
+
 
     # Uses find_window function to identify portions of the integrated mz dimension that look 'isotope-cluster-like', saves as Factor attribute
-    def find_isotope_clusters(self, peak_width, **kwargs):
-
-        def rel_height_peak_bounds(centers, int_mz, bound=20):
-            out = []
-            baseline = max(int_mz) * 0.15  # TODO: HARDCODE
-            for center in centers:
-                if int_mz[center] > baseline:
-                    i, j = center, center
-                    cutoff = int_mz[center] * (bound / 100)
-                    while center - i <= 10 and i - 1 != -1:
-                        i -= 1
-                        if int_mz[i] < cutoff:
-                            break
-                    while j - center <= 10 and j + 1 != len(int_mz):
-                        j += 1
-                        if int_mz[j] < cutoff:
-                            break
-                    out.append((i, j))
-            return out
+    def find_isotope_clusters(self, prominence=0.15, width_val=3, rel_height_filter=True, baseline_threshold=0.15, rel_height_threshold=0.10):
+        """
+        find isotope clusters by finding peaks in integrated mz distribution and choosing indices to include in mz data for ic clusters
+        :param prominence: prominence value for choosing peaks.
+        :param width_val: minimum width for choosing peaks
+        :param rel_height_filter: within peaks, whether or not
+        :param baseline_threshold: baseline for rel height filtering
+        :param rel_height_threshold: rel height threhold for rel height filtering
+        :return:
+        """
 
         self.isotope_clusters = []
-        peaks, feature_dict = find_peaks(self.baseline_subtracted_integrated_mz,
-                                         prominence=0.01,
-                                         width=0.5)
+
+        norm_integrated_mz = self.baseline_subtracted_integrated_mz/max(self.baseline_subtracted_integrated_mz)
+
+        peaks, feature_dict = find_peaks(norm_integrated_mz,
+                                         prominence=prominence,
+                                         width=width_val)
 
         if len(peaks) == 0:
             return
@@ -319,15 +334,26 @@ class Factor:
                 if feature_dict["right_bases"][i] -
                 feature_dict["left_bases"][i] > 4
             ]
+
+            if rel_height_filter:
+                height_filtered = self.rel_height_peak_bounds(centers=peaks,
+                                                              norm_integrated_mz=norm_integrated_mz,
+                                                              baseline_threshold=baseline_threshold,
+                                                              rel_ht_threshold=rel_height_threshold)
+
+                ic_idxs = height_filtered
+
             # ic_idxs = [(feature_dict['left_bases'][i], feature_dict['left_bases'][i+1]) if feature_dict['left_bases'][i] < feature_dict['left_bases'][i+1] else (feature_dict['left_bases'][i], feature_dict['left_bases'][i]+6) for i in range(len(out[0])-1)]
-            if len(peaks) > 1:
-                ic_idxs.append(
-                    (feature_dict["left_bases"][0],
-                     feature_dict["right_bases"][-1])
-                )  # Create default ic from first left base to last right base
-            height_filtered = rel_height_peak_bounds(
-                peaks, self.baseline_subtracted_integrated_mz)
-            [ic_idxs.append(tup) for tup in height_filtered]
+            ## previous protocol to create ic indexes to include the entire factor mz data. Not including this in ic generation.
+            # if len(peaks) > 1:
+            #     ic_idxs.append(
+            #         (feature_dict["left_bases"][0],
+            #          feature_dict["right_bases"][-1])
+            #     )  # Create default ic from first left base to last right base
+            # height_filtered = rel_height_peak_bounds(
+            #     peaks, self.baseline_subtracted_integrated_mz)
+            # [ic_idxs.append(tup) for tup in height_filtered]
+
             cluster_idx = 0
             for integrated_indices in ic_idxs:
                 if integrated_indices != None:
