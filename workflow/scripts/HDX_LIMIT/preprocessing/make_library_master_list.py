@@ -237,7 +237,14 @@ def gen_stretched_times(tic_file_list, plot_path=None):
     
     """
     ref_tic = np.loadtxt(tic_file_list[0])
+    ref_tic_sum = np.sum(ref_tic)
     ref_tic_norm = norm_tic(ref_tic)
+
+    # Create normalization factors from true intensity values, all normalized to ref_tic_sum
+    normalization_factors = {"name": [tic_file_list[0]], "normalization_factor": [1]} # init with 1 for reference/reference
+    for fn in tic_file_list:
+        normalization_factors["name"].append(fn)
+        normalization_factors["normalization_factor"].append(np.sum(np.loadtxt(fn))/ref_tic_sum)
 
     stretched_ts1_times = []
     stretched_ts2_times = []
@@ -266,7 +273,7 @@ def gen_stretched_times(tic_file_list, plot_path=None):
         # save the plot
         plt.savefig(plot_path)
 
-    return stretched_ts1_times, stretched_ts2_times
+    return stretched_ts1_times, stretched_ts2_times, normalization_factors
 
 
 ##########################################################
@@ -282,7 +289,9 @@ def main(names_and_seqs_path,
          return_flag=None,
          out_path=None,
          rt_group_cutoff=0.2,
-         plot=None):
+         stretched_time_plot=None,
+         normalization_factors_outpath=None,
+         normalization_factors_plot_outpath=None):
     """Generates the master list of library_proteins identified in MS data: library_info.csv.
 
     Args:
@@ -302,17 +311,18 @@ def main(names_and_seqs_path,
     """
     name_and_seq = pd.read_csv(names_and_seqs_path)
 
-    #if plot is none, function runs without plotting
-    stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics, plot)
+    # If plot is none, function runs without plotting.
+    stretched_ts1_times, stretched_ts2_times, normalization_factors = gen_stretched_times(tics, plot)
 
     lo_time, hi_time, n_lc_timepoints = set_global_scan_bounds(undeut_mzml)
 
-    # merge UNs - no, appends open dfs to list, why?
+    # TODO: This implementation is weird.
+    # Merge UNs - no, appends open dfs to list, why?
     undfs = []
     for file in intermediates:
         undfs.append(pd.read_csv(file))
 
-    # applies warp from provided undeut_mzml to each other undeut mzml, including itself
+    # Applies warp from provided undeut_mzml to each other undeut mzml, including itself.
     for i in range(len(undfs)):
         undfs[i]["pred_RT"] = [
             pred_time(rt, stretched_ts1_times[i], lo_time, hi_time,
@@ -321,7 +331,7 @@ def main(names_and_seqs_path,
         undfs[i]["UN"] = [i for line in undfs[i]["RT"]
                          ]  #apply source index to each line
 
-    # combine undfs and sort
+    # Combine undfs and sort.
     catdf = pd.concat(undfs)
     catdf = catdf.sort_values(["name", "charge", "pred_RT"])
     catdf.index = range(len(catdf))
@@ -341,10 +351,10 @@ def main(names_and_seqs_path,
     catdf["sequence"] = [
         list(name_and_seq.loc[name_and_seq["name"] == catdf.iloc[i]["name"]]
              ["sequence"].values)[0] for i in range(len(catdf))
-    ]  # adds sequences to output
+    ]  # Adds sequences to output.
     catdf["idx"] = [i for i in range(len(catdf))]
 
-    # cluster RT values and rename
+    # Cluster RT values and rename.
     name_dict = OrderedDict.fromkeys(catdf["name"].values)
     [
         rt_cluster(catdf, name_dict, key, rt_group_cutoff)
@@ -364,13 +374,13 @@ def main(names_and_seqs_path,
         weighted_avgs[name] = np.average(
             catdf.loc[catdf["name"]==name]["pred_RT"].values,
             weights=catdf.loc[catdf["name"]==name]["ab_cluster_total"])
-    #apply weighted avg to all rt-group members
+    # Apply weighted avg to all rt-group members.
     catdf["weighted_average_rt"] = [weighted_avgs[x] for x in catdf["name"].values]
 
     catdf = catdf.sort_values(["weighted_average_rt", "charge"])
     catdf.index = range(len(catdf))
 
-    # Create RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint]
+    # Create RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint].
     rt_columns = []
     for i in range(len(timepoints["timepoints"])):
         base = "RT_%s" % i
@@ -380,23 +390,23 @@ def main(names_and_seqs_path,
         else:
             rt_columns.append(base + "_0")
 
-    # apply warp from provided undeut_mzml RT to each later timepoint RT for each charged species identified
+    # Apply warp from provided undeut_mzml RT to each later timepoint RT for each charged species identified.
     for i, stretched in enumerate(stretched_ts2_times):
         catdf[rt_columns[i]] = [
             pred_time(x, stretched, lo_time, hi_time, n_lc_timepoints)
             for x in catdf["pred_RT"]
         ]
 
-    # determine rt-group average pred-RT-n times from above
+    # Determine rt-group average pred-RT-n times from above.
     prev_name = None
     all_tp_mean_preds = [[] for i in range(len(rt_columns))]
     catdf = catdf.sort_values(["weighted_average_rt", "name"])
     for i in range(len(catdf)):
         if catdf.iloc[i]["name"] != prev_name:
-            # get sub frame of rt-group
+            # Get sub frame of rt-group.
             protein_name = catdf.iloc[i]["name"]
             subdf = catdf.loc[catdf["name"] == protein_name]
-            # take weighted-avg of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins
+            # Take weighted-avg of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins.
             if len(subdf) > 1:
                 name_rt_preds = [
                     np.average(subdf.iloc[:, j].values, weights=catdf.loc[catdf["name"]==protein_name]["ab_cluster_total"])
@@ -410,19 +420,33 @@ def main(names_and_seqs_path,
                 for i in range(len(all_tp_mean_preds))
             ]
              for j in range(len(subdf))]
-            # set prev_name to current name
+
             prev_name = catdf.iloc[i]["name"]
         else:
             pass
-    # set new columns to give all lines their rt-group RT_n consensus rt-positions
+    # Set new columns to give all lines their rt-group RT_n consensus rt-positions.
     for i in range(len(all_tp_mean_preds)):
         catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
 
+
+    # Handle output options:
     if out_path is not None:
         catdf.to_csv(out_path)
 
+    if normalization_factors_outpath is not None:
+        pd.DataFrame.from_dict(normalization_factors).to_csv(normalization_factors_outpath, index=False)
+
+    if normalization_factors_plot_outpath is not None:
+        fig = plt.figure()
+        fig.suptitle("Normalization Factor Magnitudes")
+        
+        ax1 = fig.add_subplot(111)
+        ax1.bar(range(len(normalization_factors["name"])), normalization_factors["normalization_factor"]) 
+        ax1.set(xlabel="TIC .mzML Source", ylabel = "Normalization Factor Magnitude")
+        plt.savefig(normalization_factors_plot_outpath)
+    
     if return_flag is not None:
-        return catdf.to_dict()
+        return {"library_info": catdf.to_dict(), "normalization_factors": normalization_factors}
 
 
 if __name__ == "__main__":
@@ -478,19 +502,24 @@ if __name__ == "__main__":
     )
     # outputs
     parser.add_argument("-p",
-                        "--plot",
+                        "--stretched_times_plot",
                         help="path/to/stretched_times_plots.png")
     parser.add_argument("-o",
                         "--out_path",
                         help="path/to/library_info.csv main output file")
+    parser.add_argument("-f",
+                        "--normalization_factors_outpath",
+                        help="path/to/normalization_factors.csv")
+    parser.add_argument("-l",
+                        "--normalization_factors_plot_outpath",
+                        help="path/to/normalization_factors_plot.png")
 
     args = parser.parse_args()
 
     #Generate explicit filenames and open timepoints .yaml
     if args.mzml_dir is not None and args.undeut_match_string is not None and args.undeut_mzMLs is None:
         args.undeut_mzml = list(
-            glob.glob(args.mzml_dir + "*" + args.undeut_match_string + "*" +
-                      ".mzML"))
+            glob.glob(args.mzml_dir + "*" + args.undeut_match_string + "*" + ".mzML"))
     if args.intermediates_dir is not None and args.intermediates is None:
         args.intermediates = list(
             glob.glob(args.intermediates_dir + "*intermediate.csv"))
@@ -506,4 +535,6 @@ if __name__ == "__main__":
          tics=args.tics,
          timepoints=open_timepoints,
          rt_group_cutoff=args.rt_group_cutoff,
-         plot=args.plot)
+         stretched_times_plot=args.stretched_times_plot,
+         normalization_factors_outpath=args.normalization_factors_outpath,
+         normalization_factors_plot_outpath=args.normalization_factors_plot_outpath)

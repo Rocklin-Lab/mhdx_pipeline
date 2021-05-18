@@ -66,9 +66,8 @@ rule mv_passing_tensors:
         sorted(expand("resources/passing_tensors/{lib_idx}/{lib_idx}_{mzml}.gz.cpickle.zlib", lib_idx=idotp_check_indices, mzml=[fn for fn in config[0]]))
     benchmark:
         "results/benchmarks/mv_passing_tensors.benchmark.txt"
-    run:
-        for fin, fout in zip(input, output):
-            shutil.move(fin, fout)
+    script:
+        "scripts/HDX_LIMIT/pipeline/mv_passing_tensors.py"
 
 if config['polyfit_calibration']:
     rule extract_tensors:
