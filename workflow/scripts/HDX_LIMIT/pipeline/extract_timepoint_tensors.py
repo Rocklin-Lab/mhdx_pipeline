@@ -280,8 +280,8 @@ def main(library_info_path,
                         # save to file if outputs provided
                         if outputs is not None:
                             my_out = [
-                                out for out in outputs if "resources/tensors/" + str(i) + "/" + str(i) + "_" +
-                                mzml + ".gz.cpickle.zlib" == out
+                                out for out in outputs if "/" + str(i) + "/" + str(i) + "_" +
+                                mzml + ".gz.cpickle.zlib" in out
                             ][0]
                             print("My_out: " + str(my_out))
                             with open(my_out, "wb") as file:
