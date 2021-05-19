@@ -225,7 +225,7 @@ def norm_tic(tic):
     return tic
 
 
-def gen_stretched_times(tic_file_list, plot_path=None):
+def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
     """Generate all warp-paths between the undeuterated reference .tic and all others .tic files.
 
     Args:
@@ -263,12 +263,12 @@ def gen_stretched_times(tic_file_list, plot_path=None):
 
         stretched_ts1_times.append(stretched_ts1)
         stretched_ts2_times.append(stretched_ts2)
-        if plot_path is not None:
+        if stretched_times_plot_path is not None:
             ax.plot(stretched_ts1, label="tic_file_" + str(index))
             ax.set_ylabel("stretched_ts1_times")
             ax.set_xlabel("index")
 
-    if plot_path is not None:
+    if stretched_times_plot_path is not None:
         plt.legend()
         # save the plot
         plt.savefig(plot_path)
@@ -312,7 +312,7 @@ def main(names_and_seqs_path,
     name_and_seq = pd.read_csv(names_and_seqs_path)
 
     # If plot is none, function runs without plotting.
-    stretched_ts1_times, stretched_ts2_times, normalization_factors = gen_stretched_times(tics, plot)
+    stretched_ts1_times, stretched_ts2_times, normalization_factors = gen_stretched_times(tics, stretched_times_plot_outpath=stretched_times_plot_outpath)
 
     lo_time, hi_time, n_lc_timepoints = set_global_scan_bounds(undeut_mzml)
 
