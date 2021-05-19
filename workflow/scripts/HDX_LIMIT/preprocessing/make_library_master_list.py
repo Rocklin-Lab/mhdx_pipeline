@@ -289,7 +289,7 @@ def main(names_and_seqs_path,
          return_flag=None,
          out_path=None,
          rt_group_cutoff=0.2,
-         stretched_time_plot=None,
+         stretched_times_plot_outpath=None,
          normalization_factors_outpath=None,
          normalization_factors_plot_outpath=None):
     """Generates the master list of library_proteins identified in MS data: library_info.csv.
@@ -502,8 +502,8 @@ if __name__ == "__main__":
     )
     # outputs
     parser.add_argument("-p",
-                        "--stretched_times_plot",
-                        help="path/to/stretched_times_plots.png")
+                        "--stretched_times_plot_outpath",
+                        help="path/to/stretched_times_plot.png")
     parser.add_argument("-o",
                         "--out_path",
                         help="path/to/library_info.json main output file")
@@ -535,6 +535,6 @@ if __name__ == "__main__":
          tics=args.tics,
          timepoints=open_timepoints,
          rt_group_cutoff=args.rt_group_cutoff,
-         stretched_times_plot=args.stretched_times_plot,
+         stretched_times_plot_outpath=args.stretched_times_plot_outpath,
          normalization_factors_outpath=args.normalization_factors_outpath,
          normalization_factors_plot_outpath=args.normalization_factors_plot_outpath)
