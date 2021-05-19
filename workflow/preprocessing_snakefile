@@ -19,7 +19,7 @@ for key in config["timepoints"]:
 # snakefile targets creation of library_info.csv and gzipping all .mzMLs
 rule all:
     input:
-        "resources/library_info/library_info.csv",
+        "resources/library_info/library_info.json",
         expand("resources/mzml/{mzml}.gz", mzml=all_timepoint_files),
 
 
