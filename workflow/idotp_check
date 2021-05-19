@@ -6,7 +6,8 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
-library_info = pd.read_csv("resources/library_info/library_info.csv")
+library_info_fn = "resources/library_info/library_info.json"
+library_info = pd.read_json(library_info_fn)
 names = list(set(library_info["name"].values))
 
 # mzml list
@@ -33,13 +34,13 @@ def idotp_check_inputs(i):
 rule all:
     input:
         "resources/idotp_filter/filter_passing_indices.csv",
-        "resources/idotp_filter/checked_library_info.csv"
+        library_info_fn
 
 
 if config['polyfit_calibration']:
     rule extract_tensors:
         input:
-            "resources/library_info/library_info.csv",
+            library_info_fn,
             "resources/mzml/{mzml}.gz",
             "config/config.yaml",
             expand(
@@ -59,7 +60,7 @@ if config['polyfit_calibration']:
 else:
     rule extract_tensors:
         input:
-            "resources/library_info/library_info.csv",
+            library_info_fn,
             "resources/mzml/{mzml}.gz",
             "config/config.yaml"
         output:
@@ -75,8 +76,8 @@ else:
 rule idotp_check:
     # TODO: docstring
     input:
-        "config/config.yaml"
-        "resources/library_info/library_info.csv",
+        library_info_fn,
+        "config/config.yaml",
         lambda wildcards: idotp_check_inputs(wildcards.i),
     output:
         "resources/idotp_check/{i}_idotp_check.csv",
@@ -94,11 +95,11 @@ rule idotp_check:
 
 rule idotp_filter:
     input: 
-        "resources/library_info/library_info.csv",
+        library_info_fn,
         expand("resources/idotp_check/{i}_idotp_check.csv", i=range(len(library_info)))
     output:
         "resources/idotp_filter/filter_passing_indices.csv",
-        "resources/idotp_filter/checked_library_info.csv",
+        "resources/idotp_filter/checked_library_info.json",
         "results/plots/idotp_distribution.png"
     script:
         "scripts/HDX_LIMIT/pipeline/idotp_filter.py"

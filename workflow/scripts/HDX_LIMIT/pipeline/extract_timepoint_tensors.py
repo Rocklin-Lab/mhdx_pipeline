@@ -58,10 +58,10 @@ def main(library_info_path,
          polyfit_calibration_dict=None,
          indices=None):
     """Reads through .mzML file and extracts subtensors whose dimensions are defined in 
-       library_info.csv, optionally saves individual tensors or returns all as a dictionary.
+       library_info.json, optionally saves individual tensors or returns all as a dictionary.
 
     Args:
-        library_info_path (str): path/to/library_info.csv
+        library_info_path (str): path/to/library_info.json or checked_library_info.json
         mzml_gz_path (str): path/to/timepoint.mzML.gz
         timepoints_dict (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
         outputs (list of strings): list of filename strings for writing extracted outputs. 
@@ -78,7 +78,7 @@ def main(library_info_path,
 
     """
     out_dict = {}
-    library_info = pd.read_csv(library_info_path)
+    library_info = pd.read_json(library_info_path)
     mzml = mzml_gz_path.split("/")[-1][:-3]
 
     # find number of mzml-source timepoint for extracting RT #TODO THIS WILL HAVE TO BE HANDLED WHEN MOVING FROM MZML TO RAW - files in config[int] will not have same extension
@@ -345,7 +345,7 @@ if __name__ == "__main__":
         # set expected command line arguments
         parser = argparse.ArgumentParser()
         # inputs
-        parser.add_argument("library_info_path", help="path/to/library_info.csv")
+        parser.add_argument("library_info_path", help="path/to/library_info.json")
         parser.add_argument("mzml_gz_path", help="path/to/file.mzML.gz")
         parser.add_argument(
             "timepoints_yaml",
@@ -409,7 +409,7 @@ if __name__ == "__main__":
                 parser.print_help()
                 sys.exit()
             else:
-                library_info = pd.read_csv(args.library_info_path)
+                library_info = pd.read_json(args.library_info_path)
                 mzml = args.mzml_gz_path.split("/")[-1][:-3]
                 if args.indices_csv is not None:
                     indices = pd.read_csv(args.indices_csv)["index"].values

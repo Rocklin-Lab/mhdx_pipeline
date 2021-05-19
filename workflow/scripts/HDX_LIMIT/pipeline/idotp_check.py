@@ -234,7 +234,7 @@ def main(library_info_path,
     """Compares each undeuterated replicate of a charge state to its theoretical distribution as a measure of signal quality.
 
     Args:
-        library_info_path (string): path/to/library_info.csv
+        library_info_path (string): path/to/library_info.json
         undeut_tensor_path_list (list of strings): list of paths/to/files.cpickle.zlib
         output_path (string): path/to/output.csv
         return_flag (bool): option to return output in python, for notebook context
@@ -250,7 +250,7 @@ def main(library_info_path,
     """
     print(undeut_tensor_path_list)
     lib_idx = int(undeut_tensor_path_list[0].split("/")[-1].split("_")[0])
-    library_info = pd.read_csv(library_info_path)
+    library_info = pd.read_json(library_info_path)
     prot_name = library_info.iloc[lib_idx]["name"]
     prot_seq = library_info.iloc[lib_idx]["sequence"]
     prot_cum_peak_gaps = cum_peak_gaps_from_sequence(prot_seq)
@@ -298,7 +298,7 @@ if __name__ == "__main__":
         description=
         "Checks observed undeuterated signal against theoretical isotopic distribution, returns dataframe with highest idotp of all undeut"
     )
-    parser.add_argument("library_info_path", help="path/to/library_info.csv")
+    parser.add_argument("library_info_path", help="path/to/library_info.json")
     parser.add_argument("config_file_path", help='path/to/config.yaml')
     parser.add_argument(
         "-l",
@@ -332,7 +332,7 @@ if __name__ == "__main__":
             parser.print_help()
             sys.exit()
         #ipdb.set_trace()
-        library_info = pd.read_csv(args.library_info_path)
+        library_info = pd.read_json(args.library_info_path)
         args.undeut_tensor_path_list = [fn for i in library_info.loc[library_info["name"]==args.rt_group_name].index.values for fn in glob.glob(args.input_directory+str(i)+"/*.zlib")]
 
 

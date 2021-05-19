@@ -90,7 +90,7 @@ rule make_library_master_list:
 
     output:
         "results/plots/preprocessing/stretched_times_plots.png",
-        "resources/library_info/library_info.csv",
+        "resources/library_info/library_info.json",
     benchmark:
         "results/benchmarks/make_library_master_list.benchmark.txt"
 

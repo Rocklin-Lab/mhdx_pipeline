@@ -32,7 +32,7 @@ def main(library_info_path,
     and optionally returns or writes output list of IsotopeClusters.
 
     Args:
-        library_info_path (str): path/to/library_info.csv
+        library_info_path (str): path/to/library_info.json
         tensor_input_path (str): path/to/tensor.cpickle.zlib
         timepoints_dict (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
         isotope_clusters_out_path (str): path/to/file for main output - list of IsotopeClusters objects
@@ -46,7 +46,7 @@ def main(library_info_path,
     out_dict = {}
 
     # open library_info
-    library_info = pd.read_csv(library_info_path)
+    library_info = pd.read_json(library_info_path)
     my_idx = int(tensor_input_path.split("/")[-1].split("_")[0])
     # my_centers = library_info.iloc[my_idx]["mz_centers"].values
     ## temporary fix for getting mz center values in an array
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         description=
         "Accepts tensor as input, factorizes and saves IsotopeClusters from resulting Factors"
     )
-    parser.add_argument("library_info_path", help="path/to/library_info.csv")
+    parser.add_argument("library_info_path", help="path/to/library_info.json")
     parser.add_argument(
         "tensor_input_path",
         help="path/to/file.cpickle.zlib for tensor to factorize")

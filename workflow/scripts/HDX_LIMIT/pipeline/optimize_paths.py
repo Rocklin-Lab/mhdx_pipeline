@@ -17,7 +17,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path,
     """Generate explicit PathOptimizer input paths for one rt_group.
 
     Args:
-        library_info_path (str): path/to/library_info.csv
+        library_info_path (str): path/to/checked_library_info.json
         input_directory_path (str): /path/to/dir/ to prepend to each outpath
         rt_group_name (str): value from 'name' column of library_info
         timepoints (dict): dictionary containing list of hdx timepoints in seconds, where each timepoint is also an integer key corresponding to that timepoint's .mzML filenames
@@ -27,7 +27,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path,
 
     """
     name_inputs = []
-    library_info = pd.read_csv(library_info_path)
+    library_info = pd.read_json(library_info_path)
     idxs = library_info.index[library_info["name"] == rt_group_name].tolist()
     for key in timepoints["timepoints"]:
         if len(timepoints[key]) > 1:
@@ -76,7 +76,7 @@ def main(library_info_path,
     """Uses PathOptimzier class to generate best-estimate hdx-timeseries of IsotopeClusters for a given library protein.
 
     Args:
-        library_info_path (str): path/to/library_info.csv
+        library_info_path (str): path/to/checked_library_info.json
         all_ic_input_paths (list of strings): list of paths/to/files.cpickle.zlib for all lists of IsotopeClusters from generate_tensor_ics.py
         timepoints (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
         return_flag: option to return main output in python, for notebook context
@@ -96,7 +96,7 @@ def main(library_info_path,
     out_dict = {}
 
     # open library_info
-    library_info = pd.read_csv(library_info_path)
+    library_info = pd.read_json(library_info_path)
 
     if rt_group_name is None:
         name = library_info.iloc[int(
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         "Generate a best-estimate HDX-timeseries of IsotopeClusters for a given library protein"
     )
     # inputs
-    parser.add_argument("library_info_path", help="path/to/library_info.csv")
+    parser.add_argument("library_info_path", help="path/to/checked_library_info.json")
     parser.add_argument(
         "timepoints_yaml",
         help=
