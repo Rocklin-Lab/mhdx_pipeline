@@ -91,6 +91,9 @@ rule make_library_master_list:
     output:
         "results/plots/preprocessing/stretched_times_plots.png",
         "resources/library_info/library_info.json",
+        "resources/library_info/normalization_factors.csv",
+        "results/plots/normalization_factors_plot.png"
+        ""
     benchmark:
         "results/benchmarks/make_library_master_list.benchmark.txt"
 
@@ -98,5 +101,5 @@ rule make_library_master_list:
         tics = " ".join([fn for fn in input if '.tic' in fn])
         intermediates = " ".join([fn for fn in input if '_intermediate.csv' in fn])
         shell('''
-            python workflow/scripts/HDX_LIMIT/preprocessing/make_library_master_list.py {input[0]} --timepoints {input[1]} --undeut_mzml {input[2]} --intermediates {intermediates} --tics {tics}  --plot {output[0]} --out_path {output[1]}
+            python workflow/scripts/HDX_LIMIT/preprocessing/make_library_master_list.py {input[0]} --timepoints {input[1]} --undeut_mzml {input[2]} --intermediates {intermediates} --tics {tics}  --stretched_times_plot {output[0]} --out_path {output[1]} --normalization_factors_outpath {output[2]} --normalization_factors_plot_outpath {output[3]}
         ''')

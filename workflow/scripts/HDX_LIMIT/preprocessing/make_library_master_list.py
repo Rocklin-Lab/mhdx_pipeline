@@ -431,7 +431,7 @@ def main(names_and_seqs_path,
 
     # Handle output options:
     if out_path is not None:
-        catdf.to_csv(out_path)
+        catdf.to_json(out_path)
 
     if normalization_factors_outpath is not None:
         pd.DataFrame.from_dict(normalization_factors).to_csv(normalization_factors_outpath, index=False)
@@ -506,7 +506,7 @@ if __name__ == "__main__":
                         help="path/to/stretched_times_plots.png")
     parser.add_argument("-o",
                         "--out_path",
-                        help="path/to/library_info.csv main output file")
+                        help="path/to/library_info.json main output file")
     parser.add_argument("-f",
                         "--normalization_factors_outpath",
                         help="path/to/normalization_factors.csv")
