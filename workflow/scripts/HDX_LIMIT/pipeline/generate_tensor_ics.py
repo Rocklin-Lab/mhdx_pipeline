@@ -2,6 +2,7 @@ import os
 import sys
 import yaml
 import psutil
+import numpy as np
 import argparse
 import pandas as pd
 
@@ -47,7 +48,14 @@ def main(library_info_path,
     # open library_info
     library_info = pd.read_csv(library_info_path)
     my_idx = int(tensor_input_path.split("/")[-1].split("_")[0])
-    my_centers = library_info.iloc[my_idx]["mz_centers"].values
+    # my_centers = library_info.iloc[my_idx]["mz_centers"].values
+    ## temporary fix for getting mz center values in an array
+    my_centers = library_info.iloc[my_idx]["mz_centers"]
+    centers = my_centers.split()
+    centers = [x.replace("[", "") for x in centers]
+    centers = [x.replace("]", "") for x in centers]
+    centers = np.array([float(x) for x in centers])
+
     # find timepoint of passed filename by config comparison
     for tp in timepoints_dict["timepoints"]:
         for fn in timepoints_dict[tp]:
