@@ -263,15 +263,15 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
 
         stretched_ts1_times.append(stretched_ts1)
         stretched_ts2_times.append(stretched_ts2)
-        if stretched_times_plot_path is not None:
+        if stretched_times_plot_outpath is not None:
             ax.plot(stretched_ts1, label="tic_file_" + str(index))
             ax.set_ylabel("stretched_ts1_times")
             ax.set_xlabel("index")
 
-    if stretched_times_plot_path is not None:
+    if stretched_times_plot_outpath is not None:
         plt.legend()
         # save the plot
-        plt.savefig(plot_path)
+        plt.savefig(stretched_times_plot_outpath)
 
     return stretched_ts1_times, stretched_ts2_times, normalization_factors
 
