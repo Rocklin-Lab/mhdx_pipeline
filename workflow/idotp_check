@@ -90,7 +90,7 @@ rule idotp_check:
         #outputs_factor_dict = [output[i] for i in range(1, len(output)) if output[i].endswith(".factor")]
         outputs_factor_plot = [output[i] for i in range(1, len(output)) if output[i].endswith(".factor.pdf")]
         shell('''
-            python workflow/scripts/HDX_LIMIT/pipeline/idotp_check.py {input[1]} {input[0]} --undeut_tensor_path_list {inputs} --output_path {output[0]} --factor_plot_output_path {outputs_factor_plot}
+            python workflow/scripts/HDX_LIMIT/pipeline/idotp_check.py {input[0]} {input[1]} --undeut_tensor_path_list {inputs} --output_path {output[0]} --factor_plot_output_path {outputs_factor_plot}
         ''')
 
 rule idotp_filter:
