@@ -324,7 +324,8 @@ class Factor:
                                          width=width_val)
 
         if len(peaks) == 0:
-            return
+            ic_idxs = [(0, len(self.baseline_subtracted_integrated_mz)-1)]
+            # return
         else:
             ic_idxs = [
                 (feature_dict["left_bases"][i], feature_dict["right_bases"][i])
@@ -354,39 +355,39 @@ class Factor:
             #     peaks, self.baseline_subtracted_integrated_mz)
             # [ic_idxs.append(tup) for tup in height_filtered]
 
-            cluster_idx = 0
-            for integrated_indices in ic_idxs:
-                if integrated_indices != None:
-                    #try:
+        cluster_idx = 0
+        for integrated_indices in ic_idxs:
+            if integrated_indices != None:
+                #try:
 
-                    newIC = IsotopeCluster(
-                        charge_states=self.charge_states,
-                        factor_mz_data=copy.deepcopy(self.mz_data),
-                        source_file=self.source_file,
-                        tensor_idx=self.tensor_idx,
-                        timepoint_idx=self.timepoint_idx,
-                        n_factors=self.n_factors,
-                        factor_idx=self.factor_idx,
-                        cluster_idx=cluster_idx,
-                        low_idx = self.bins_per_isotope_peak * integrated_indices[0],
-                        high_idx = self.bins_per_isotope_peak * (integrated_indices[1] + 1),
-                        rts=self.rts,
-                        dts=self.dts,
-                        retention_labels=self.retention_labels,
-                        drift_labels=self.drift_labels,
-                        mz_labels=self.mz_labels,
-                        bins_per_isotope_peak=self.bins_per_isotope_peak,
-                        max_rtdt=self.max_rtdt,
-                        outer_rtdt=self.outer_rtdt,
-                        n_concatenated=self.n_concatenated,
-                        concat_dt_idxs=self.concat_dt_idxs,
-                    )
-                    if (newIC.baseline_peak_error / newIC.baseline_auc <
-                            0.2):  # TODO: HARDCODE
-                        self.isotope_clusters.append(newIC)
-                        cluster_idx += 1
-                    #except:
-                    #print("ic index out of bounds: " + str(integrated_indices))
+                newIC = IsotopeCluster(
+                    charge_states=self.charge_states,
+                    factor_mz_data=copy.deepcopy(self.mz_data),
+                    source_file=self.source_file,
+                    tensor_idx=self.tensor_idx,
+                    timepoint_idx=self.timepoint_idx,
+                    n_factors=self.n_factors,
+                    factor_idx=self.factor_idx,
+                    cluster_idx=cluster_idx,
+                    low_idx = self.bins_per_isotope_peak * integrated_indices[0],
+                    high_idx = self.bins_per_isotope_peak * (integrated_indices[1] + 1),
+                    rts=self.rts,
+                    dts=self.dts,
+                    retention_labels=self.retention_labels,
+                    drift_labels=self.drift_labels,
+                    mz_labels=self.mz_labels,
+                    bins_per_isotope_peak=self.bins_per_isotope_peak,
+                    max_rtdt=self.max_rtdt,
+                    outer_rtdt=self.outer_rtdt,
+                    n_concatenated=self.n_concatenated,
+                    concat_dt_idxs=self.concat_dt_idxs,
+                )
+                if (newIC.baseline_peak_error / newIC.baseline_auc <
+                        0.2):  # TODO: HARDCODE
+                    self.isotope_clusters.append(newIC)
+                    cluster_idx += 1
+                #except:
+                #print("ic index out of bounds: " + str(integrated_indices))
             return
 
     # heuristically identifies 'things that look like acceptable isotope clusters' in integrated mz dimension, roughly gaussian allowing some inflection points from noise
