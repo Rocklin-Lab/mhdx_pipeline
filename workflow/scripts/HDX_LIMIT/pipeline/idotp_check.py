@@ -273,14 +273,14 @@ def main(library_info_path,
         ic_rel_height_filter_baseline=ic_rel_height_filter_baseline,
         ic_rel_height_threshold=ic_rel_height_threshold)
 
-    idotp_list, integrated_mz_list, theor_mz_dist = calc_dot_prod_for_isotope_clusters(
+    idotp_list, integtd_mz_list, theo_mz_dist = calc_dot_prod_for_isotope_clusters(
         sequence=prot_seq, undeut_isotope_clusters=iso_clusters_list)
 
     if output_path is not None:
         pd.DataFrame({
             "idotp": max(idotp_list),
             "mz_centers": [mz_centers], # Cast as nested list to force into single index
-            "theor_mz_dist": [theor_mz_dist]
+            "theor_mz_dist": [theo_mz_dist]
             }, index=[0]).to_csv(output_path)
 
     if return_flag is not None:
@@ -288,7 +288,7 @@ def main(library_info_path,
             "iso_clusters_list": iso_clusters_list,
             "data_tensor_list": data_tensor_list,
             "idotp_list": idotp_list,
-            "integrated_mz_list": integrated_mz_list
+            "integrated_mz_list": integtd_mz_list
         }
 
 
