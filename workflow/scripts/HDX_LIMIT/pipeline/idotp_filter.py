@@ -73,7 +73,7 @@ def main(library_info_path,
         plt.savefig(plot_out_path)
 
     if indices_out_path is not None:
-        out_df.to_json(indices_out_path)
+        out_df.to_csv(indices_out_path)
 
     if return_flag:
         return out_dict
