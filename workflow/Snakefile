@@ -76,7 +76,7 @@ if config['polyfit_calibration']:
             "resources/mzml/{mzml}.gz",
             "config/config.yaml",
             expand(
-                "results/library_info/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
+                "results/imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
             ),
             "resources/idotp_filter/filter_passing_indices.csv"
         output:
