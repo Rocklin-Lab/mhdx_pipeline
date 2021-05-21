@@ -80,7 +80,7 @@ rule idotp_check:
         "config/config.yaml",
         lambda wildcards: idotp_check_inputs(wildcards.i),
     output:
-        "resources/idotp_check/{i}_idotp_check.csv",
+        "resources/idotp_check/{i}_idotp_check.json",
         #expand("resources/factor_data/{{i}}_{file}.cpickle.zlib.factor", file=config[0]),
         expand("results/plots/factors/{{i}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
     benchmark:
@@ -96,7 +96,7 @@ rule idotp_check:
 rule idotp_filter:
     input: 
         library_info_fn,
-        expand("resources/idotp_check/{i}_idotp_check.csv", i=range(len(library_info)))
+        expand("resources/idotp_check/{i}_idotp_check.json", i=range(len(library_info)))
     output:
         "resources/idotp_filter/filter_passing_indices.csv",
         "resources/idotp_filter/checked_library_info.json",

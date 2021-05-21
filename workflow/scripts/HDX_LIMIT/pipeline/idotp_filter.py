@@ -42,7 +42,7 @@ def main(library_info_path,
 
     for fn in sorted_inputs:
         lib_idx = int(fn.split("/")[-1].split("_")[0])
-        idpc = pd.read_csv(fn)
+        idpc = pd.read_json(fn)
         idotps.append(idpc["idotp"].values[0])
         mz_centers.append(idpc["mz_centers"][0]) # Account for nested list structure
         theor_mz_dists.append(idpc["theor_mz_dist"][0])

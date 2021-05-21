@@ -281,7 +281,7 @@ def main(library_info_path,
             "idotp": max(idotp_list),
             "mz_centers": [mz_centers], # Cast as nested list to force into single index
             "theor_mz_dist": [theo_mz_dist]
-            }, index=[0]).to_csv(output_path)
+            }, index=[0]).to_json(output_path)
 
     if return_flag is not None:
         return {
@@ -308,7 +308,7 @@ if __name__ == "__main__":
         "list of paths to undeuterated tensor outputs from extract_tensors.py")
     parser.add_argument("-d", "--input_directory", help="path/to/dir/ containing undeuterated tensor inputs")
     parser.add_argument("-r", "--rt_group_name", help="rt-group name to capture for idotp check")
-    parser.add_argument("-o", "--output_path", help="path/to/file for main .csv output")
+    parser.add_argument("-o", "--output_path", help="path/to/file for main .json output")
     parser.add_argument("-f", "--factor_output_path_list", nargs="+", help="list of paths/to/file for factor data .factor output")
 
     parser.add_argument("-p", "--factor_plot_output_path_list", nargs="+", help="list of paths/to/files for factor data plot output .pdf")
