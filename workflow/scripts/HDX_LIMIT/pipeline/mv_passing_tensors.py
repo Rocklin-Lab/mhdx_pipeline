@@ -1,3 +1,7 @@
+import os
+import shutil
+import argparse
+
 def main(input_paths, output_paths):
 	for fin, fout in zip(input_paths, output_paths):
 		os.makedirs(os.path.dirname(fout), exist_ok=True)
@@ -16,4 +20,3 @@ if __name__ == "__main__":
 		args = parser.parse_args()
 
 		# Make explicit inputs and outputs from checked_library_info.json.
-		
