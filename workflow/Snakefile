@@ -124,6 +124,7 @@ rule generate_tensor_ics:
 rule optimize_paths:
     input:
         library_info_fn,
+        "config/config.yaml"
         lambda wildcards: optimize_paths_inputs(wildcards.name, library_info, idotp_check_indices) 
     output:
         "results/plots/ic_time_series/html/{name}_time_series.html",
@@ -135,9 +136,9 @@ rule optimize_paths:
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
     run:
-        inputs = [input[i] for i in range(1, len(input))]
+        inputs = [input[i] for i in range(2, len(input))]
         shell('''
-            "python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} --all_tensor_input_paths {inputs} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]}"
+            python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} {input[1]} --all_ic_input_paths {inputs} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]}
         ''')
 
 """
