@@ -64,18 +64,13 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cuto
 
 def estimate_gauss_param(ydata, xdata):
     ymax = np.max(ydata)
-    mean = sum(xdata * ydata) / sum(ydata)
-    sigma = np.sqrt(sum(ydata * (xdata - mean) ** 2) / sum(ydata))
-    non_zeros_ydata_index = np.nonzero(ydata)[0]
-    # init_guess = [0, ymax, mean, sigma]
-    bounds = ([0, 0, non_zeros_ydata_index[0], 0], [np.inf, np.inf, non_zeros_ydata_index[-1], np.inf])
     maxindex = np.nonzero(ydata == ymax)[0]
     peakmax_x = xdata[maxindex][0]
     norm_arr = ydata/max(ydata)
     bins_for_width = norm_arr[norm_arr > 0.8]
     width_bin = len(bins_for_width)
     init_guess = [0, ymax, peakmax_x, width_bin]
-    return init_guess, bounds
+    return init_guess
 
 
 def gauss_func(x, y0, A, xc, w):
@@ -91,13 +86,13 @@ def adjrsquared(r2, param, num):
 
 def fit_gaussian(xdata, ydata, data_label='dt'):
 
-    init_guess, bounds = estimate_gauss_param(ydata, xdata)
+    init_guess = estimate_gauss_param(ydata, xdata)
 
     gauss_fit_dict = dict()
     gauss_fit_dict['data_label'] = data_label
 
     try:
-        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, bounds=bounds, maxfev=1000000)
+        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, maxfev=1000000)
         y_fit = gauss_func(xdata, *popt)
         fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
         slope, intercept, rvalue, pvalue, stderr = linregress(ydata, y_fit)
