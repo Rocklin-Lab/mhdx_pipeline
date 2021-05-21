@@ -806,8 +806,8 @@ class PathOptimizer:
                 substituted_scores["int_mz_std_rmse"],
                 winner_scores["delta_mz_rate_backward"] -
                 substituted_scores["delta_mz_rate_backward"],
-                winner_scores["delta_mz_rate_forward"] -
-                substituted_scores["delta_mz_rate_forward"],
+                winner_scores["delta_mz_rate_afterward"] -
+                substituted_scores["delta_mz_rate_afterward"],
                 winner_scores["dt_ground_rmse"] -
                 substituted_scores["dt_ground_rmse"],
                 winner_scores["rt_ground_rmse"] -
@@ -849,7 +849,7 @@ class PathOptimizer:
                 ic.dt_ground_err,
                 winner_scores["int_mz_std_rmse"],
                 winner_scores["delta_mz_rate_backward"],
-                winner_scores["delta_mz_rate_forward"],
+                winner_scores["delta_mz_rate_afterward"],
                 winner_scores["dt_ground_rmse"],
                 winner_scores["rt_ground_rmse"],
                 winner_scores["dt_ground_fit"],
