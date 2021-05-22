@@ -124,7 +124,7 @@ rule generate_tensor_ics:
 rule optimize_paths:
     input:
         library_info_fn,
-        "config/config.yaml"
+        "config/config.yaml",
         lambda wildcards: optimize_paths_inputs(wildcards.name, library_info, idotp_check_indices) 
     output:
         "results/plots/ic_time_series/html/{name}_time_series.html",
