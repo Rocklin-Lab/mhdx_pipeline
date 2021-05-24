@@ -134,9 +134,10 @@ def main(library_info_path,
         rt_corrmat = gen_correlate_matrix(all_rts)
         minimum_corrmat = np.minimum(mz_corrmat, rt_corrmat)
         for column, ic in enumerate(ics):
-            try:
-                ic.nearest_neighbor_correlation = max(minimum_corrmat[column][charge_list != ic.charge_states[0]])
-            except:
+            min_corr_list = minimum_corrmat[column][charge_list != ic.charge_states[0]]
+            if len(min_corr_list) != 0:
+                ic.nearest_neighbor_correlation = max(min_corr_list)
+            else:
                 ic.nearest_neighbor_correlation = 0
 
     p1 = PathOptimizer(
@@ -168,6 +169,11 @@ def main(library_info_path,
     if return_flag:
         out_dict["PathOptimizer"] = p1
         return out_dict
+
+    # Save all ics with all computed attributes to one file
+    if not os.path.isfile('resources/ics/'):
+        os.mkdir('resources/ics')
+    limit_write(atc, 'resources/ics/' + name + '.gz.cpickle.zlib')
 
 
 if __name__ == "__main__":
