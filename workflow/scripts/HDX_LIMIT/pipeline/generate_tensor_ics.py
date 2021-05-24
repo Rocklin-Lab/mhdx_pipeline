@@ -51,10 +51,7 @@ def main(library_info_path,
     # my_centers = library_info.iloc[my_idx]["mz_centers"].values
     ## temporary fix for getting mz center values in an array
     my_centers = library_info.iloc[my_idx]["mz_centers"]
-    centers = my_centers.split()
-    centers = [x.replace("[", "") for x in centers]
-    centers = [x.replace("]", "") for x in centers]
-    centers = np.array([float(x) for x in centers])
+    centers = np.array(my_centers)
 
     # find timepoint of passed filename by config comparison
     for tp in timepoints_dict["timepoints"]:
