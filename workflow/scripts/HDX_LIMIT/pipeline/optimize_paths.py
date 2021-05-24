@@ -109,7 +109,7 @@ def main(library_info_path,
     for tp in timepoints["timepoints"]:
         tp_buf = []
         for fn in timepoints[tp]:
-            for file in all_ic_input_paths[0]:
+            for file in all_ic_input_paths:
                 if fn.split(
                         ".")[0] in file:  # only match filename without .mzML
                     ics = limit_read(file)  # expects list of ics
