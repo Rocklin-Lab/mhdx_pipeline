@@ -100,7 +100,7 @@ def main(library_info_path,
 
     if rt_group_name is None:
         name = library_info.iloc[int(
-            all_ic_input_paths[0][0].split("/")[-1].split("_")[0])]["name"]
+            all_ic_input_paths[0].split("/")[-1].split("_")[0])]["name"]
     else:
         name = rt_group_name
 
