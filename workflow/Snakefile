@@ -8,6 +8,8 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
+old_library_info_fn = "resources/library_info/library_info.json"
+old_library_info = pd.read_json(old_library_info_fn)
 library_info_fn = "resources/idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
@@ -125,7 +127,7 @@ rule optimize_paths:
     input:
         library_info_fn,
         "config/config.yaml",
-        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info, idotp_check_indices) 
+        lambda wildcards: optimize_paths_inputs(wildcards.name, old_library_info, idotp_check_indices) 
     output:
         "results/plots/ic_time_series/html/{name}_time_series.html",
         "resources/ic_time_series/{name}_winner.cpickle.zlib",
