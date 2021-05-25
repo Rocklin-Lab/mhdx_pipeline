@@ -10,6 +10,7 @@ import yaml
 sys.path.append(os.getcwd() + "/workflow/scripts/")
 from HDX_LIMIT.io import limit_read, limit_write
 from HDX_LIMIT.processing import PathOptimizer
+from HDX_LIMIT.gjr_plot import plot_gjr_
 
 
 def optimize_paths_inputs(library_info_path, input_directory_path,
@@ -67,6 +68,7 @@ def main(library_info_path,
          return_flag=False,
          rt_group_name=None,
          old_data_dir=None,
+         path_plot_out_path=None,
          html_plot_out_path=None,
          winner_out_path=None,
          runner_out_path=None,
@@ -165,6 +167,11 @@ def main(library_info_path,
         limit_write(p1.winner_scores, winner_scores_out_path)
     if rtdt_com_cvs_out_path is not None:
         limit_write([p1.rt_com_cv, p1.dt_com_cv], rtdt_com_cvs_out_path)
+    if path_plot_out_path is not None:
+        plot_gjr_(winner=p1.winner,
+                  undeut_grounds=p1.undeut_grounds,
+                  output_path=path_plot_out_path,
+                  prefix=name)
 
     if return_flag:
         out_dict["PathOptimizer"] = p1
@@ -238,6 +245,9 @@ if __name__ == "__main__":
     parser.add_argument("-c",
                         "--rtdt_com_cvs_out_path",
                         help="path/to/file to save rt/dt error measurement")
+    parser.add_argument("-po",
+                        "--path_plot_out_path",
+                        help="path/to/file to save path plot .pdf")
     args = parser.parse_args()
 
     timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
@@ -258,6 +268,7 @@ if __name__ == "__main__":
          timepoints=timepoints,
          rt_group_name=args.rt_group_name,
          old_data_dir=args.old_data_dir,
+         path_plot_out_path=args.path_plot_out_path,
          html_plot_out_path=args.html_plot_out_path,
          winner_out_path=args.winner_out_path,
          runner_out_path=args.runner_out_path,
