@@ -206,10 +206,10 @@ timepoints:
 # ic_rel_height_filter: bool (True or False). Whether to filter indices based on relative intensity of mz values within the peak
 # ic_rel_height_filter_baseline: sets baseline threshold for relative height filtering
 # ic_rel_height_threshold: sets the relative peak height to include based on the ht of the peak center
-"ic_peak_prominence": 0.15
+"ic_peak_prominence": 0.10
 "ic_peak_width": 1
 "ic_rel_height_filter": True
-"ic_rel_height_filter_baseline": 0.15
+"ic_rel_height_filter_baseline": 0.10
 "ic_rel_height_threshold": 0.10
 
 
