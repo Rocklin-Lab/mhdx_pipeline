@@ -117,11 +117,12 @@ rule generate_tensor_ics:
         "config/config.yaml"
     output:
         "resources/subtensor_ics/{lib_idx}/{lib_idx}_{file}.cpickle.zlib",
-        "results/plots/factors/{lib_idx}_{file}.cpickle.zlib.factor.pdf"
+        "results/plots/factors/{lib_idx}/{lib_idx}_{file}.cpickle.zlib.factor.pdf",
+        "results/plots/ics/{lib_idx}/{lib_idx}_{file}.cpickle.zlib.ics.pdf"
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{lib_idx}_{file}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]}"
+        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]}"
 
 rule optimize_paths:
     input:
@@ -135,12 +136,13 @@ rule optimize_paths:
         "resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
         "resources/ic_time_series/{name}_winner_scores.cpickle.zlib",
         "resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib",
+        "results/plots/ic_time_series/winner_plots/{name}_winner_path.pdf"
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
     run:
         inputs = [input[i] for i in range(2, len(input))]
         shell('''
-            python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} {input[1]} --all_ic_input_paths {inputs} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]}
+            python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} {input[1]} --all_ic_input_paths {inputs} --html_plot_out_path {output[0]} --winner_out_path {output[1]} --runner_out_path {output[2]} --undeut_ground_out_path {output[3]} --winner_scores_out_path {output[4]} --rtdt_com_cvs_out_path {output[5]} --path_plot_out_path {output[6]}
         ''')
 
 """
