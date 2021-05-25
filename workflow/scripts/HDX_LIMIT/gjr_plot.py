@@ -317,7 +317,6 @@ def plot_gjr_(winner, undeut_grounds, output_path, prefix='winner_plot'):
     plt.savefig(output_path, bbox_inches="tight")
 
 
-
 def plot_gjr_from_files(winner_path_fpath, undeut_grounds_fpath, output_path, prefix='winner_plot'):
     winner = cpickle.loads(zlib.decompress(open(winner_path_fpath, "rb").read()))
 
@@ -345,7 +344,6 @@ def plot_path_from_commandline():
                         undeut_grounds_fpath=args.undeut_grounds_path,
                         output_path=args.prefix,
                         prefix=args.plot_output_path)
-
 
     return args
 
