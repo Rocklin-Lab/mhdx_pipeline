@@ -325,8 +325,17 @@ class Factor:
 
         if len(peaks) == 0:
             ic_idxs = [(0, len(self.baseline_subtracted_integrated_mz)-1)]
+            int_mz_width = [2]
             # return
         else:
+            int_mz_width = [
+                feature_dict['widths'][i]
+                for i in range(len(peaks))
+                if
+                feature_dict["left_bases"][i] < feature_dict["right_bases"][i]
+                if feature_dict["right_bases"][i] -
+                feature_dict["left_bases"][i] > 4
+            ]
             ic_idxs = [
                 (feature_dict["left_bases"][i], feature_dict["right_bases"][i])
                 for i in range(len(peaks))
@@ -356,11 +365,12 @@ class Factor:
             # [ic_idxs.append(tup) for tup in height_filtered]
 
         cluster_idx = 0
-        for integrated_indices in ic_idxs:
+        for integrated_indices, integrated_mz_width in zip(ic_idxs, int_mz_width):
             if integrated_indices != None:
                 #try:
 
                 newIC = IsotopeCluster(
+                    integrated_mz_peak_width=integrated_mz_width,
                     charge_states=self.charge_states,
                     factor_mz_data=copy.deepcopy(self.mz_data),
                     source_file=self.source_file,
@@ -510,6 +520,7 @@ class IsotopeCluster:
 
     def __init__(
         self,
+        integrated_mz_peak_width,
         charge_states,
         factor_mz_data,
         source_file,
@@ -533,7 +544,7 @@ class IsotopeCluster:
     ):
 
         ###Set Attributes###
-
+        self.integrated_mz_peak_width = integrated_mz_peak_width
         self.charge_states = charge_states
         self.factor_mz_data = factor_mz_data
         self.source_file = source_file
