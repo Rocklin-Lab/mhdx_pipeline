@@ -237,22 +237,12 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
     
     """
     ref_tic = np.loadtxt(tic_file_list[0])
-    ref_tic_sum = np.sum(ref_tic)
     ref_tic_norm = norm_tic(ref_tic)
-
-    # Create normalization factors from true intensity values, all normalized to ref_tic_sum
-    
-    normalization_factors = {"name": [tic_file_list[0]], "normalization_factor": [1]} # init with 1 for reference/reference
-    '''
-    for fn in tic_file_list:
-        normalization_factors["name"].append(fn)
-        normalization_factors["normalization_factor"].append(np.sum(np.loadtxt(fn))/ref_tic_sum)
-    '''
     
     stretched_ts1_times = []
     stretched_ts2_times = []
 
-    # gen a plot
+    # Make stretched times plot.
     fig, ax = plt.subplots()
 
     for index, tic_file in enumerate(tic_file_list):
@@ -273,10 +263,9 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
 
     if stretched_times_plot_outpath is not None:
         plt.legend()
-        # save the plot
         plt.savefig(stretched_times_plot_outpath)
 
-    return stretched_ts1_times, stretched_ts2_times, normalization_factors
+    return stretched_ts1_times, stretched_ts2_times
 
 
 ##########################################################
@@ -288,6 +277,7 @@ def main(names_and_seqs_path,
          undeut_mzml,
          intermediates,
          tics,
+         mzml_sums,
          timepoints,
          return_flag=None,
          out_path=None,
@@ -309,13 +299,15 @@ def main(names_and_seqs_path,
         plot (any non-None type): path/to/file for stretched time plots
 
     Returns:
-        library_info (dict): Outputs library_info as dict
+        out_dict (dict): containing the below key/value pairs.
+            library_info (dict): library_info as pandas-ready dict.
+            normalization_factors(dict): dict of mzml(i)/mzml[0] intensity ratios with identifying information. 
     
     """
     name_and_seq = pd.read_csv(names_and_seqs_path)
 
     # If plot is none, function runs without plotting.
-    stretched_ts1_times, stretched_ts2_times, normalization_factors = gen_stretched_times(tics, stretched_times_plot_outpath=stretched_times_plot_outpath)
+    stretched_ts1_times, stretched_ts2_times = gen_stretched_times(tics, stretched_times_plot_outpath=stretched_times_plot_outpath)
 
     lo_time, hi_time, n_lc_timepoints = set_global_scan_bounds(undeut_mzml)
 
@@ -431,6 +423,13 @@ def main(names_and_seqs_path,
     for i in range(len(all_tp_mean_preds)):
         catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
 
+    # Initialize normalization_factors dict with reference mzml.
+    normalization_factors = {"mzml": [mzml_sums[0].split("/")[-1].split("_")[0]], "sum": [np.loadtxt(mzml_sums[0])] "normalization_factor": [1]}
+    for fn in mzml_sums:
+        mzml = fn.split("/")[-1].split("_")[0] #expects path/to/<mzml>_sum.txt
+        normalization_factors["mzml"].append(mzml)
+        normalization_factors["sum"].append(np.loadtxt(fn))
+        normalization_factors["normalization_factor"].append(np.loadtxt(fn))
 
     # Handle output options:
     if out_path is not None:
@@ -489,6 +488,11 @@ if __name__ == "__main__":
         nargs="+",
         help="used in snakemake, list of all .imx.mz.tic file paths")
     parser.add_argument(
+        "-t",
+        "--mzml_sums",
+        nargs="+",
+        help="used in snakemake, list of all <mzml>_sum.txt file paths")
+    parser.add_argument(
         "-e",
         "--timepoints",
         required=True,
@@ -536,6 +540,7 @@ if __name__ == "__main__":
          undeut_mzml=args.undeut_mzml,
          intermediates=args.intermediates,
          tics=args.tics,
+         mzml_sums=args.mzml_sums,
          timepoints=open_timepoints,
          rt_group_cutoff=args.rt_group_cutoff,
          stretched_times_plot_outpath=args.stretched_times_plot_outpath,

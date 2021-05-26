@@ -72,26 +72,27 @@ rule make_ims_mz_tics:
         "resources/mzml/{mzml}",
     output:
         "resources/tics/{mzml}.ims.mz.tic",
+        "resources/tics/{mzml}_sum.txt"
     benchmark:
         "results/benchmarks/make_ims_mz_tics.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/preprocessing/make_ims_mz_tics.py {input} --out_path {output}"
+        "python workflow/scripts/HDX_LIMIT/preprocessing/make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
 
 
 rule make_library_master_list:
     input:
         config["names_and_seqs"],
         "config/config.yaml",
-        expand("resources/mzml/{mzml}.gz", mzml=all_timepoint_files[0]),
+        expand("resources/mzml/{mzml}.gz", mzml=all_timepoint_files[0]), # Pick a single mzML.gz
         expand(
             "resources/imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
         ),
         expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files),
-
+        expand("resources/tics/{mzml}_sum.txt", mzml=all_timepoint_files)
     output:
         "results/plots/preprocessing/stretched_times_plots.png",
         "resources/library_info/library_info.json",
-        "resources/library_info/normalization_factors.csv",
+        "resources/library_info/normalization_factors.pickle"
         "results/plots/normalization_factors_plot.png"
         ""
     benchmark:
@@ -100,6 +101,7 @@ rule make_library_master_list:
     run:
         tics = " ".join([fn for fn in input if '.tic' in fn])
         intermediates = " ".join([fn for fn in input if '_intermediate.csv' in fn])
+        
         shell('''
             python workflow/scripts/HDX_LIMIT/preprocessing/make_library_master_list.py {input[0]} --timepoints {input[1]} --undeut_mzml {input[2]} --intermediates {intermediates} --tics {tics}  --stretched_times_plot_outpath {output[0]} --out_path {output[1]} --normalization_factors_outpath {output[2]} --normalization_factors_plot_outpath {output[3]}
         ''')

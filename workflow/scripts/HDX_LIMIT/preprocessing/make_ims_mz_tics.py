@@ -9,22 +9,25 @@ import numpy as np
 import pandas as pd
 
 
-def main(mzml_path, return_flag=None, out_path=None):
+def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
     """Generate LC Chromatogram by summing ionic current over IMS and m/Z dimensions.
 
     Args:
-        mzml_path (string): path/to/file.mzml to be read into .tic
-        return_flag: option to return main output in python, for notebook context
-        out_path (string): option to save main output, path/to/file.tic
+        mzml_path (string): path/to/file.mzml to be read into .tic.
+        return_flag: option to return main output in python, for notebook context.
+        out_path (string): option to save main output, path/to/file.tic.
+        mzml_sum_outpath (string): option to save sum of mzml intensity, used in normalization between mzmls. 
 
     Returns:
-        ms1_ims_tic (np_array): LC Chromatogram as 2D numpy ndarray. Contains sum of ionic current for LC-RT and m/Z bins. 
+        out_dict (dictionary): containing the below key/value pairs.
+            ms1_ims_tic (np_array): LC Chromatogram as 2D numpy ndarray. Contains sum of ionic current for LC-RT and m/Z bins. 
+            mzml_sum (float): sum of all mzml MS intensity.
     
     """
     drift_times = []
     scan_times = []
 
-    # opens mzml
+    # Uses mzML string pattern to find ims drift and m/z scan times
     lines = open(mzml_path, "rt").readlines()
     for line in lines:
         if ('<cvParam cvRef="MS" accession="MS:1002476" name="ion mobility drift time" value'
@@ -47,7 +50,7 @@ def main(mzml_path, return_flag=None, out_path=None):
     mz_bins = 70
     lims = np.arange(
         600, 2020, 20
-    )  ###This seems to be limits on where to look in mz? Binned to get discrete dist? Can be automated using molmass to compute lower limits of mass from sequence list?
+    )
 
     # print ((len(set(drift_times)),len(set(scan_times))))
     ms1_ims_tic = np.zeros(
@@ -77,17 +80,21 @@ def main(mzml_path, return_flag=None, out_path=None):
 
                 if rtIndex % 20 == 0:
                     print(rtIndex)
+    mzml_sum = np.sum(ms1_ims_tic)
 
     if out_path is not None:
         np.savetxt(out_path, ms1_ims_tic, fmt="%i")
 
+    if mzml_sum_outpath is not None:
+        np.savetxt(mzml_sum_outpath, np.array(mzml_sum))
+
     if return_flag is not None:
-        return ms1_ims_tic
+        return {"tic": ms1_ims_tic, "mzml_sum": mzml_sum}
 
 
 if __name__ == "__main__":
 
-    # set expected command line arguments
+    # Set expected command line arguments.
     parser = argparse.ArgumentParser(
         description=
         "Sum of Total Ionic Current over IMS and m/Z dimensions, yielding an LC-Chromatogram"
@@ -96,7 +103,10 @@ if __name__ == "__main__":
                         help="path/to/file for one timepoint .mzML")
     parser.add_argument("-o",
                         "--out_path",
-                        help="path/to/file for output .ims.mz.tic")
+                        help="path/to/file for main output .ims.mz.tic")
+    parser.add_argument("-s",
+                        "--mzml_sum_outpath",
+                        help="path/to/file for <mzml>_sum.txt")
     args = parser.parse_args()
 
-    main(args.mzml_path, out_path=args.out_path)
+    main(args.mzml_path, out_path=args.out_path, mzml_sum_outpath=args.mzml_sum_outpath)
