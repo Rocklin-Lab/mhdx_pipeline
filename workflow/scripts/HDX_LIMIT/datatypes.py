@@ -19,7 +19,7 @@ from scipy.stats import norm
 class DataTensor:
 
     def __init__(self, source_file, tensor_idx, timepoint_idx, name,
-                 total_mass_window, n_concatenated, charge_states, integrated_mz_limits, bins_per_isotope_peak, **kwargs):
+                 total_mass_window, n_concatenated, charge_states, integrated_mz_limits, bins_per_isotope_peak, normalization_factor, **kwargs):
 
         ###Set Common Attributes###
 
@@ -33,6 +33,7 @@ class DataTensor:
         self.charge_states = charge_states
         self.integrated_mz_limits = integrated_mz_limits
         self.bins_per_isotope_peak = bins_per_isotope_peak
+        self.normalization_factor = normalization_factor
 
         # Keyword Args
         if kwargs is not None:
@@ -194,12 +195,12 @@ class DataTensor:
                     retention_labels=self.retention_labels,
                     drift_labels=self.drift_labels,
                     mz_labels=self.mz_labels,
-
                     factor_idx=i,
                     n_factors=n_factors,
                     bins_per_isotope_peak = self.bins_per_isotope_peak,
                     n_concatenated=self.n_concatenated,
                     concat_dt_idxs=concat_dt_idxs,
+                    normalization_factor=self.normalization_factor
                 ))
             pmem(str(n_itr) + " End Factor " + str(i))
             n_itr += 1
@@ -238,6 +239,7 @@ class Factor:
         bins_per_isotope_peak,
         n_concatenated,
         concat_dt_idxs,
+        normalization_factor
     ):
 
         ###Set Attributes###
@@ -259,6 +261,7 @@ class Factor:
         self.bins_per_isotope_peak = bins_per_isotope_peak
         self.n_concatenated = n_concatenated
         self.concat_dt_idxs = concat_dt_idxs
+        self.normalization_factor = normalization_factor
 
         ###Compute Instance Values###
 
@@ -381,6 +384,7 @@ class Factor:
                     outer_rtdt=self.outer_rtdt,
                     n_concatenated=self.n_concatenated,
                     concat_dt_idxs=self.concat_dt_idxs,
+                    normalization_factor=self.normalization_factor
                 )
                 if (newIC.baseline_peak_error / newIC.baseline_auc <
                         0.2):  # TODO: HARDCODE
@@ -554,6 +558,7 @@ class IsotopeCluster:
         self.outer_rtdt = outer_rtdt
         self.n_concatenated = n_concatenated
         self.concat_dt_idxs = concat_dt_idxs
+        self.normalization_factor = 
 
         ###Calculate Scoring Requirements###
 
@@ -562,10 +567,8 @@ class IsotopeCluster:
         self.cluster_mz_data[0:self.low_idx] = 0
         self.cluster_mz_data[self.high_idx:] = 0
 
-        my_mzml = self.source_file.split("/")[-1].split("")
-
         # integrate area of IC
-        self.auc = sum(self.cluster_mz_data) * self.outer_rtdt
+        self.auc = sum(self.cluster_mz_data) * self.outer_rtdt * self.normalization_factor
 
         # identify peaks and find error from expected peak positions using raw mz
         

@@ -114,7 +114,8 @@ rule generate_tensor_ics:
     input:
         library_info_fn,
         "resources/passing_tensors/{lib_idx}/{lib_idx}_{mzml}.cpickle.zlib",
-        "config/config.yaml"
+        "config/config.yaml",
+        "resources/library_info/normalization_factors.csv"
     output:
         "resources/subtensor_ics/{lib_idx}/{lib_idx}_{mzml}.cpickle.zlib",
         "results/plots/factors/{lib_idx}/{lib_idx}_{mzml}.cpickle.zlib.factor.pdf",
@@ -122,7 +123,7 @@ rule generate_tensor_ics:
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{lib_idx}_{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]}"
+        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {output[3]}"
 
 rule optimize_paths:
     input:

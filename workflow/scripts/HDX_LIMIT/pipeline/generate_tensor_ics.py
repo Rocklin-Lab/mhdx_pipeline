@@ -135,6 +135,7 @@ def plot_ics_from_ic_list(list_of_ics, output_path):
 def main(library_info_path,
          tensor_input_path,
          timepoints_dict,
+         normalization_factors,
          isotope_clusters_out_path=None,
          factor_out_path=None,
          factor_plot_output_path=None,
@@ -187,6 +188,7 @@ def main(library_info_path,
                                           gauss_params=gauss_params,
                                           n_factors=n_factors,
                                           mz_centers=centers,
+                                          normalization_factors=normalization_factors,
                                           factor_output_fpath=factor_out_path,
                                           factor_plot_output_path=factor_plot_output_path,
                                           timepoint_label=None,
@@ -251,6 +253,10 @@ if __name__ == "__main__":
         "--ic_plot_out_path",
         help="path/to/output.cpickle.zlib.ic.pdf, ICData Plot output .pdf")
     parser.add_argument(
+        "-p",
+        "--normalization_factors_path",
+        help="path/to/normalization_factors.csv")
+    parser.add_argument(
         "-r",
         "--return_flag",
         type=bool,
@@ -286,11 +292,12 @@ if __name__ == "__main__":
     ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
     ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
 
-
+    normalization_factors = pd.read_csv(args.normalization_factors_path).to_dict()
 
     main(library_info_path=args.library_info_path,
          tensor_input_path=args.tensor_input_path,
          timepoints_dict=config_dict,
+         normalization_factors=normalization_factors,
          isotope_clusters_out_path=args.isotope_clusters_out_path,
          factor_out_path=args.factor_data_out_path,
          factor_plot_output_path=args.factor_plot_out_path,

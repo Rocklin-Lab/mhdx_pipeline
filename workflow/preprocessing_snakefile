@@ -92,7 +92,7 @@ rule make_library_master_list:
     output:
         "results/plots/preprocessing/stretched_times_plots.png",
         "resources/library_info/library_info.json",
-        "resources/library_info/normalization_factors.pickle"
+        "resources/library_info/normalization_factors.csv",
         "results/plots/normalization_factors_plot.png"
         ""
     benchmark:
