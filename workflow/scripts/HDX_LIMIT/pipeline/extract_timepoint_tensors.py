@@ -250,7 +250,6 @@ def main(library_info_path,
                     print(spectrum)
                     print(spectrum[(mz_low < spectrum[:, 0]) &
                                    (spectrum[:, 0] < mz_high)])
-                    ipdb.set_trace()
                     sys.exit(0)
                 try:
                     # check if this is the last scan the line needed
@@ -305,7 +304,6 @@ def main(library_info_path,
                 except:
                     print("error in output block on scan: " + str(scan_number) +
                           " , for line: " + str(i))
-                    ipdb.set_trace()
                     sys.exit(0)
             """ TODO: Review Deletion
             if len(scan_to_lines[scan_number]) > 0:
