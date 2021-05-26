@@ -272,8 +272,6 @@ class TensorGenerator:
         self.mz_highs = self.library_info["obs_mz"].values[i] + (
             self.total_isotopes / self.library_info["charge"].values[i])
 
-        print("mz_centers: " + str(self.mz_centers))
-        print("ppm_radius" + str(self.ppm_radius))
         low_mz_limits = self.mz_centers * (
             (1000000.0 - self.ppm_radius) / 1000000.0)
         high_mz_limits = self.mz_centers * (
