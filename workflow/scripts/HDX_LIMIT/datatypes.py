@@ -388,7 +388,7 @@ class Factor:
                     cluster_idx += 1
                 #except:
                 #print("ic index out of bounds: " + str(integrated_indices))
-            return
+        return
 
     # heuristically identifies 'things that look like acceptable isotope clusters' in integrated mz dimension, roughly gaussian allowing some inflection points from noise
     def find_window(self, array, peak_idx, width):
