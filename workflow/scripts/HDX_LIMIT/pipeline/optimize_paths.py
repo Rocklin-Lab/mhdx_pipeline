@@ -154,8 +154,8 @@ def main(library_info_path,
     p1.optimize_paths()
 
     # write outputs
-    if html_plot_out_path is not None:
-        p1.bokeh_plot(html_plot_out_path)
+    # if html_plot_out_path is not None:
+    #     p1.bokeh_plot(html_plot_out_path)
     if winner_out_path is not None:
         limit_write(p1.winner, winner_out_path)
     if runner_out_path is not None:
@@ -168,8 +168,9 @@ def main(library_info_path,
     if rtdt_com_cvs_out_path is not None:
         limit_write([p1.rt_com_cv, p1.dt_com_cv], rtdt_com_cvs_out_path)
     if path_plot_out_path is not None:
+        undeut_grounds = [p1.undeut_grounds, p1.undeut_ground_dot_products]
         plot_gjr_(winner=p1.winner,
-                  undeut_grounds=p1.undeut_grounds,
+                  undeut_grounds=undeut_grounds,
                   output_path=path_plot_out_path,
                   prefix=name)
 
@@ -178,7 +179,7 @@ def main(library_info_path,
         return out_dict
 
     # Save all ics with all computed attributes to one file
-    if not os.path.isfile('resources/ics/'):
+    if not os.path.isdir('resources/ics'):
         os.mkdir('resources/ics')
     limit_write(atc, 'resources/ics/' + name + '.gz.cpickle.zlib')
 
