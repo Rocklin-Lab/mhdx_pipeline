@@ -237,7 +237,7 @@ class TensorGenerator:
 
         if (
                 kwargs is not None
-        ):  # TODO: Default control values should be placed in a check statement below (if hasattr(self, "name of value"): Do) do this for other kwargs fxns
+        ):  
             for key in kwargs.keys():
                 setattr(self, key, kwargs[key])
 
@@ -259,7 +259,7 @@ class TensorGenerator:
         self.tensor = io.limit_read(self.filename)
         self.lib_idx = int(
             filename.split("/")[-1].split("_")[0]
-        )  # expects format: path/to/{LibraryIdx}_{protName}_{tp}.cpickle.zlib
+        )  # expects format: path/to/{library_index}_{protein_name}_{time_point}.cpickle.zlib
         self.name = self.library_info.iloc[self.lib_idx]["name"]
         self.max_peak_center = len(self.library_info.loc[
             self.library_info["name"] == self.name]["sequence"].values[0])
@@ -272,6 +272,8 @@ class TensorGenerator:
         self.mz_highs = self.library_info["obs_mz"].values[i] + (
             self.total_isotopes / self.library_info["charge"].values[i])
 
+        print("mz_centers: " + str(self.mz_centers))
+        print("ppm_radius" + str(self.ppm_radius))
         low_mz_limits = self.mz_centers * (
             (1000000.0 - self.ppm_radius) / 1000000.0)
         high_mz_limits = self.mz_centers * (

@@ -241,11 +241,14 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
     ref_tic_norm = norm_tic(ref_tic)
 
     # Create normalization factors from true intensity values, all normalized to ref_tic_sum
+    
     normalization_factors = {"name": [tic_file_list[0]], "normalization_factor": [1]} # init with 1 for reference/reference
+    '''
     for fn in tic_file_list:
         normalization_factors["name"].append(fn)
         normalization_factors["normalization_factor"].append(np.sum(np.loadtxt(fn))/ref_tic_sum)
-
+    '''
+    
     stretched_ts1_times = []
     stretched_ts2_times = []
 

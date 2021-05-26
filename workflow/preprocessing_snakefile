@@ -82,7 +82,7 @@ rule make_library_master_list:
     input:
         config["names_and_seqs"],
         "config/config.yaml",
-        expand("resources/mzml/{mzml}", mzml=all_timepoint_files[0]),
+        expand("resources/mzml/{mzml}.gz", mzml=all_timepoint_files[0]),
         expand(
             "resources/imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
         ),
