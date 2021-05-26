@@ -562,6 +562,8 @@ class IsotopeCluster:
         self.cluster_mz_data[0:self.low_idx] = 0
         self.cluster_mz_data[self.high_idx:] = 0
 
+        my_mzml = self.source_file.split("/")[-1].split("")
+
         # integrate area of IC
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt
 
@@ -682,5 +684,3 @@ class IsotopeCluster:
         self.bokeh_tuple = None  # bokeh plot info tuple
         self.single_sub_scores = None  # differences between winning score and score if this IC were substituted, list of signed values
         self.undeut_ground_dot_products = None
-
-    # uses internal
