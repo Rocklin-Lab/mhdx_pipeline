@@ -154,7 +154,8 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     return factor_data_dict
 
 
-def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, n_factors, mz_centers,
+def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, mz_centers, normalization_factors,
+                            n_factors=15,
                             factor_output_fpath=None,
                             factor_plot_output_path=None,
                             timepoint_label=None,
@@ -182,7 +183,8 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     data_tensor = TensorGenerator(filename=tensor_fpath,
                                   library_info=library_info_df,
                                   timepoint_index=timepoint_index,
-                                  mz_centers=mz_centers)
+                                  mz_centers=mz_centers,
+                                  normalization_factors=normalization_factors)
 
     print("Post-Tensor-Pre-Factor-Initialization: " + str(process.memory_info().rss /
                                         (1024 * 1024 * 1024)))
@@ -226,7 +228,7 @@ class TensorGenerator:
     hd_mass_diff = 1.006277
     c13_mass_diff = 1.00335
 
-    def __init__(self, filename, timepoint_index, library_info, mz_centers, **kwargs):
+    def __init__(self, filename, timepoint_index, library_info, mz_centers, normalization_factors, **kwargs):
 
         ###Set Instance Attributes###
 
@@ -234,6 +236,9 @@ class TensorGenerator:
         self.timepoint_index = timepoint_index
         self.library_info = library_info
         self.mz_centers = mz_centers
+        self.normalization_factors = normalization_factors
+        my_mzml = ".".join(self.filename.split("/")[-1].split("_")[-1].split(".")[:2])
+        self.normalization_factor = normalization_factors[my_mzml]["normalization_factor"]
 
         if (
                 kwargs is not None
@@ -292,9 +297,9 @@ class TensorGenerator:
             dts=self.tensor[1],
             seq_out=self.tensor[2],
             int_seq_out=None,
-            integrated_mz_limits = self.integrated_mz_limits,
-            bins_per_isotope_peak = self.bins_per_isotope_peak
-
+            integrated_mz_limits=self.integrated_mz_limits,
+            bins_per_isotope_peak=self.bins_per_isotope_peak,
+            normalization_factor=self.normalization_factor
         )
 
         #self.DataTensor.lows = searchsorted(self.DataTensor.mz_labels,
