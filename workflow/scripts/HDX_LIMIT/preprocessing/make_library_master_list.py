@@ -425,11 +425,11 @@ def main(names_and_seqs_path,
 
     # Initialize normalization_factors dict with reference mzml.
     normalization_factors = {"mzml": [mzml_sums[0].split("/")[-1].split("_")[0]], "sum": [np.loadtxt(mzml_sums[0])] "normalization_factor": [1]}
-    for fn in mzml_sums:
+    for fn in mzml_sums[1:]:
         mzml = fn.split("/")[-1].split("_")[0] #expects path/to/<mzml>_sum.txt
         normalization_factors["mzml"].append(mzml)
         normalization_factors["sum"].append(np.loadtxt(fn))
-        normalization_factors["normalization_factor"].append(np.loadtxt(fn))
+        normalization_factors["normalization_factor"].append(np.loadtxt(fn)/normalization_factors["sum"][0])
 
     # Handle output options:
     if out_path is not None:

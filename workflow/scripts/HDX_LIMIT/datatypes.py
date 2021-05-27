@@ -534,6 +534,7 @@ class IsotopeCluster:
         outer_rtdt,
         n_concatenated,
         concat_dt_idxs,
+        normalization_factor
     ):
 
         ###Set Attributes###
@@ -558,7 +559,7 @@ class IsotopeCluster:
         self.outer_rtdt = outer_rtdt
         self.n_concatenated = n_concatenated
         self.concat_dt_idxs = concat_dt_idxs
-        self.normalization_factor = 
+        self.normalization_factor = normalization_factor
 
         ###Calculate Scoring Requirements###
 
