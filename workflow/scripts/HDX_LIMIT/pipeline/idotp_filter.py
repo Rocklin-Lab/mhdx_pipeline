@@ -37,6 +37,7 @@ def main(library_info_path,
     idotps = []
     mz_centers = []
     theor_mz_dists = []
+    integrated_mz_width_list = []
 
     sorted_inputs = sorted(all_idotp_csv_inputs, key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
 
@@ -46,6 +47,7 @@ def main(library_info_path,
         idotps.append(idpc["idotp"].values[0])
         mz_centers.append(idpc["mz_centers"][0]) # Account for nested list structure
         theor_mz_dists.append(idpc["theor_mz_dist"][0])
+        integrated_mz_width_list.append(idpc["integrated_mz_width"].values[0])
         if idpc["idotp"].values[0] >= idotp_cutoff:
             filter_passing_indices.append(lib_idx)
 
@@ -53,6 +55,7 @@ def main(library_info_path,
     library_info["idotp"] = idotps
     library_info["mz_centers"] = mz_centers
     library_info["theor_mz_dist"] = theor_mz_dists
+    library_info["integrated_mz_width"] = integrated_mz_width_list
 
     if library_info_out_path is not None:
         library_info.to_json(library_info_out_path)

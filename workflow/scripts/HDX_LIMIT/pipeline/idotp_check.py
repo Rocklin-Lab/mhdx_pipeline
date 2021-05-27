@@ -125,11 +125,11 @@ def gen_tensors_factorize(library_info_df,
                           filter_factors=False,
                           factor_rt_r2_cutoff=0.91,
                           factor_dt_r2_cutoff=0.91,
-                          ic_peak_prominence=0.15,
-                          ic_peak_width=3,
+                          ic_peak_prominence=0.10,
+                          ic_peak_width=2,
                           ic_rel_height_filter=False,
-                          ic_rel_height_filter_baseline=0.15,
-                          ic_rel_height_threshold=0.15):
+                          ic_rel_height_filter_baseline=0.10,
+                          ic_rel_height_threshold=0.10):
     """Instantiates TensorGenerator and factorizes.
     
     Args:
@@ -204,15 +204,18 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
     """
     dot_product_list = []
     integrated_mz_list = []
+    integrated_mz_width_list = []
 
     for index, isotope_clusters in enumerate(undeut_isotope_clusters):
         integrated_mz_array = isotope_clusters.baseline_integrated_mz
+        int_mz_width = isotope_clusters.integrated_mz_peak_width
         dot_product, theor_mz_dist = calculate_isotope_dist_dot_product(
             sequence=sequence, undeut_integrated_mz_array=integrated_mz_array)
         dot_product_list.append(dot_product)
         integrated_mz_list.append(integrated_mz_array)
+        integrated_mz_width_list.append(int_mz_width)
 
-    return dot_product_list, integrated_mz_list, theor_mz_dist
+    return dot_product_list, integrated_mz_list, integrated_mz_width_list, theor_mz_dist
 
 
 def main(library_info_path,
@@ -273,12 +276,17 @@ def main(library_info_path,
         ic_rel_height_filter_baseline=ic_rel_height_filter_baseline,
         ic_rel_height_threshold=ic_rel_height_threshold)
 
-    idotp_list, integtd_mz_list, theo_mz_dist = calc_dot_prod_for_isotope_clusters(
+    idotp_list, integtd_mz_list, integt_mz_width_list, theo_mz_dist = calc_dot_prod_for_isotope_clusters(
         sequence=prot_seq, undeut_isotope_clusters=iso_clusters_list)
+
+    max_idotp_idx = np.argmax(np.array(idotp_list))
+    max_idotp = np.array(idotp_list)[max_idotp_idx]
+    int_mz_width = np.array(integt_mz_width_list)[max_idotp_idx]
 
     if output_path is not None:
         pd.DataFrame({
-            "idotp": max(idotp_list),
+            "idotp": max_idotp,
+            "integrated_mz_width": int_mz_width,
             "mz_centers": [mz_centers], # Cast as nested list to force into single index
             "theor_mz_dist": [theo_mz_dist]
             }, index=[0]).to_json(output_path)

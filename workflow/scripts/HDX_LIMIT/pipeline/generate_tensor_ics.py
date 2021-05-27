@@ -146,10 +146,11 @@ def main(library_info_path,
          filter_factors=False,
          factor_rt_r2_cutoff=0.91,
          factor_dt_r2_cutoff=0.91,
-         ic_peak_prominence=0.15,
-         ic_peak_width=3,
+         ic_peak_prominence=0.10,
+         auto_ic_peak_width=True,
+         ic_peak_width=2,
          ic_rel_height_filter=True,
-         ic_rel_height_filter_baseline=0.15,
+         ic_rel_height_filter_baseline=0.10,
          ic_rel_height_threshold=0.10):
     """Performs nonnegative tensor factorization to deconvolute input tensor, identifies IsotopeCluster objects, 
     and optionally returns or writes output list of IsotopeClusters.
@@ -197,14 +198,25 @@ def main(library_info_path,
                                           factor_dt_r2_cutoff=factor_dt_r2_cutoff)
 
     all_ics = []
+
+    ic_peak_width_auto = 0.8 * library_info['integrated_mz_width']
+
     for factor in data_tensor.DataTensor.factors:
 
         # generate isotope cluster class
-        factor.find_isotope_clusters(prominence=ic_peak_prominence,
-                                     width_val=ic_peak_width,
+
+        if auto_ic_peak_width:
+            factor.find_isotope_clusters(prominence=ic_peak_prominence,
+                                     width_val=ic_peak_width_auto,
                                      rel_height_filter=ic_rel_height_filter,
                                      baseline_threshold=ic_rel_height_filter_baseline,
                                      rel_height_threshold=ic_rel_height_threshold)
+        else:
+            factor.find_isotope_clusters(prominence=ic_peak_prominence,
+                                         width_val=ic_peak_width,
+                                         rel_height_filter=ic_rel_height_filter,
+                                         baseline_threshold=ic_rel_height_filter_baseline,
+                                         rel_height_threshold=ic_rel_height_threshold)
 
         for ic in factor.isotope_clusters:
             all_ics.append(ic)
@@ -288,6 +300,7 @@ if __name__ == "__main__":
 
     ic_peak_prom = config_dict["ic_peak_prominence"]
     ic_peak_width = config_dict["ic_peak_width"]
+    auto_ic_peak_width = config_dict["auto_ic_peak_width"]
     ic_rel_ht_filter = config_dict["ic_rel_height_filter"]
     ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
     ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
@@ -309,6 +322,7 @@ if __name__ == "__main__":
          factor_dt_r2_cutoff=factor_dt_r2_cutoff,
          ic_peak_prominence=ic_peak_prom,
          ic_peak_width=ic_peak_width,
+         auto_ic_peak_width=auto_ic_peak_width,
          ic_rel_height_filter=ic_rel_ht_filter,
          ic_rel_height_filter_baseline=ic_rel_ht_baseline,
          ic_rel_height_threshold=ic_rel_ht_threshold)
