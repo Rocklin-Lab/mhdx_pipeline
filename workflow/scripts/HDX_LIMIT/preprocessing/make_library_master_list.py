@@ -445,7 +445,7 @@ def main(names_and_seqs_path,
         fig = plt.figure()
         fig.suptitle("Normalization Factor Magnitudes")
         ax1 = fig.add_subplot(111)
-        ax1.bar(range(len(normalization_factors["name"])), normalization_factors["normalization_factor"]) 
+        ax1.bar(range(len(normalization_factors["mzml"])), normalization_factors["normalization_factor"]) 
         ax1.set(xlabel="TIC .mzML Source", ylabel = "Normalization Factor Magnitude")
         plt.savefig(normalization_factors_plot_outpath)
     
