@@ -424,11 +424,11 @@ def main(names_and_seqs_path,
         catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
 
     ref_mzml_path = [mzml_path for mzml_path in mzml_sum_paths if timepoints[0][0] in mzml_path][0] # Default first undeuterated replicate. 
-    ref_sum = float(open(ref_mzml_path, 'r'))
+    ref_sum = float(open(ref_mzml_path, 'r').read())
     # Initialize normalization_factors dict with reference mzml.
     normalization_factors = {"mzml": ["_".join(ref_mzml_path.split("/")[-1].split("_")[:-1])], "sum": [ref_sum], "normalization_factor": [1]}
     for mzml_sum_path in mzml_sum_paths[1:]:
-        my_sum = float(open(mzml_sum_path, 'r'))
+        my_sum = float(open(mzml_sum_path, 'r').read())
         my_mzml = "_".join(mzml_sum_path.split("/")[-1].split("_")[:-1]) #expects path/to/<mzml>_sum.txt
         normalization_factors["mzml"].append(my_mzml)
         normalization_factors["sum"].append(my_sum)
