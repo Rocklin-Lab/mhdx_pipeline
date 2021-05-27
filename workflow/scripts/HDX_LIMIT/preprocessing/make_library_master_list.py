@@ -490,7 +490,7 @@ if __name__ == "__main__":
         nargs="+",
         help="used in snakemake, list of all .imx.mz.tic file paths")
     parser.add_argument(
-        "-s",
+        "-v",
         "--mzml_sum_paths",
         nargs="+",
         help="used in snakemake, list of all mzml_sum.txt file paths")
