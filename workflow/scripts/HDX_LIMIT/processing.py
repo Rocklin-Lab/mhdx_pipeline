@@ -204,17 +204,20 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
                                                              dt_r2_cutoff=factor_dt_r2_cutoff)
         data_tensor.DataTensor.factors = filtered_factors
 
-    # create factor data dictionary
-    factor_data_dictionary = create_factor_data_object(data_tensor=data_tensor,
-                                                       gauss_params=gauss_params,
-                                                       timepoint_label=timepoint_label)
-
     # save factor data object
     if factor_output_fpath != None:
+        # create factor data dictionary
+        factor_data_dictionary = create_factor_data_object(data_tensor=data_tensor,
+                                                           gauss_params=gauss_params,
+                                                           timepoint_label=timepoint_label)
         io.limit_write(factor_data_dictionary, factor_output_fpath)
 
     # plot_factor_data
     if factor_plot_output_path != None:
+        # create factor data dictionary
+        factor_data_dictionary = create_factor_data_object(data_tensor=data_tensor,
+                                                           gauss_params=gauss_params,
+                                                           timepoint_label=timepoint_label)
         plot_factor_data_from_data_dict(factor_data=factor_data_dictionary,
                                         output_path=factor_plot_output_path)
 
