@@ -38,7 +38,7 @@ if __name__ == "__main__":
         "mzml_path",
         help=
         "path to .mzML input file, resources/mzml/*.mzML in pipeline context")
-    parser.add_argument("-d", "--delete_source", type=bool, default=False, help="True deletes the source mzML file after writing gzipped file.")
+    parser.add_argument("-d", "--delete_source", action="store_true", help="deletes the source mzML file after writing gzipped file.")
     parser.add_argument("-o", "--out_path", help="path to .mzML.gz output file")
     args = parser.parse_args()
 
