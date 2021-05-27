@@ -36,7 +36,7 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cuto
     factor filters based on rt and dt gaussian fit. new factor list is created if the factor rt
     and factor dt gauss fit r2 value is higher than the cutoff values. If none of the factors pass
     the filtering criteria, the original factor list is returned
-    :param factor_list: factor list
+    :param factor_list: gauss fitted factor list
     :param rt_r2_cutoff: rt gauss fit r2 cutoff
     :param dt_r2_cutoff: dt gauss fit r2 cutoff
     :return: filtered factor list
@@ -45,12 +45,8 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cuto
     filtered_factors = []
 
     for factor in factor_list:
-        rt_gauss_fit = fit_gaussian(np.arange(len(factor.rts)), factor.rts, data_label='rt')
-
-        dt_gauss_fit = fit_gaussian(np.arange(len(factor.dts)), factor.dts, data_label='dt')
-
-        if rt_gauss_fit['fit_linregress_r2'] >= rt_r2_cutoff:
-            if dt_gauss_fit['fit_linregress_r2'] >= dt_r2_cutoff:
+        if factor.rt_gauss_fit['fit_linregress_r2'] >= rt_r2_cutoff:
+            if factor.dt_gauss_fit['fit_linregress_r2'] >= dt_r2_cutoff:
                 filtered_factors.append(factor)
 
     new_factor_list = filtered_factors
@@ -116,6 +112,33 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
         gauss_fit_dict['fit_linregress_r2'] = 0.0
 
     return gauss_fit_dict
+
+
+def fit_factor_rt_dt_gaussians(factor_list):
+    """
+    fit the factor's rt and dt distribution to gaussian
+    :param factor: factor
+    :return: factor with additional gaussfit attributes to dt and rt
+    """
+
+    gauss_fit_factor_list = []
+
+    for factor in factor_list:
+
+        # fit gauss to rt
+        rt_gauss_fit = fit_gaussian(np.arange(len(factor.rts)), factor.rts, data_label='rt')
+
+        # fit gauss to dt
+        dt_gauss_fit = fit_gaussian(np.arange(len(factor.dts)), factor.dts, data_label='dt')
+
+        # assign new attributes in factor class
+        factor.rt_gauss_fit = rt_gauss_fit
+        factor.dt_gauss_fit = dt_gauss_fit
+
+        gauss_fit_factor_list.append(factor)
+
+    return gauss_fit_factor_list
+
 
 
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
@@ -197,6 +220,11 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     # profile memory after factorization
     print("Post-Factorization: " + str(process.memory_info().rss /
                                        (1024 * 1024 * 1024)))
+
+    # compute rt and dt gauss fit for factors
+    gauss_fit_factors = fit_factor_rt_dt_gaussians(data_tensor.DataTensor.factors)
+    data_tensor.DataTensor.factors = gauss_fit_factors
+
 
     if filter_factors:
         filtered_factors = filter_factors_on_rt_dt_gauss_fit(factor_list=data_tensor.DataTensor.factors,
