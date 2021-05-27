@@ -101,7 +101,8 @@ rule make_library_master_list:
     run:
         tics = " ".join([fn for fn in input if '.tic' in fn])
         intermediates = " ".join([fn for fn in input if '_intermediate.csv' in fn])
+        sums = " ".join([fn for fn in input if '_sum.txt' in fn])
         
         shell('''
-            python workflow/scripts/HDX_LIMIT/preprocessing/make_library_master_list.py {input[0]} --timepoints {input[1]} --undeut_mzml {input[2]} --intermediates {intermediates} --tics {tics}  --stretched_times_plot_outpath {output[0]} --out_path {output[1]} --normalization_factors_outpath {output[2]} --normalization_factors_plot_outpath {output[3]}
+            python workflow/scripts/HDX_LIMIT/preprocessing/make_library_master_list.py {input[0]} --timepoints {input[1]} --undeut_mzml {input[2]} --intermediates {intermediates} --tics {tics} --mzml_sum_paths {sums}  --stretched_times_plot_outpath {output[0]} --out_path {output[1]} --normalization_factors_outpath {output[2]} --normalization_factors_plot_outpath {output[3]}
         ''')
