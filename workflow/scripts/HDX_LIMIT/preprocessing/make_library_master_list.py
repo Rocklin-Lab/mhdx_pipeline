@@ -426,7 +426,7 @@ def main(names_and_seqs_path,
     ref_mzml_path = [mzml_path for mzml_path in mzml_sum_paths if timepoints[0][0] in mzml][0] # Default first undeuterated replicate. 
     ref_sum = float(open(ref_mzml_path, 'r'))
     # Initialize normalization_factors dict with reference mzml.
-    normalization_factors = {"mzml": ["_".join(ref_mzml_path.split("/")[-1].split("_")[:-1])], "sum": [ref_sum] "normalization_factor": [1]}
+    normalization_factors = {"mzml": ["_".join(ref_mzml_path.split("/")[-1].split("_")[:-1])], "sum": [ref_sum], "normalization_factor": [1]}
     for mzml_sum_path in mzml_sum_paths[1:]:
         my_sum = float(open(mzml_sum_path, 'r'))
         my_mzml = "_".join(mzml_sum_path.split("/")[-1].split("_")[:-1]) #expects path/to/<mzml>_sum.txt
