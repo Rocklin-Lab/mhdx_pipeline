@@ -36,7 +36,7 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cuto
     factor filters based on rt and dt gaussian fit. new factor list is created if the factor rt
     and factor dt gauss fit r2 value is higher than the cutoff values. If none of the factors pass
     the filtering criteria, the original factor list is returned
-    :param factor_list: factor list
+    :param factor_list: gauss fitted factor list
     :param rt_r2_cutoff: rt gauss fit r2 cutoff
     :param dt_r2_cutoff: dt gauss fit r2 cutoff
     :return: filtered factor list
@@ -45,12 +45,8 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cuto
     filtered_factors = []
 
     for factor in factor_list:
-        rt_gauss_fit = fit_gaussian(np.arange(len(factor.rts)), factor.rts, data_label='rt')
-
-        dt_gauss_fit = fit_gaussian(np.arange(len(factor.dts)), factor.dts, data_label='dt')
-
-        if rt_gauss_fit['fit_linregress_r2'] >= rt_r2_cutoff:
-            if dt_gauss_fit['fit_linregress_r2'] >= dt_r2_cutoff:
+        if factor.rt_gauss_fit['fit_linregress_r2'] >= rt_r2_cutoff:
+            if factor.dt_gauss_fit['fit_linregress_r2'] >= dt_r2_cutoff:
                 filtered_factors.append(factor)
 
     new_factor_list = filtered_factors
