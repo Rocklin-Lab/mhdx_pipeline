@@ -118,6 +118,33 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
     return gauss_fit_dict
 
 
+def fit_factor_rt_dt_gaussians(factor_list):
+    """
+    fit the factor's rt and dt distribution to gaussian
+    :param factor: factor
+    :return: factor with additional gaussfit attributes to dt and rt
+    """
+
+    gauss_fit_factor_list = []
+
+    for factor in factor_list:
+
+        # fit gauss to rt
+        rt_gauss_fit = fit_gaussian(np.arange(len(factor.rts)), factor.rts, data_label='rt')
+
+        # fit gauss to dt
+        dt_gauss_fit = fit_gaussian(np.arange(len(factor.dts)), factor.dts, data_label='dt')
+
+        # assign new attributes in factor class
+        factor.rt_gauss_fit = rt_gauss_fit
+        factor.dt_gauss_fit = dt_gauss_fit
+
+        gauss_fit_factor_list.append(factor)
+
+    return gauss_fit_factor_list
+
+
+
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     """
     function to store factor data to factor data class
@@ -197,6 +224,11 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     # profile memory after factorization
     print("Post-Factorization: " + str(process.memory_info().rss /
                                        (1024 * 1024 * 1024)))
+
+    # compute rt and dt gauss fit for factors
+    gauss_fit_factors = fit_factor_rt_dt_gaussians(data_tensor.DataTensor.factors)
+    data_tensor.DataTensor.factors = gauss_fit_factors
+
 
     if filter_factors:
         filtered_factors = filter_factors_on_rt_dt_gauss_fit(factor_list=data_tensor.DataTensor.factors,
