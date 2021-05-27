@@ -5,7 +5,7 @@ from pymzml.utils.utils import index_gzip
 from pymzml.run import Reader
 
 
-def main(mzml_path, out_path=None):
+def main(mzml_path, delete_source=False, out_path=None):
     """Create an indexed, gzipped mzML.gz file from a .mzML file.
     
     Args:
@@ -25,6 +25,8 @@ def main(mzml_path, out_path=None):
                out_path,
                max_idx=max_spec_no,
                idx_len=len(str(max_offset_len)))
+    if delete_source is True:
+        os.remove(mzml_path)
 
 
 if __name__ == "__main__":
@@ -36,7 +38,8 @@ if __name__ == "__main__":
         "mzml_path",
         help=
         "path to .mzML input file, resources/mzml/*.mzML in pipeline context")
+    parser.add_argument("-d", "--delete_source", type=bool, default=False, help="True deletes the source mzML file after writing gzipped file.")
     parser.add_argument("-o", "--out_path", help="path to .mzML.gz output file")
     args = parser.parse_args()
 
-    main(mzml_path=args.mzml_path, out_path=args.out_path)
+    main(mzml_path=args.mzml_path, delete_source=args.delete_source, out_path=args.out_path)

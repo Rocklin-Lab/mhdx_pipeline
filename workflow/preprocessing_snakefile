@@ -63,7 +63,7 @@ rule gzip_mzmls:
     benchmark:
         "results/benchmarks/gzip_mzml.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/preprocessing/gzip_mzml.py {input} --out_path {output}"
+        "python workflow/scripts/HDX_LIMIT/preprocessing/gzip_mzml.py {input} --delete_source --out_path {output}"
 
 
 rule make_ims_mz_tics:

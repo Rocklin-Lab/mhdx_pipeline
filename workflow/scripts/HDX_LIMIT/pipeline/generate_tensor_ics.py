@@ -269,13 +269,6 @@ if __name__ == "__main__":
         "--normalization_factors_path",
         help="path/to/normalization_factors.csv")
     parser.add_argument(
-        "-r",
-        "--return_flag",
-        type=bool,
-        default=False,
-        help="option to return output dictionary in python, for notebook context"
-    )
-    parser.add_argument(
         "-g",
         "--gauss_params",
         type=tuple,
@@ -315,7 +308,6 @@ if __name__ == "__main__":
          factor_out_path=args.factor_data_out_path,
          factor_plot_output_path=args.factor_plot_out_path,
          ic_plot_output_path=args.ic_plot_out_path,
-         return_flag=args.return_flag,
          gauss_params=args.gauss_params,
          filter_factors=filter_factors,
          factor_rt_r2_cutoff=factor_rt_r2_cutoff,
