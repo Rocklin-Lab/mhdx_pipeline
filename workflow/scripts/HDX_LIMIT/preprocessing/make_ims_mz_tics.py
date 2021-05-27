@@ -86,7 +86,9 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
         np.savetxt(out_path, ms1_ims_tic, fmt="%i")
 
     if mzml_sum_outpath is not None:
-        np.savetxt(mzml_sum_outpath, np.array(mzml_sum))
+        with open(mzml_sum_outpath, "w") as txt_file:
+            txt_file.write(str(mzml_sum))
+            txt_file.close()
 
     if return_flag is not None:
         return {"tic": ms1_ims_tic, "mzml_sum": mzml_sum}
