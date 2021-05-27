@@ -580,7 +580,8 @@ class IsotopeCluster:
         self.cluster_mz_data[self.high_idx:] = 0
 
         # integrate area of IC
-        self.auc = sum(self.cluster_mz_data) * self.outer_rtdt * self.normalization_factor
+        self.auc = sum(self.cluster_mz_data) * self.outer_rtdt 
+        self.normalized_auc = self.auc / self.normalization_factor
 
         # identify peaks and find error from expected peak positions using raw mz
         
