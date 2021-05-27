@@ -262,6 +262,7 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
             ax.set_xlabel("index")
 
     if stretched_times_plot_outpath is not None:
+        plt.figure(fig.number)
         plt.legend()
         plt.savefig(stretched_times_plot_outpath)
 
