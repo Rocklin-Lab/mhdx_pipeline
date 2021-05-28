@@ -269,7 +269,7 @@ class TensorGenerator:
         self.mz_centers = mz_centers
         self.normalization_factors = normalization_factors
         my_mzml = ".".join("_".join(self.filename.split("/")[-1].split("_")[1:]).split(".")[:-3])
-        self.normalization_factor = normalization_factors[my_mzml]["normalization_factor"]
+        self.normalization_factor = normalization_factors.loc[normalization_factors["mzml"]==my_mzml]["normalization_factor"]
 
         if (
                 kwargs is not None
