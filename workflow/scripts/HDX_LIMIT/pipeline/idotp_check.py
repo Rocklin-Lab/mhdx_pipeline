@@ -117,6 +117,7 @@ def calculate_isotope_dist_dot_product(sequence, undeut_integrated_mz_array):
 def gen_tensors_factorize(library_info_df,
                           undeut_tensor_path_list,
                           mz_centers,
+                          normalization_factors,
                           factor_output_path_list=None,
                           factor_plot_output_path_list=None,
                           timepoint_index=0,
@@ -164,6 +165,7 @@ def gen_tensors_factorize(library_info_df,
                                               gauss_params=gauss_params,
                                               n_factors=n_factors,
                                               mz_centers=mz_centers,
+                                              normalization_factors=normalization_factors,
                                               factor_output_fpath=factor_output_path,
                                               factor_plot_output_path=factor_plot_output_path,
                                               timepoint_label=None,
@@ -219,6 +221,7 @@ def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
 
 
 def main(library_info_path,
+         normalization_factors,
          undeut_tensor_path_list,
          factor_output_path_list=None,
          factor_plot_output_path_list=None,
@@ -265,6 +268,7 @@ def main(library_info_path,
         factor_output_path_list=factor_output_path_list,
         factor_plot_output_path_list=factor_plot_output_path_list,
         mz_centers=mz_centers,
+        normalization_factors=normalization_factors,
         n_factors=n_factors,
         gauss_params=gauss_params,
         filter_factors=filter_factors,
@@ -308,6 +312,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("library_info_path", help="path/to/library_info.json")
     parser.add_argument("config_file_path", help='path/to/config.yaml')
+    parser.add_argument("normalization_factors", help="path/to/normalization_factors.csv")
     parser.add_argument(
         "-l",
         "--undeut_tensor_path_list",
@@ -356,8 +361,11 @@ if __name__ == "__main__":
     ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
     ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
 
+    normalization_factors = pd.read_csv(args.normalization_factors)
+
     # main operation
     main(library_info_path=args.library_info_path,
+         normalization_factors=normalization_factors,
          undeut_tensor_path_list=args.undeut_tensor_path_list,
          factor_output_path_list=args.factor_output_path_list,
          output_path=args.output_path,
