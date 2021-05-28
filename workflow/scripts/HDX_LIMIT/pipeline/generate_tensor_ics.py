@@ -298,7 +298,7 @@ if __name__ == "__main__":
     ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
     ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
 
-    normalization_factors = pd.read_csv(args.normalization_factors_path).to_dict()
+    normalization_factors = pd.read_csv(args.normalization_factors_path)
 
     main(library_info_path=args.library_info_path,
          tensor_input_path=args.tensor_input_path,
