@@ -633,6 +633,7 @@ class PathOptimizer:
                 ic.rt_ground_fit = max(np.correlate(undeut.rt_norm, ic.rt_norm, mode='full'))
                 ic.dt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.dt_norms[0])
                 ic.rt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.rt_norm)
+                ic.log_baseline_auc_diff = ic.log_baseline_auc - undeut.log_baseline_auc
 
     def generate_sample_paths(self):
         starts = np.linspace(0, 0.7, 8)
@@ -1108,20 +1109,11 @@ class PathOptimizer:
         return np.average([ic.baseline_peak_error for ic in ics])
 
     def auc_ground_rmse(self,
-                        ics,
-                        undeut_grounds=None
-                       ):  # TODO put this in PO.precalculate_fits_to_ground()
-        # find corresponding charge state to each ic, compute AUC error, return avg err
-        if undeut_grounds is None:
-            undeut_grounds = self.undeut_grounds
-
+                        ics
+                       ):
         sd = 0
         for ic in ics:
-            for key in undeut_grounds.keys():
-                if set(undeut_grounds[key].charge_states).intersection(
-                        set(ic.charge_states)):
-                    sd += (ic.log_baseline_auc -
-                           undeut_grounds[key].log_baseline_auc)**2
+            sd += ic.log_baseline_auc_diff ** 2
         return math.sqrt(np.mean(sd))
     
     def rmses_sum(self, ics):
