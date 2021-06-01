@@ -199,7 +199,7 @@ def main(library_info_path,
 
     all_ics = []
 
-    ic_peak_width_auto = 0.8 * library_info['integrated_mz_width']
+    ic_peak_width_auto = 0.8 * library_info['integrated_mz_width'].values[my_idx]
 
     for factor in data_tensor.DataTensor.factors:
 
