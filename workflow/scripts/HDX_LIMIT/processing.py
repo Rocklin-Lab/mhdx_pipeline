@@ -10,7 +10,7 @@ from scipy.stats import gmean
 from HDX_LIMIT import io, datatypes
 from numpy import linspace, cumsum, searchsorted
 
-from HDX_LIMIT.plot_factor_data import plot_factor_data_from_data_dict
+from HDX_LIMIT.plot_factor_data import plot_factor_data_from_data_dict, plot_factor_data_from_data_tensor
 
 ### BOKEH ###
 from bokeh.plotting import figure
@@ -167,7 +167,7 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
 
     for num, factor in enumerate(data_tensor.DataTensor.factors):
         factor_dict = dict()
-        factor_dict['factor_num'] = num
+        factor_dict['factor_num'] = factor.factor_idx
         factor_dict['factor_dt'] = factor.dts
         factor_dict['factor_rt'] = factor.rts
         factor_dict['factor_mz'] = factor.mz_data
@@ -242,12 +242,8 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
 
     # plot_factor_data
     if factor_plot_output_path != None:
-        # create factor data dictionary
-        factor_data_dictionary = create_factor_data_object(data_tensor=data_tensor,
-                                                           gauss_params=gauss_params,
-                                                           timepoint_label=timepoint_label)
-        plot_factor_data_from_data_dict(factor_data=factor_data_dictionary,
-                                        output_path=factor_plot_output_path)
+        plot_factor_data_from_data_tensor(data_tensor=data_tensor,
+                                          output_path=factor_plot_output_path)
 
     return data_tensor
 
@@ -462,13 +458,13 @@ class PathOptimizer:
                 score_df = pd.DataFrame().from_dict({
                     "idx": [j for j in range(len(center_dict[i]))],
                     "rt_ground_err": [
-                        ic.rt_ground_err for ic in center_dict[i]
+                        abs(ic.rt_ground_err) for ic in center_dict[i]
                     ],
                     "dt_ground_err": [
-                        ic.dt_ground_err for ic in center_dict[i]
+                        abs(ic.dt_ground_err) for ic in center_dict[i]
                     ],
                     "peak_err": [
-                        ic.baseline_peak_error for ic in center_dict[i]
+                        abs(ic.baseline_peak_error) for ic in center_dict[i]
                     ],
                     "rt_ground_fit": [
                         ic.rt_ground_fit for ic in center_dict[i]
@@ -503,14 +499,12 @@ class PathOptimizer:
                                 int_mz_dom_dict[low_score_keys[2]],
                                 int_mz_dom_dict[high_score_keys[0]],
                                 int_mz_dom_dict[high_score_keys[1]],
-                                int_mz_dom_dict[high_score_keys[2]],
-
                         ):
                             # ic is weakly Pareto dominated, leave out of output
                             pass
                         else:
                             # ic is not weakly Pareto dominated, add to output
-                            int_mz_buffer.append(tp[idx])
+                            int_mz_buffer.append(center_dict[i][idx])
 
                 for ic in int_mz_buffer:
                     tp_buffer.append(ic)
