@@ -149,10 +149,11 @@ def fit_factor_rt_dt_gaussians(factor_list):
         # fit gauss to dt
         dt_gauss_fit = fit_gaussian(np.arange(len(factor.dts)), factor.dts, data_label='dt')
 
-        # assign new attributes in factor class
+        # assign new attributes in factor class to save gauss fit information
         factor.rt_gauss_fit = rt_gauss_fit
         factor.dt_gauss_fit = dt_gauss_fit
 
+        # calculate the area under the curve for rt and dt 
         if rt_gauss_fit['gauss_fit_status']:
             factor.rt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
                                                                           upper_bound=len(factor.rts)-1,
