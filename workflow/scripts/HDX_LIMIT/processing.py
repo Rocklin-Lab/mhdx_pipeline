@@ -510,7 +510,7 @@ class PathOptimizer:
                             pass
                         else:
                             # ic is not weakly Pareto dominated, add to output
-                            int_mz_buffer.append(tp[idx])
+                            int_mz_buffer.append(center_dict[i][idx])
 
                 for ic in int_mz_buffer:
                     tp_buffer.append(ic)
