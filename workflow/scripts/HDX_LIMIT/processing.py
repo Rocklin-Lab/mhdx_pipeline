@@ -413,16 +413,17 @@ class PathOptimizer:
         for tp in self.all_tp_clusters:
             tp_buffer = []
             for ic1 in tp:
+                ic1_int_mz_com = np.round(ic1.baseline_integrated_mz_com)
                 compare_flag = False
                 for ic2 in tp:
                     if (
-                        np.round(ic2.baseline_integrated_mz_com) == np.round(ic1.baseline_integrated_mz_com) and
-                        ic2.rt_ground_err < ic1.rt_ground_err and
-                        ic2.dt_ground_err < ic1.dt_ground_err and
+                        np.round(ic2.baseline_integrated_mz_com) == ic1_int_mz_com and
+                        ic2.rt_ground_err**2 < ic1.rt_ground_err**2 and
+                        ic2.dt_ground_err**2 < ic1.dt_ground_err**2 and
                         ic2.peak_err < ic1.peak_err and 
                         ic2.rt_ground_fit > ic1.rt_ground_fit and 
                         ic2.dt_ground_fit > ic1.dt_ground_fit and 
-                        ic2.baseline_auc > ic1.baseline_auc
+                        ic2.auc_ground_err**2 > ic1.auc_ground_err**2
                        ):
                         compare_flag = True
                         break
@@ -649,7 +650,7 @@ class PathOptimizer:
                 undeut = undeut_grounds[ic.charge_states[0]]
                 ic.dt_ground_err = ic.dt_coms[0] - undeut.dt_coms[0]
                 ic.rt_ground_err = ic.rt_com - undeut.rt_com
-                ic.auc_ground_err = ic.baseline_auc - undeut.baseline_auc
+                ic.auc_ground_err = ic.auc - undeut.auc
                 ic.dt_ground_fit = max(
                     np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
                 ic.rt_ground_fit = max(np.correlate(undeut.rt_norm, ic.rt_norm, mode='full'))
@@ -1130,7 +1131,10 @@ class PathOptimizer:
         # returns avg of peak_errors from baseline subtracted int_mz -> minimize score
         return np.average([ic.baseline_peak_error for ic in ics])
 
-    def auc_ground_rmse(self,
+    def auc_ground_rmse(self, ics):
+        return np.sqrt(np.mean([ic.auc_ground_err**2 for ic in ics]))
+
+    def auc_rmse(self,
                         ics
                        ):
         sd = 0
