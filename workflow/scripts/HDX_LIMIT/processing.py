@@ -108,10 +108,28 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
         gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
     except:
         gauss_fit_dict['gauss_fit_status'] = False
+        gauss_fit_dict['xc'] = None
+        gauss_fit_dict['width'] = None
         gauss_fit_dict['fit_rmse'] = 100
         gauss_fit_dict['fit_linregress_r2'] = 0.0
 
     return gauss_fit_dict
+
+
+def cal_area_under_curve_from_normal_distribution(low_bound, upper_bound, center, width):
+    """
+    calculate area under the curve given the lower and upper bound
+    :param low_bound: low bound
+    :param upper_bound: upper bound
+    :param center: center of distribution
+    :param width: width of distribution
+    :return: area under curve
+    """
+
+    lb_cdf = norm.cdf(low_bound, loc=center, scale=width)
+    ub_cdf = norm.cdf(upper_bound, loc=center, scale=width)
+    auc = ub_cdf - lb_cdf
+    return auc
 
 
 def fit_factor_rt_dt_gaussians(factor_list):
@@ -134,6 +152,22 @@ def fit_factor_rt_dt_gaussians(factor_list):
         # assign new attributes in factor class
         factor.rt_gauss_fit = rt_gauss_fit
         factor.dt_gauss_fit = dt_gauss_fit
+
+        if rt_gauss_fit['gauss_fit_status']:
+            factor.rt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
+                                                                          upper_bound=len(factor.rts)-1,
+                                                                          center=rt_gauss_fit['xc'],
+                                                                          width=rt_gauss_fit['width'])
+        else:
+            factor.rt_auc = None
+
+        if dt_gauss_fit['gauss_fit_status']:
+            factor.dt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
+                                                                          upper_bound=len(factor.dts) - 1,
+                                                                          center=dt_gauss_fit['xc'],
+                                                                          width=dt_gauss_fit['width'])
+        else:
+            factor.dt_auc = None
 
         gauss_fit_factor_list.append(factor)
 
