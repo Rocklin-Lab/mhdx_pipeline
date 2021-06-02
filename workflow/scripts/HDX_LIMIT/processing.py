@@ -426,8 +426,8 @@ class PathOptimizer:
 
             # add ic to bin list closest to center
             for ic in tp:
-                center_dict[  min([len(tp[0].baseline_integrated_mz)-1,
-                                   np.round(ic.baseline_integrated_mz_com)])  ].append(ic)
+                center_dict[min([len(tp[0].baseline_integrated_mz)-1,
+                                   np.round(ic.baseline_integrated_mz_com)])].append(ic)
 
             # score all ics in each int_mz bin, keep only those that are not worse than another IC in all dimensions
             low_score_keys = ["rt_ground_err", "dt_ground_err", "peak_err"]
@@ -454,7 +454,7 @@ class PathOptimizer:
                     "baseline_auc": [ic.baseline_auc for ic in center_dict[i]],
                 })
 
-                if len(score_df) > 0:
+                if len(score_df) > 1:
                     for idx in score_df["idx"].values:
                         int_mz_dom_dict = dict.fromkeys(low_score_keys +
                                                         high_score_keys)
@@ -466,7 +466,7 @@ class PathOptimizer:
                             int_mz_dom_dict[key] = set(dom_list[:ic_pos])
 
                         for key in high_score_keys:
-                            high_score_dom_list = list(
+                            dom_list = list(
                                 score_df.sort_values(
                                     key, ascending=False)["idx"].values)
                             ic_pos = dom_list.index(idx)
@@ -478,6 +478,8 @@ class PathOptimizer:
                                 int_mz_dom_dict[low_score_keys[2]],
                                 int_mz_dom_dict[high_score_keys[0]],
                                 int_mz_dom_dict[high_score_keys[1]],
+                                int_mz_dom_dict[high_score_keys[2]],
+
                         ):
                             # ic is weakly Pareto dominated, leave out of output
                             pass
