@@ -132,7 +132,7 @@ def main(library_info_path,
             charge_list.append(ic.charge_states[0])
 
         charge_list = np.array(charge_list)
-        mz_corrmat = np.corrcoef(all_baseline_integrated_mz)
+        mz_corrmat = gen_correlate_matrix(all_baseline_integrated_mz)
         rt_corrmat = gen_correlate_matrix(all_rts)
         minimum_corrmat = np.minimum(mz_corrmat, rt_corrmat)
         for column, ic in enumerate(ics):
