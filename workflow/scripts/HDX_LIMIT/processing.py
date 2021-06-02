@@ -454,7 +454,7 @@ class PathOptimizer:
                     "baseline_auc": [ic.baseline_auc for ic in center_dict[i]],
                 })
 
-                if len(score_df) > 1:
+                if len(score_df) > 0:
                     for idx in score_df["idx"].values:
                         int_mz_dom_dict = dict.fromkeys(low_score_keys +
                                                         high_score_keys)
