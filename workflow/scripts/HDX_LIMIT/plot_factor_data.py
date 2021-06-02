@@ -7,7 +7,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 
 def plot_factor_row(fig, gs, retention_labels, drift_labels, mz_labels, bins_per_isotope_peak, row_number, factor=None,
-                    tensor3=None, name=''):
+                    tensor3=None, name='', from_dict=True):
     """
     plot the factor data (3d rt, dt, mz), mz data, integrated mz data
     :param retention_labels: retention labels
@@ -22,9 +22,14 @@ def plot_factor_row(fig, gs, retention_labels, drift_labels, mz_labels, bins_per
     """
 
     if factor != None:
-        factor_rt_dt_grid = np.multiply.outer(factor['factor_dt'], factor['factor_rt'])
-        factor_mz = factor['factor_mz']
-        factor_integrated_mz = factor['factor_integrated_mz']
+        if from_dict:
+            factor_rt_dt_grid = np.multiply.outer(factor['factor_dt'], factor['factor_rt'])
+            factor_mz = factor['factor_mz']
+            factor_integrated_mz = factor['factor_integrated_mz']
+        else:
+            factor_rt_dt_grid = np.multiply.outer(factor.dts, factor.rts)
+            factor_mz = factor.mz_data
+            factor_integrated_mz = factor.baseline_subtracted_integrated_mz
     else:
         factor_rt_dt_grid = np.sum(tensor3, axis=2).T
         factor_mz = np.sum(tensor3, axis=(0, 1))
@@ -79,7 +84,7 @@ def plot_factor_row(fig, gs, retention_labels, drift_labels, mz_labels, bins_per
 
 
 def plot_factor_data(retention_labels, drift_labels, mz_labels, bins_per_isotope_peak, tensor3, factors, output_path,
-                     gauss_filter_params=(3, 1), title=''):
+                     gauss_filter_params=(3, 1), title='', from_dict=True):
     """
     plot factor data
     :param retention_labels: retention time labels
@@ -93,6 +98,11 @@ def plot_factor_data(retention_labels, drift_labels, mz_labels, bins_per_isotope
     :param output_path: output path
     :return: None
     """
+
+    if from_dict:
+        print('plotting factor data from dictionary')
+    else:
+        print('plotting factor data from data tensor')
 
     n_factors = len(factors)
     if n_factors == 1:
@@ -137,16 +147,32 @@ def plot_factor_data(retention_labels, drift_labels, mz_labels, bins_per_isotope
 
     for num, factor in enumerate(factors):
 
-        plot_factor_row(fig=fig,
-                        gs=gs,
-                        retention_labels=retention_labels,
-                        drift_labels=drift_labels,
-                        mz_labels=mz_labels,
-                        bins_per_isotope_peak=bins_per_isotope_peak,
-                        row_number=num+2,
-                        factor=factor,
-                        tensor3=None,
-                        name='Factor %s ' % num)
+        if from_dict:
+
+            plot_factor_row(fig=fig,
+                            gs=gs,
+                            retention_labels=retention_labels,
+                            drift_labels=drift_labels,
+                            mz_labels=mz_labels,
+                            bins_per_isotope_peak=bins_per_isotope_peak,
+                            row_number=num+2,
+                            factor=factor,
+                            tensor3=None,
+                            name='Factor %s ' % factor['factor_num'],
+                            from_dict=from_dict)
+        else:
+            plot_factor_row(fig=fig,
+                            gs=gs,
+                            retention_labels=retention_labels,
+                            drift_labels=drift_labels,
+                            mz_labels=mz_labels,
+                            bins_per_isotope_peak=bins_per_isotope_peak,
+                            row_number=num + 2,
+                            factor=factor,
+                            tensor3=None,
+                            name='Factor %s ' % factor.factor_idx,
+                            from_dict=from_dict)
+
 
 
     # additional plots if there are more than one factors present
@@ -160,10 +186,17 @@ def plot_factor_data(retention_labels, drift_labels, mz_labels, bins_per_isotope
         factor_mzs = []
 
         for num, factor in enumerate(factors):
-            factor_dts.append(factor['factor_dt'] / max(factor['factor_dt']))
-            factor_rts.append(factor['factor_rt'] / max(factor['factor_rt']))
-            factor_mzs.append(factor['factor_mz'] / max(factor['factor_mz']))
-            total_factor_masses.append(sum(factor['factor_integrated_mz']))
+            if from_dict:
+                factor_dts.append(factor['factor_dt'] / max(factor['factor_dt']))
+                factor_rts.append(factor['factor_rt'] / max(factor['factor_rt']))
+                factor_mzs.append(factor['factor_mz'] / max(factor['factor_mz']))
+                total_factor_masses.append(sum(factor['factor_integrated_mz']))
+            else:
+                factor_dts.append(factor.dts / max(factor.dts))
+                factor_rts.append(factor.rts / max(factor.rts))
+                factor_mzs.append(factor.mz_data / max(factor.mz_data))
+                total_factor_masses.append(sum(factor.baseline_subtracted_integrated_mz))
+
 
         total_factor_masses = np.array(total_factor_masses)
         factor_dts = np.array(factor_dts).T
@@ -239,6 +272,30 @@ def plot_factor_data(retention_labels, drift_labels, mz_labels, bins_per_isotope
     plt.close()
 
 
+def plot_factor_data_from_data_tensor(data_tensor, output_path):
+
+    title = ''
+    if hasattr(data_tensor.DataTensor, 'charge_states'):
+        title = '%s +%i Timepoint %s' % (
+            data_tensor.DataTensor.name, data_tensor.DataTensor.charge_states[0], data_tensor.DataTensor.timepoint_idx)
+    elif hasattr(data_tensor.DataTensor, 'charge_state'):
+        title = '%s +%i Timepoint %s' % (
+            data_tensor.DataTensor.name, data_tensor.DataTensor.charge_state, data_tensor.DataTensor.timepoint_idx)
+    else:
+        title = '%s Timepoint %s' % (data_tensor.DataTensor.name, data_tensor.DataTensor.timepoint_idx)
+
+    plot_factor_data(retention_labels=data_tensor.DataTensor.retention_labels,
+                     drift_labels=data_tensor.DataTensor.drift_labels,
+                     mz_labels=data_tensor.DataTensor.mz_labels,
+                     bins_per_isotope_peak=data_tensor.DataTensor.bins_per_isotope_peak,
+                     tensor3=data_tensor.DataTensor.full_grid_out,
+                     factors=data_tensor.DataTensor.factors,
+                     output_path=output_path,
+                     gauss_filter_params=data_tensor.gauss_params,
+                     title=title,
+                     from_dict=False)
+
+
 def plot_factor_data_from_data_dict(factor_data, output_path):
     """
 
@@ -265,7 +322,8 @@ def plot_factor_data_from_data_dict(factor_data, output_path):
                      factors=factor_data['factors'],
                      output_path=output_path,
                      gauss_filter_params=factor_data['gauss_params'],
-                     title=title)
+                     title=title,
+                     from_dict=True)
 
 
 def plot_factor_data_from_data_dict_file(factor_data_filepath, output_path=None):
