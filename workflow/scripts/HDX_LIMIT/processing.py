@@ -458,13 +458,13 @@ class PathOptimizer:
                 score_df = pd.DataFrame().from_dict({
                     "idx": [j for j in range(len(center_dict[i]))],
                     "rt_ground_err": [
-                        ic.rt_ground_err for ic in center_dict[i]
+                        abs(ic.rt_ground_err) for ic in center_dict[i]
                     ],
                     "dt_ground_err": [
-                        ic.dt_ground_err for ic in center_dict[i]
+                        abs(ic.dt_ground_err) for ic in center_dict[i]
                     ],
                     "peak_err": [
-                        ic.baseline_peak_error for ic in center_dict[i]
+                        abs(ic.baseline_peak_error) for ic in center_dict[i]
                     ],
                     "rt_ground_fit": [
                         ic.rt_ground_fit for ic in center_dict[i]
