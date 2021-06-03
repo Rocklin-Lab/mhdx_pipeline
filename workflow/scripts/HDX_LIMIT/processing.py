@@ -31,7 +31,7 @@ from scipy.stats import norm
 from scipy.stats import linregress
 
 
-def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cutoff=0.91):
+def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.90, dt_r2_cutoff=0.90):
     """
     factor filters based on rt and dt gaussian fit. new factor list is created if the factor rt
     and factor dt gauss fit r2 value is higher than the cutoff values. If none of the factors pass
@@ -99,8 +99,8 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
                             factor_plot_output_path=None,
                             timepoint_label=None,
                             filter_factors=False,
-                            factor_rt_r2_cutoff=0.91,
-                            factor_dt_r2_cutoff=0.91):
+                            factor_rt_r2_cutoff=0.90,
+                            factor_dt_r2_cutoff=0.90):
     """
     generate data tensor from a given tensor file path, library info file path, and timepoint index
     :param tensor_fpath: tensor file path
@@ -560,17 +560,8 @@ class PathOptimizer:
             for ic in timepoint:
                 undeut = undeut_grounds[ic.charge_states[0]]
 
-                if ic.dt_coms is None:
-                    ic.dt_ground_err = 100.0
-                else:
-                    ic.dt_ground_err = ic.dt_coms - undeut.dt_coms
-                # ic.dt_ground_err = ic.dt_coms[0] - undeut.dt_coms[0]
-
-                if ic.rt_com is None:
-                    ic.rt_ground_err = 100.0
-                else:
-                    ic.rt_ground_err = ic.rt_com - undeut.rt_com
-                # ic.rt_ground_err = ic.rt_com - undeut.rt_com
+                ic.dt_ground_err = abs(ic.dt_coms - undeut.dt_coms)
+                ic.rt_ground_err = abs(ic.rt_com - undeut.rt_com)
                 ic.auc_ground_err = ic.auc - undeut.auc
                 ic.dt_ground_fit = max(
                     np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
@@ -712,11 +703,11 @@ class PathOptimizer:
         self.find_runners()
         self.set_bokeh_tuples()
         self.filter_runners()
-        self.rt_com_cv = (np.var([ic.rt_com for ic in self.winner])**
-                          0.5) / np.mean([ic.rt_com for ic in self.winner])
+        self.rt_com_cv = (np.var([ic.rt_com for ic in self.winner if ic.rt_com is not None])**
+                          0.5) / np.mean([ic.rt_com for ic in self.winner if ic.rt_com is not None])
         self.dt_com_cv = (np.var([
-            np.mean(ic.dt_coms) for ic in self.winner
-        ])**0.5) / np.mean([np.mean(ic.dt_coms) for ic in self.winner])
+            np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None
+        ])**0.5) / np.mean([np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None])
         # Doesn't return, only sets PO attributes
 
     def find_runners(self):
