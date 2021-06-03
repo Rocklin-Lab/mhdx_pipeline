@@ -262,36 +262,38 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
 
     try:
         popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess)
-        y_fit = gauss_func(xdata, *popt)
-        fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
-        slope, intercept, rvalue, pvalue, stderr = linregress(ydata, y_fit)
-        adj_r2 = adjrsquared(r2=rvalue**2, param=4, num=len(ydata))
-        gauss_fit_dict['gauss_fit_success'] = True
-        gauss_fit_dict['y_baseline'] = popt[0]
-        gauss_fit_dict['y_amp'] = popt[1]
-        gauss_fit_dict['xc'] = popt[2]
-        gauss_fit_dict['width'] = popt[3]
-        gauss_fit_dict['y_fit'] = y_fit
-        gauss_fit_dict['fit_rmse'] = fit_rmse
-        gauss_fit_dict['fit_lingress_slope'] = slope
-        gauss_fit_dict['fit_lingress_intercept'] = intercept
-        gauss_fit_dict['fit_lingress_pvalue'] = pvalue
-        gauss_fit_dict['fit_lingress_stderr'] = stderr
-        gauss_fit_dict['fit_linregress_r2'] = rvalue ** 2
-        gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
-        gauss_fit_dict['auc'] = cal_area_under_curve_from_normal_distribution(low_bound=0,
-                                                                              upper_bound=len(xdata) - 1,
-                                                                              center=popt[2],
-                                                                              width=popt[3])
-
         if popt[2] < 0.0:
-            gauss_fit_dict['gauss_fit_success'] = True
+            gauss_fit_dict['gauss_fit_success'] = False
             gauss_fit_dict['xc'] = None
             gauss_fit_dict['width'] = None
             gauss_fit_dict['auc'] = None
             gauss_fit_dict['fit_rmse'] = 100.0
             gauss_fit_dict['fit_linregress_r2'] = 0.0
             gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
+        else:
+            y_fit = gauss_func(xdata, *popt)
+            fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
+            slope, intercept, rvalue, pvalue, stderr = linregress(ydata, y_fit)
+            adj_r2 = adjrsquared(r2=rvalue**2, param=4, num=len(ydata))
+            gauss_fit_dict['gauss_fit_success'] = True
+            gauss_fit_dict['y_baseline'] = popt[0]
+            gauss_fit_dict['y_amp'] = popt[1]
+            gauss_fit_dict['xc'] = popt[2]
+            gauss_fit_dict['width'] = popt[3]
+            gauss_fit_dict['y_fit'] = y_fit
+            gauss_fit_dict['fit_rmse'] = fit_rmse
+            gauss_fit_dict['fit_lingress_slope'] = slope
+            gauss_fit_dict['fit_lingress_intercept'] = intercept
+            gauss_fit_dict['fit_lingress_pvalue'] = pvalue
+            gauss_fit_dict['fit_lingress_stderr'] = stderr
+            gauss_fit_dict['fit_linregress_r2'] = rvalue ** 2
+            gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
+            gauss_fit_dict['auc'] = cal_area_under_curve_from_normal_distribution(low_bound=0,
+                                                                                  upper_bound=len(xdata) - 1,
+                                                                                  center=popt[2],
+                                                                                  width=popt[3])
+
+
 
 
     except:
