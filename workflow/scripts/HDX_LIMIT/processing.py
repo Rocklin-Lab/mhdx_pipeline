@@ -45,8 +45,8 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cuto
     filtered_factors = []
 
     for factor in factor_list:
-        if factor.rt_gauss_fit['fit_linregress_r2'] >= rt_r2_cutoff:
-            if factor.dt_gauss_fit['fit_linregress_r2'] >= dt_r2_cutoff:
+        if factor.rt_gauss_fit_r2 >= rt_r2_cutoff:
+            if factor.dt_gauss_fit_r2 >= dt_r2_cutoff:
                 filtered_factors.append(factor)
 
     new_factor_list = filtered_factors

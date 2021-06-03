@@ -235,9 +235,10 @@ def estimate_gauss_param(ydata, xdata):
     maxindex = np.nonzero(ydata == ymax)[0]
     peakmax_x = xdata[maxindex][0]
     norm_arr = ydata/max(ydata)
-    bins_for_width = norm_arr[norm_arr > 0.7]
+    bins_for_width = norm_arr[norm_arr > 0.70]
     width_bin = len(bins_for_width)
     init_guess = [0, ymax, peakmax_x, width_bin]
+    # bounds = ([0, 0, 0, 0], [np.inf, np.inf, len(xdata)-1, len(xdata)-1])
     return init_guess
 
 
@@ -260,7 +261,7 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
     gauss_fit_dict['data_label'] = data_label
 
     try:
-        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, maxfev=1000000)
+        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess)
         y_fit = gauss_func(xdata, *popt)
         fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
         slope, intercept, rvalue, pvalue, stderr = linregress(ydata, y_fit)
@@ -282,6 +283,17 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
                                                                               upper_bound=len(xdata) - 1,
                                                                               center=popt[2],
                                                                               width=popt[3])
+
+        if popt[2] < 0.0:
+            gauss_fit_dict['gauss_fit_success'] = True
+            gauss_fit_dict['xc'] = None
+            gauss_fit_dict['width'] = None
+            gauss_fit_dict['auc'] = None
+            gauss_fit_dict['fit_rmse'] = 100.0
+            gauss_fit_dict['fit_linregress_r2'] = 0.0
+            gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
+
+
     except:
         gauss_fit_dict['gauss_fit_success'] = False
         gauss_fit_dict['xc'] = None
@@ -370,11 +382,13 @@ class Factor:
         self.rt_auc = rt_gauss_fit['auc']
         self.rt_com = rt_gauss_fit['xc']
         self.rt_gaussian_rmse = rt_gauss_fit['fit_rmse']
+        self.rt_gauss_fit_r2 = rt_gauss_fit['fit_linregress_r2']
 
         self.dt_gauss_fit_success = dt_gauss_fit['gauss_fit_success']
         self.dt_auc = dt_gauss_fit['auc']
         self.dt_com = dt_gauss_fit['xc']
         self.dt_gaussian_rmse = dt_gauss_fit['fit_rmse']
+        self.dt_gauss_fit_r2 = dt_gauss_fit['fit_linregress_r2']
 
         # assign dt and rt com
 
@@ -709,17 +723,17 @@ class IsotopeCluster:
         if self.rt_auc is None:
             auc_after_rt = self.auc
         else:
-            try:
+            if self.rt_auc > 0:
                 auc_after_rt = self.auc * (1/self.rt_auc)
-            except:
+            else:
                 auc_after_rt = self.auc
 
         if self.dt_auc is None:
             auc_after_rt_dt = auc_after_rt
         else:
-            try:
+            if self.dt_auc > 0:
                 auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
-            except:
+            else:
                 auc_after_rt_dt = auc_after_rt
 
         self.auc = auc_after_rt_dt
