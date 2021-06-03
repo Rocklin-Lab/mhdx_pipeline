@@ -235,7 +235,7 @@ def estimate_gauss_param(ydata, xdata):
     maxindex = np.nonzero(ydata == ymax)[0]
     peakmax_x = xdata[maxindex][0]
     norm_arr = ydata/max(ydata)
-    bins_for_width = norm_arr[norm_arr > 0.8]
+    bins_for_width = norm_arr[norm_arr > 0.7]
     width_bin = len(bins_for_width)
     init_guess = [0, ymax, peakmax_x, width_bin]
     return init_guess
@@ -690,8 +690,29 @@ class IsotopeCluster:
         self.cluster_mz_data[0:self.low_idx] = 0
         self.cluster_mz_data[self.high_idx:] = 0
 
-        # integrate area of IC
+        # integrate area of IC and normalize according the TIC counts
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt / self.normalization_factor
+
+        # normalize auc with rt and dt auc
+        if self.rt_auc is None:
+            self.auc_after_rt = self.auc
+        else:
+            try:
+                self.auc_after_rt = self.auc * (1/self.rt_auc)
+            except:
+                self.auc_after_rt = self.auc
+
+        if self.dt_auc is None:
+            self.auc_after_rt_dt = self.auc_after_rt
+        else:
+            try:
+                self.auc_after_rt_dt = self.auc_after_rt * (1/self.dt_auc)
+            except:
+                self.auc_after_rt_dt = self.auc_after_rt
+
+        self.auc = self.auc_after_rt_dt
+
+
 
         # identify peaks and find error from expected peak positions using raw mz
         
