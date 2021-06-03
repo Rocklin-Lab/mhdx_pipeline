@@ -278,10 +278,15 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
         gauss_fit_dict['fit_lingress_stderr'] = stderr
         gauss_fit_dict['fit_linregress_r2'] = rvalue ** 2
         gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
+        gauss_fit_dict['auc'] = cal_area_under_curve_from_normal_distribution(low_bound=0,
+                                                                              upper_bound=len(xdata) - 1,
+                                                                              center=popt[2],
+                                                                              width=popt[3])
     except:
         gauss_fit_dict['gauss_fit_success'] = False
         gauss_fit_dict['xc'] = None
         gauss_fit_dict['width'] = None
+        gauss_fit_dict['auc'] = None
         gauss_fit_dict['fit_rmse'] = 100.0
         gauss_fit_dict['fit_linregress_r2'] = 0.0
         gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
@@ -358,26 +363,21 @@ class Factor:
         self.baseline_subtracted_integrated_mz = self.integrated_mz_data
 
         # fit factor rts and dts to gaussian
-        self.rt_gauss_fit = fit_gaussian(np.arange(len(self.rts)), self.rts, data_label='rt')
-        self.dt_gauss_fit = fit_gaussian(np.arange(len(self.dts)), self.dts, data_label='dt')
+        rt_gauss_fit = fit_gaussian(np.arange(len(self.rts)), self.rts, data_label='rt')
+        dt_gauss_fit = fit_gaussian(np.arange(len(self.dts)), self.dts, data_label='dt')
 
+        self.rt_gauss_fit_success = rt_gauss_fit['gauss_fit_success']
+        self.rt_auc = rt_gauss_fit['auc']
+        self.rt_com = rt_gauss_fit['xc']
+        self.rt_gaussian_rmse = rt_gauss_fit['fit_rmse']
 
-        # calculate rt and dt auc
-        if self.rt_gauss_fit['gauss_fit_success']:
-            self.rt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
-                                                                        upper_bound=len(self.rts) - 1,
-                                                                        center=self.rt_gauss_fit['xc'],
-                                                                        width=self.rt_gauss_fit['width'])
-        else:
-            self.rt_auc = None
+        self.dt_gauss_fit_success = dt_gauss_fit['gauss_fit_success']
+        self.dt_auc = dt_gauss_fit['auc']
+        self.dt_com = dt_gauss_fit['xc']
+        self.dt_gaussian_rmse = dt_gauss_fit['fit_rmse']
 
-        if self.dt_gauss_fit['gauss_fit_success']:
-            self.dt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
-                                                                        upper_bound=len(self.dts) - 1,
-                                                                        center=self.dt_gauss_fit['xc'],
-                                                                        width=self.dt_gauss_fit['width'])
-        else:
-            self.dt_auc = None
+        # assign dt and rt com
+
 
         ## old protocol.
         # Writes to self.isotope_clusters
@@ -485,10 +485,14 @@ class Factor:
                     high_idx = self.bins_per_isotope_peak * (integrated_indices[1] + 1),
                     rts=self.rts,
                     dts=self.dts,
+                    rt_gauss_fit_success=self.rt_gauss_fit_success,
+                    dt_gauss_fit_success=self.dt_gauss_fit_success,
+                    rt_gaussian_rmse=self.rt_gaussian_rmse,
+                    dt_gaussian_rmse=self.dt_gaussian_rmse,
+                    rt_com=self.rt_com,
+                    dt_coms=self.dt_com,
                     rt_auc=self.rt_auc,
                     dt_auc=self.dt_auc,
-                    rt_gauss_fit=self.rt_gauss_fit,
-                    dt_gauss_fit=self.dt_gauss_fit,
                     retention_labels=self.retention_labels,
                     drift_labels=self.drift_labels,
                     mz_labels=self.mz_labels,
@@ -640,10 +644,14 @@ class IsotopeCluster:
         high_idx,
         rts,
         dts,
+        rt_gauss_fit_success,
+        dt_gauss_fit_success,
+        rt_gaussian_rmse,
+        dt_gaussian_rmse,
+        rt_com,
+        dt_coms,
         rt_auc,
         dt_auc,
-        rt_gauss_fit,
-        dt_gauss_fit,
         retention_labels,
         drift_labels,
         mz_labels,
@@ -669,10 +677,14 @@ class IsotopeCluster:
         self.high_idx = high_idx
         self.rts = rts
         self.dts = dts
+        self.rt_gauss_fit_success = rt_gauss_fit_success
+        self.dt_gauss_fit_success = dt_gauss_fit_success
+        self.rt_gaussian_rmse = rt_gaussian_rmse
+        self.dt_gaussian_rmse = dt_gaussian_rmse
+        self.rt_com = rt_com
+        self.dt_coms = dt_coms
         self.rt_auc = rt_auc
         self.dt_auc = dt_auc
-        self.rt_gauss_fit = rt_gauss_fit
-        self.dt_gauss_fit = dt_gauss_fit
         self.retention_labels = retention_labels
         self.drift_labels = drift_labels
         self.mz_labels = mz_labels
@@ -773,7 +785,9 @@ class IsotopeCluster:
         self.baseline_integrated_mz_rmse, self.baseline_integrated_mz_com, self.baseline_integrated_mz_std, self.baseline_integrated_mz_FWHM = params_from_gaussian_fit(self)
 
         self.rt_norm = self.rts / np.linalg.norm(self.rts)
-        self.rt_com = center_of_mass(self.rts)[0]
+
+        # rt_com is pre calculated during factor data class
+        # self.rt_com = center_of_mass(self.rts)[0]
 
         # Cache DT values
         # If DT is concatenated, return list of coms and norms of single rts relative to bin numbers, a single_dt distribution starts at 0. If only one charge state, return list of len=1
@@ -786,10 +800,14 @@ class IsotopeCluster:
                     self.dts[self.concat_dt_idxs[i]:self.concat_dt_idxs[i + 1]])
 
             self.single_dts = single_dts
-            self.dt_coms = [center_of_mass(dt)[0] for dt in single_dts]
+
+            ## dt coms is pre calculated during factor data class
+            # self.dt_coms = [center_of_mass(dt)[0] for dt in single_dts]
+
             self.dt_norms = [dt / np.linalg.norm(dt) for dt in single_dts]
         else:
-            self.dt_coms = [center_of_mass(self.dts)[0]]
+            ## dt coms is pre calculated during factor data class
+            # self.dt_coms = [center_of_mass(self.dts)[0]]
             self.dt_norms = [self.dts / np.linalg.norm(self.dts)]
 
         if self.n_concatenated == 1:
