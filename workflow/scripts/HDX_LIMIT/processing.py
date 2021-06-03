@@ -559,14 +559,27 @@ class PathOptimizer:
         for timepoint in all_tp_clusters:
             for ic in timepoint:
                 undeut = undeut_grounds[ic.charge_states[0]]
-                ic.dt_ground_err = ic.dt_coms[0] - undeut.dt_coms[0]
-                ic.rt_ground_err = ic.rt_com - undeut.rt_com
+
+                if ic.dt_coms is None:
+                    ic.dt_ground_err = 100.0
+                else:
+                    ic.dt_ground_err = ic.dt_coms - undeut.dt_coms
+                # ic.dt_ground_err = ic.dt_coms[0] - undeut.dt_coms[0]
+
+                if ic.rt_com is None:
+                    ic.rt_ground_err = 100.0
+                else:
+                    ic.rt_ground_err = ic.rt_com - undeut.rt_com
+                # ic.rt_ground_err = ic.rt_com - undeut.rt_com
                 ic.auc_ground_err = ic.auc - undeut.auc
                 ic.dt_ground_fit = max(
                     np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
                 ic.rt_ground_fit = max(np.correlate(undeut.rt_norm, ic.rt_norm, mode='full'))
-                ic.dt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.dt_norms[0])
-                ic.rt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.rt_norm)
+
+                # these are pre calculated in the factor class
+                # ic.dt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.dt_norms[0])
+                # ic.rt_gaussian_rmse = self.rmse_from_gaussian_fit(ic.rt_norm)
+
                 ic.log_baseline_auc_diff = ic.log_baseline_auc - undeut.log_baseline_auc
 
     def generate_sample_paths(self):
