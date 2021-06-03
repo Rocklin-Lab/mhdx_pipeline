@@ -261,12 +261,11 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
     gauss_fit_dict['data_label'] = data_label
 
     try:
-        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess)
-        if popt[2] < 0.0:
+        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, maxfev=100000)
+        if popt[2] < 0:
             gauss_fit_dict['gauss_fit_success'] = False
-            gauss_fit_dict['xc'] = None
-            gauss_fit_dict['width'] = None
-            gauss_fit_dict['auc'] = None
+            gauss_fit_dict['xc'] = center_of_mass(ydata)[0]
+            gauss_fit_dict['auc'] = 1.0
             gauss_fit_dict['fit_rmse'] = 100.0
             gauss_fit_dict['fit_linregress_r2'] = 0.0
             gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
@@ -294,9 +293,8 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
                                                                                   width=popt[3])
     except:
         gauss_fit_dict['gauss_fit_success'] = False
-        gauss_fit_dict['xc'] = None
-        gauss_fit_dict['width'] = None
-        gauss_fit_dict['auc'] = None
+        gauss_fit_dict['xc'] = center_of_mass(ydata)[0]
+        gauss_fit_dict['auc'] = 1.0
         gauss_fit_dict['fit_rmse'] = 100.0
         gauss_fit_dict['fit_linregress_r2'] = 0.0
         gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
@@ -718,21 +716,15 @@ class IsotopeCluster:
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt / self.normalization_factor
 
         # normalize auc with rt and dt auc
-        if self.rt_auc is None:
+        if self.rt_auc > 0:
+            auc_after_rt = self.auc * (1/self.rt_auc)
+        else:
             auc_after_rt = self.auc
-        else:
-            if self.rt_auc > 0:
-                auc_after_rt = self.auc * (1/self.rt_auc)
-            else:
-                auc_after_rt = self.auc
 
-        if self.dt_auc is None:
-            auc_after_rt_dt = auc_after_rt
+        if self.dt_auc > 0:
+            auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
         else:
-            if self.dt_auc > 0:
-                auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
-            else:
-                auc_after_rt_dt = auc_after_rt
+            auc_after_rt_dt = auc_after_rt
 
         self.auc = auc_after_rt_dt
 
