@@ -282,8 +282,9 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
         gauss_fit_dict['gauss_fit_success'] = False
         gauss_fit_dict['xc'] = None
         gauss_fit_dict['width'] = None
-        gauss_fit_dict['fit_rmse'] = 100
+        gauss_fit_dict['fit_rmse'] = 100.0
         gauss_fit_dict['fit_linregress_r2'] = 0.0
+        gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
 
     return gauss_fit_dict
 
@@ -484,6 +485,10 @@ class Factor:
                     high_idx = self.bins_per_isotope_peak * (integrated_indices[1] + 1),
                     rts=self.rts,
                     dts=self.dts,
+                    rt_auc=self.rt_auc,
+                    dt_auc=self.dt_auc,
+                    rt_gauss_fit=self.rt_gauss_fit,
+                    dt_gauss_fit=self.dt_gauss_fit,
                     retention_labels=self.retention_labels,
                     drift_labels=self.drift_labels,
                     mz_labels=self.mz_labels,
@@ -635,6 +640,10 @@ class IsotopeCluster:
         high_idx,
         rts,
         dts,
+        rt_auc,
+        dt_auc,
+        rt_gauss_fit,
+        dt_gauss_fit,
         retention_labels,
         drift_labels,
         mz_labels,
@@ -660,6 +669,10 @@ class IsotopeCluster:
         self.high_idx = high_idx
         self.rts = rts
         self.dts = dts
+        self.rt_auc = rt_auc
+        self.dt_auc = dt_auc
+        self.rt_gauss_fit = rt_gauss_fit
+        self.dt_gauss_fit = dt_gauss_fit
         self.retention_labels = retention_labels
         self.drift_labels = drift_labels
         self.mz_labels = mz_labels
