@@ -57,125 +57,6 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.91, dt_r2_cuto
 
 
 
-
-def estimate_gauss_param(ydata, xdata):
-    ymax = np.max(ydata)
-    maxindex = np.nonzero(ydata == ymax)[0]
-    peakmax_x = xdata[maxindex][0]
-    norm_arr = ydata/max(ydata)
-    bins_for_width = norm_arr[norm_arr > 0.8]
-    width_bin = len(bins_for_width)
-    init_guess = [0, ymax, peakmax_x, width_bin]
-    return init_guess
-
-
-def gauss_func(x, y0, A, xc, w):
-    rxc = ((x - xc) ** 2) / (2 * (w ** 2))
-    y = y0 + A * (np.exp(-rxc))
-    return y
-
-
-def adjrsquared(r2, param, num):
-    y = 1 - (((1 - r2) * (num - 1)) / (num - param - 1))
-    return y
-
-
-def fit_gaussian(xdata, ydata, data_label='dt'):
-
-    init_guess = estimate_gauss_param(ydata, xdata)
-
-    gauss_fit_dict = dict()
-    gauss_fit_dict['data_label'] = data_label
-
-    try:
-        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, maxfev=1000000)
-        y_fit = gauss_func(xdata, *popt)
-        fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
-        slope, intercept, rvalue, pvalue, stderr = linregress(ydata, y_fit)
-        adj_r2 = adjrsquared(r2=rvalue**2, param=4, num=len(ydata))
-        gauss_fit_dict['gauss_fit_status'] = True
-        gauss_fit_dict['y_baseline'] = popt[0]
-        gauss_fit_dict['y_amp'] = popt[1]
-        gauss_fit_dict['xc'] = popt[2]
-        gauss_fit_dict['width'] = popt[3]
-        gauss_fit_dict['y_fit'] = y_fit
-        gauss_fit_dict['fit_rmse'] = fit_rmse
-        gauss_fit_dict['fit_lingress_slope'] = slope
-        gauss_fit_dict['fit_lingress_intercept'] = intercept
-        gauss_fit_dict['fit_lingress_pvalue'] = pvalue
-        gauss_fit_dict['fit_lingress_stderr'] = stderr
-        gauss_fit_dict['fit_linregress_r2'] = rvalue ** 2
-        gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
-    except:
-        gauss_fit_dict['gauss_fit_status'] = False
-        gauss_fit_dict['xc'] = None
-        gauss_fit_dict['width'] = None
-        gauss_fit_dict['fit_rmse'] = 100
-        gauss_fit_dict['fit_linregress_r2'] = 0.0
-
-    return gauss_fit_dict
-
-
-def cal_area_under_curve_from_normal_distribution(low_bound, upper_bound, center, width):
-    """
-    calculate area under the curve given the lower and upper bound
-    :param low_bound: low bound
-    :param upper_bound: upper bound
-    :param center: center of distribution
-    :param width: width of distribution
-    :return: area under curve
-    """
-
-    lb_cdf = norm.cdf(low_bound, loc=center, scale=width)
-    ub_cdf = norm.cdf(upper_bound, loc=center, scale=width)
-    auc = ub_cdf - lb_cdf
-    return auc
-
-
-def fit_factor_rt_dt_gaussians(factor_list):
-    """
-    fit the factor's rt and dt distribution to gaussian
-    :param factor: factor
-    :return: factor with additional gaussfit attributes to dt and rt
-    """
-
-    gauss_fit_factor_list = []
-
-    for factor in factor_list:
-
-        # fit gauss to rt
-        rt_gauss_fit = fit_gaussian(np.arange(len(factor.rts)), factor.rts, data_label='rt')
-
-        # fit gauss to dt
-        dt_gauss_fit = fit_gaussian(np.arange(len(factor.dts)), factor.dts, data_label='dt')
-
-        # assign new attributes in factor class to save gauss fit information
-        factor.rt_gauss_fit = rt_gauss_fit
-        factor.dt_gauss_fit = dt_gauss_fit
-
-        # calculate the area under the curve for rt and dt
-        if rt_gauss_fit['gauss_fit_status']:
-            factor.rt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
-                                                                          upper_bound=len(factor.rts)-1,
-                                                                          center=rt_gauss_fit['xc'],
-                                                                          width=rt_gauss_fit['width'])
-        else:
-            factor.rt_auc = None
-
-        if dt_gauss_fit['gauss_fit_status']:
-            factor.dt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
-                                                                          upper_bound=len(factor.dts) - 1,
-                                                                          center=dt_gauss_fit['xc'],
-                                                                          width=dt_gauss_fit['width'])
-        else:
-            factor.dt_auc = None
-
-        gauss_fit_factor_list.append(factor)
-
-    return gauss_fit_factor_list
-
-
-
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     """
     function to store factor data to factor data class
@@ -255,11 +136,6 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     # profile memory after factorization
     print("Post-Factorization: " + str(process.memory_info().rss /
                                        (1024 * 1024 * 1024)))
-
-    # compute rt and dt gauss fit for factors
-    gauss_fit_factors = fit_factor_rt_dt_gaussians(data_tensor.DataTensor.factors)
-    data_tensor.DataTensor.factors = gauss_fit_factors
-
 
     if filter_factors:
         filtered_factors = filter_factors_on_rt_dt_gauss_fit(factor_list=data_tensor.DataTensor.factors,

@@ -212,6 +212,81 @@ class DataTensor:
         # print('Done: T+'+str(t-t0))
 
 
+
+def cal_area_under_curve_from_normal_distribution(low_bound, upper_bound, center, width):
+    """
+    calculate area under the curve given the lower and upper bound
+    :param low_bound: low bound
+    :param upper_bound: upper bound
+    :param center: center of distribution
+    :param width: width of distribution
+    :return: area under curve
+    """
+
+    lb_cdf = norm.cdf(low_bound, loc=center, scale=width)
+    ub_cdf = norm.cdf(upper_bound, loc=center, scale=width)
+    auc = ub_cdf - lb_cdf
+    return auc
+
+
+def estimate_gauss_param(ydata, xdata):
+    ymax = np.max(ydata)
+    maxindex = np.nonzero(ydata == ymax)[0]
+    peakmax_x = xdata[maxindex][0]
+    norm_arr = ydata/max(ydata)
+    bins_for_width = norm_arr[norm_arr > 0.8]
+    width_bin = len(bins_for_width)
+    init_guess = [0, ymax, peakmax_x, width_bin]
+    return init_guess
+
+
+def gauss_func(x, y0, A, xc, w):
+    rxc = ((x - xc) ** 2) / (2 * (w ** 2))
+    y = y0 + A * (np.exp(-rxc))
+    return y
+
+
+def adjrsquared(r2, param, num):
+    y = 1 - (((1 - r2) * (num - 1)) / (num - param - 1))
+    return y
+
+
+def fit_gaussian(xdata, ydata, data_label='dt'):
+
+    init_guess = estimate_gauss_param(ydata, xdata)
+
+    gauss_fit_dict = dict()
+    gauss_fit_dict['data_label'] = data_label
+
+    try:
+        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, maxfev=1000000)
+        y_fit = gauss_func(xdata, *popt)
+        fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
+        slope, intercept, rvalue, pvalue, stderr = linregress(ydata, y_fit)
+        adj_r2 = adjrsquared(r2=rvalue**2, param=4, num=len(ydata))
+        gauss_fit_dict['gauss_fit_success'] = True
+        gauss_fit_dict['y_baseline'] = popt[0]
+        gauss_fit_dict['y_amp'] = popt[1]
+        gauss_fit_dict['xc'] = popt[2]
+        gauss_fit_dict['width'] = popt[3]
+        gauss_fit_dict['y_fit'] = y_fit
+        gauss_fit_dict['fit_rmse'] = fit_rmse
+        gauss_fit_dict['fit_lingress_slope'] = slope
+        gauss_fit_dict['fit_lingress_intercept'] = intercept
+        gauss_fit_dict['fit_lingress_pvalue'] = pvalue
+        gauss_fit_dict['fit_lingress_stderr'] = stderr
+        gauss_fit_dict['fit_linregress_r2'] = rvalue ** 2
+        gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
+    except:
+        gauss_fit_dict['gauss_fit_success'] = False
+        gauss_fit_dict['xc'] = None
+        gauss_fit_dict['width'] = None
+        gauss_fit_dict['fit_rmse'] = 100
+        gauss_fit_dict['fit_linregress_r2'] = 0.0
+
+    return gauss_fit_dict
+
+
 ###
 ### Class - Factor:
 ### Holds data from a single component of a non_negative_parafac factorization
@@ -279,6 +354,28 @@ class Factor:
         #self.baseline_subtracted_integrated_mz = (self.integrated_mz_data -
         #                                          self.integrated_mz_baseline)
         self.baseline_subtracted_integrated_mz = self.integrated_mz_data
+
+        # fit factor rts and dts to gaussian
+        self.rt_gauss_fit = fit_gaussian(np.arange(len(self.rts)), self.rts, data_label='rt')
+        self.dt_gauss_fit = fit_gaussian(np.arange(len(self.dts)), self.dts, data_label='dt')
+
+
+        # calculate rt and dt auc
+        if self.rt_gauss_fit['gauss_fit_success']:
+            self.rt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
+                                                                               upper_bound=len(self.rts) - 1,
+                                                                               center=self.rt_gauss_fit['xc'],
+                                                                               width=self.rt_gauss_fit['width'])
+        else:
+            self.rt_auc = None
+
+        if self.dt_gauss_fit['gauss_fit_success']:
+            self.dt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
+                                                                               upper_bound=len(self.dts) - 1,
+                                                                               center=self.dt_gauss_fit['xc'],
+                                                                               width=self.dt_gauss_fit['width'])
+        else:
+            self.rt_auc = None
 
         ## old protocol.
         # Writes to self.isotope_clusters
