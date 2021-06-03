@@ -443,7 +443,7 @@ class PathOptimizer:
         self.generate_sample_paths()
 
 
-    def alt_weak_pareto_dom_filter(self):
+    def weak_pareto_dom_filter(self):
         out = []
         for tp in self.all_tp_clusters:
             tp_buffer = []
@@ -455,10 +455,10 @@ class PathOptimizer:
                         np.round(ic2.baseline_integrated_mz_com) == ic1_int_mz_com and
                         ic2.rt_ground_err**2 < ic1.rt_ground_err**2 and
                         ic2.dt_ground_err**2 < ic1.dt_ground_err**2 and
-                        ic2.peak_err < ic1.peak_err and 
+                        ic2.baseline_peak_error < ic1.baseline_peak_error and
                         ic2.rt_ground_fit > ic1.rt_ground_fit and 
                         ic2.dt_ground_fit > ic1.dt_ground_fit and 
-                        ic2.auc_ground_err**2 > ic1.auc_ground_err**2
+                        ic2.auc_ground_err**2 < ic1.auc_ground_err**2
                        ):
                         compare_flag = True
                         break
@@ -468,7 +468,7 @@ class PathOptimizer:
         return out
 
 
-    def weak_pareto_dom_filter(self):
+    def alt_weak_pareto_dom_filter(self):
         # Filters input of PO ICs to ensure no IC is worse in every score dimension than another IC (weak Pareto domination)
 
         out = []
