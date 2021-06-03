@@ -363,19 +363,19 @@ class Factor:
         # calculate rt and dt auc
         if self.rt_gauss_fit['gauss_fit_success']:
             self.rt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
-                                                                               upper_bound=len(self.rts) - 1,
-                                                                               center=self.rt_gauss_fit['xc'],
-                                                                               width=self.rt_gauss_fit['width'])
+                                                                        upper_bound=len(self.rts) - 1,
+                                                                        center=self.rt_gauss_fit['xc'],
+                                                                        width=self.rt_gauss_fit['width'])
         else:
             self.rt_auc = None
 
         if self.dt_gauss_fit['gauss_fit_success']:
             self.dt_auc = cal_area_under_curve_from_normal_distribution(low_bound=0,
-                                                                               upper_bound=len(self.dts) - 1,
-                                                                               center=self.dt_gauss_fit['xc'],
-                                                                               width=self.dt_gauss_fit['width'])
+                                                                        upper_bound=len(self.dts) - 1,
+                                                                        center=self.dt_gauss_fit['xc'],
+                                                                        width=self.dt_gauss_fit['width'])
         else:
-            self.rt_auc = None
+            self.dt_auc = None
 
         ## old protocol.
         # Writes to self.isotope_clusters
