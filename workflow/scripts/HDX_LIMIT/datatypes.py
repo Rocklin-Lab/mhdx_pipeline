@@ -292,10 +292,6 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
                                                                                   upper_bound=len(xdata) - 1,
                                                                                   center=popt[2],
                                                                                   width=popt[3])
-
-
-
-
     except:
         gauss_fit_dict['gauss_fit_success'] = False
         gauss_fit_dict['xc'] = None
