@@ -695,22 +695,22 @@ class IsotopeCluster:
 
         # normalize auc with rt and dt auc
         if self.rt_auc is None:
-            self.auc_after_rt = self.auc
+            auc_after_rt = self.auc
         else:
             try:
-                self.auc_after_rt = self.auc * (1/self.rt_auc)
+                auc_after_rt = self.auc * (1/self.rt_auc)
             except:
-                self.auc_after_rt = self.auc
+                auc_after_rt = self.auc
 
         if self.dt_auc is None:
-            self.auc_after_rt_dt = self.auc_after_rt
+            auc_after_rt_dt = auc_after_rt
         else:
             try:
-                self.auc_after_rt_dt = self.auc_after_rt * (1/self.dt_auc)
+                auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
             except:
-                self.auc_after_rt_dt = self.auc_after_rt
+                auc_after_rt_dt = auc_after_rt
 
-        self.auc = self.auc_after_rt_dt
+        self.auc = auc_after_rt_dt
 
 
 
