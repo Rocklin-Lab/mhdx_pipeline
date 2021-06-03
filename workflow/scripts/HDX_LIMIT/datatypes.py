@@ -14,6 +14,7 @@ import scipy as sp
 from scipy.optimize import curve_fit
 from sklearn.metrics import mean_squared_error
 from scipy.stats import norm
+from scipy.stats import linregress
 
 
 class DataTensor:
