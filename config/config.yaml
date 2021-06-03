@@ -196,8 +196,8 @@ timepoints:
 #factor filter option. bool (True or False)
 # set the r2 cutoff values for rt and dt data of the factors
 "filter_factor": True
-"factor_rt_r2_cutoff": 0.91
-"factor_dt_r2_cutoff": 0.91
+"factor_rt_r2_cutoff": 0.90
+"factor_dt_r2_cutoff": 0.90
 
 
 # ic generation options
