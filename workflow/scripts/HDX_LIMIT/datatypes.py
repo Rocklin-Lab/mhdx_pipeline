@@ -302,6 +302,16 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
     return gauss_fit_dict
 
 
+def model_data_with_gauss(data, gauss_params):
+
+    data_length = len(data)
+    center = int(gauss_params[2])
+    upper_bound = center + data_length/2
+    low_bound = upper_bound - data_length
+    new_xdata = np.arange(low_bound, upper_bound)
+    new_gauss_data = gauss_func(new_xdata, *gauss_params)
+    return new_gauss_data
+
 ###
 ### Class - Factor:
 ### Holds data from a single component of a non_negative_parafac factorization
@@ -358,9 +368,6 @@ class Factor:
         # integrate within expected peak bounds and create boolean mask of expected peak bounds called grate
         self.integrated_mz_data = np.sum(np.reshape(mz_data, (-1, self.bins_per_isotope_peak)), axis=1)
 
-        self.max_rtdt = max(self.rts) * max(self.dts)
-        self.outer_rtdt = sum(sum(np.outer(self.rts, self.dts)))
-
         # This can be a shared function
         #self.integrated_mz_baseline = peakutils.baseline(
         #    np.asarray(self.integrated_mz_data),
@@ -385,6 +392,29 @@ class Factor:
         self.dt_com = dt_gauss_fit['xc']
         self.dt_gaussian_rmse = dt_gauss_fit['fit_rmse']
         self.dt_gauss_fit_r2 = dt_gauss_fit['fit_linregress_r2']
+
+
+        # calculate max rtdt and outer rtdt based on gauss fits
+        if rt_gauss_fit['gauss_fit_success']:
+            gauss_params = [rt_gauss_fit['y_baseline'], rt_gauss_fit['y_amp'], rt_gauss_fit['xc'], rt_gauss_fit['width']]
+            rt_fac = model_data_with_gauss(self.rts, gauss_params)
+        else:
+            rt_fac = self.rts
+
+        if dt_gauss_fit['gauss_fit_success']:
+            gauss_params = [dt_gauss_fit['y_baseline'], dt_gauss_fit['y_amp'], dt_gauss_fit['xc'], dt_gauss_fit['width']]
+            dt_fac = model_data_with_gauss(self.dts, gauss_params)
+        else:
+            dt_fac = self.rts
+
+        # self.max_rtdt = max(self.rts) * max(self.dts)
+        # self.outer_rtdt = sum(sum(np.outer(self.rts, self.dts)))
+
+        self.max_rtdt_old = max(self.rts) * max(self.dts)
+        self.outer_rtdt_old = sum(sum(np.outer(self.rts, self.dts)))
+
+        self.max_rtdt = max(rt_fac) * max(dt_fac)
+        self.outer_rtdt = sum(sum(np.outer(rt_fac, dt_fac)))
 
         # assign dt and rt com
 
@@ -716,17 +746,17 @@ class IsotopeCluster:
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt / self.normalization_factor
 
         # normalize auc with rt and dt auc
-        if self.rt_auc > 0:
-            auc_after_rt = self.auc * (1/self.rt_auc)
-        else:
-            auc_after_rt = self.auc
-
-        if self.dt_auc > 0:
-            auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
-        else:
-            auc_after_rt_dt = auc_after_rt
-
-        self.auc = auc_after_rt_dt
+        # if self.rt_auc > 0:
+        #     auc_after_rt = self.auc * (1/self.rt_auc)
+        # else:
+        #     auc_after_rt = self.auc
+        #
+        # if self.dt_auc > 0:
+        #     auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
+        # else:
+        #     auc_after_rt_dt = auc_after_rt
+        #
+        # self.auc = auc_after_rt_dt
 
 
 
