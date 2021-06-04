@@ -562,7 +562,7 @@ class PathOptimizer:
 
                 ic.dt_ground_err = abs(ic.dt_coms - undeut.dt_coms)
                 ic.rt_ground_err = abs(ic.rt_com - undeut.rt_com)
-                ic.auc_ground_err = ic.auc - undeut.auc
+                ic.auc_ground_err = ic.log_baseline_auc - undeut.log_baseline_auc
                 ic.dt_ground_fit = max(
                     np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
                 ic.rt_ground_fit = max(np.correlate(undeut.rt_norm, ic.rt_norm, mode='full'))
