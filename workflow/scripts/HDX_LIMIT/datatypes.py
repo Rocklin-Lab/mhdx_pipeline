@@ -231,12 +231,13 @@ def cal_area_under_curve_from_normal_distribution(low_bound, upper_bound, center
 
 
 def estimate_gauss_param(ydata, xdata):
+    xdata_bin_value = (xdata[-1] - xdata[0])/len(xdata)
     ymax = np.max(ydata)
     maxindex = np.nonzero(ydata == ymax)[0]
     peakmax_x = xdata[maxindex][0]
     norm_arr = ydata/max(ydata)
     bins_for_width = norm_arr[norm_arr > 0.70]
-    width_bin = len(bins_for_width)
+    width_bin = len(bins_for_width) * xdata_bin_value
     init_guess = [0, ymax, peakmax_x, width_bin]
     # bounds = ([0, 0, 0, 0], [np.inf, np.inf, len(xdata)-1, len(xdata)-1])
     return init_guess
@@ -253,22 +254,32 @@ def adjrsquared(r2, param, num):
     return y
 
 
+def gen_center_of_mass_from_data(xdata, ydata):
+    center_of_mass_ydata = center_of_mass(ydata)[0]
+    poly_fit = np.polyfit(np.arange(len(xdata)), xdata, deg=1)
+    center_of_mass_xdata = np.polyval(poly_fit, center_of_mass_ydata)
+    return center_of_mass_xdata
+
+
 def fit_gaussian(xdata, ydata, data_label='dt'):
 
     init_guess = estimate_gauss_param(ydata, xdata)
 
     gauss_fit_dict = dict()
     gauss_fit_dict['data_label'] = data_label
+    gauss_fit_dict['gauss_fit_success'] = False
+    gauss_fit_dict['xc'] = gen_center_of_mass_from_data(xdata, ydata)
+    gauss_fit_dict['auc'] = 1.0
+    gauss_fit_dict['fit_rmse'] = 100.0
+    gauss_fit_dict['fit_linregress_r2'] = 0.0
+    gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
 
     try:
         popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, maxfev=100000)
         if popt[2] < 0:
-            gauss_fit_dict['gauss_fit_success'] = False
-            gauss_fit_dict['xc'] = center_of_mass(ydata)[0]
-            gauss_fit_dict['auc'] = 1.0
-            gauss_fit_dict['fit_rmse'] = 100.0
-            gauss_fit_dict['fit_linregress_r2'] = 0.0
-            gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
+            return gauss_fit_dict
+        if popt[3] < 0:
+            return gauss_fit_dict
         else:
             y_fit = gauss_func(xdata, *popt)
             fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
@@ -287,28 +298,27 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
             gauss_fit_dict['fit_lingress_stderr'] = stderr
             gauss_fit_dict['fit_linregress_r2'] = rvalue ** 2
             gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
-            gauss_fit_dict['auc'] = cal_area_under_curve_from_normal_distribution(low_bound=0,
-                                                                                  upper_bound=len(xdata) - 1,
+            gauss_fit_dict['auc'] = cal_area_under_curve_from_normal_distribution(low_bound=xdata[0],
+                                                                                  upper_bound=xdata[-1],
                                                                                   center=popt[2],
                                                                                   width=popt[3])
+            return gauss_fit_dict
     except:
-        gauss_fit_dict['gauss_fit_success'] = False
-        gauss_fit_dict['xc'] = center_of_mass(ydata)[0]
-        gauss_fit_dict['auc'] = 1.0
-        gauss_fit_dict['fit_rmse'] = 100.0
-        gauss_fit_dict['fit_linregress_r2'] = 0.0
-        gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
-
-    return gauss_fit_dict
+        return gauss_fit_dict
 
 
-def model_data_with_gauss(data, gauss_params):
+def model_data_with_gauss(xdata, gauss_params):
 
-    data_length = len(data)
-    center = int(gauss_params[2])
-    upper_bound = center + data_length/2
-    low_bound = upper_bound - data_length
-    new_xdata = np.arange(low_bound, upper_bound)
+    data_length = len(xdata)
+    bin_value = (xdata[-1] - xdata[0])/data_length
+    center = gauss_params[2]
+    data_length_half = int(data_length/2)
+    low_val = center - (data_length_half * bin_value)
+    new_xdata = []
+    for num in range(data_length):
+        val = low_val + (num * bin_value)
+        new_xdata.append(val)
+    new_xdata = np.array(new_xdata)
     new_gauss_data = gauss_func(new_xdata, *gauss_params)
     return new_gauss_data
 
@@ -397,13 +407,13 @@ class Factor:
         # calculate max rtdt and outer rtdt based on gauss fits
         if rt_gauss_fit['gauss_fit_success']:
             gauss_params = [rt_gauss_fit['y_baseline'], rt_gauss_fit['y_amp'], rt_gauss_fit['xc'], rt_gauss_fit['width']]
-            rt_fac = model_data_with_gauss(self.rts, gauss_params)
+            rt_fac = model_data_with_gauss(self.retention_labels, gauss_params)
         else:
             rt_fac = self.rts
 
         if dt_gauss_fit['gauss_fit_success']:
             gauss_params = [dt_gauss_fit['y_baseline'], dt_gauss_fit['y_amp'], dt_gauss_fit['xc'], dt_gauss_fit['width']]
-            dt_fac = model_data_with_gauss(self.dts, gauss_params)
+            dt_fac = model_data_with_gauss(self.drift_labels, gauss_params)
         else:
             dt_fac = self.rts
 
@@ -539,6 +549,8 @@ class Factor:
                     bins_per_isotope_peak=self.bins_per_isotope_peak,
                     max_rtdt=self.max_rtdt,
                     outer_rtdt=self.outer_rtdt,
+                    max_rtdt_old=self.max_rtdt_old,
+                    outer_rtdt_old=self.outer_rtdt_old,
                     n_concatenated=self.n_concatenated,
                     concat_dt_idxs=self.concat_dt_idxs,
                     normalization_factor=self.normalization_factor
@@ -698,6 +710,8 @@ class IsotopeCluster:
         bins_per_isotope_peak,
         max_rtdt,
         outer_rtdt,
+        max_rtdt_old,
+        outer_rtdt_old,
         n_concatenated,
         concat_dt_idxs,
         normalization_factor
@@ -731,6 +745,8 @@ class IsotopeCluster:
         self.bins_per_isotope_peak = bins_per_isotope_peak
         self.max_rtdt = max_rtdt
         self.outer_rtdt = outer_rtdt
+        self.max_rtdt_old = max_rtdt_old
+        self.outer_rtdt_old = outer_rtdt_old
         self.n_concatenated = n_concatenated
         self.concat_dt_idxs = concat_dt_idxs
         self.normalization_factor = normalization_factor
@@ -743,6 +759,24 @@ class IsotopeCluster:
         self.cluster_mz_data[self.high_idx:] = 0
 
         # integrate area of IC and normalize according the TIC counts
+        self.auc_no_rt_dt_norm = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
+
+        self.auc_old = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
+        # normalize auc with rt and dt auc
+        if self.rt_auc > 0:
+            auc_after_rt = self.auc_old * (1/self.rt_auc)
+        else:
+            auc_after_rt = self.auc_old
+
+        if self.dt_auc > 0:
+            auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
+        else:
+            auc_after_rt_dt = auc_after_rt
+
+        self.auc_old = auc_after_rt_dt
+
+
+
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt / self.normalization_factor
 
         # normalize auc with rt and dt auc
