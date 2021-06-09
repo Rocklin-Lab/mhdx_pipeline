@@ -758,6 +758,9 @@ class IsotopeCluster:
         self.cluster_mz_data[0:self.low_idx] = 0
         self.cluster_mz_data[self.high_idx:] = 0
 
+        #####################################################################################################
+        #########################################################################################################
+        ### the following block of code is just for comparison with self.auc
         # integrate area of IC and normalize according the TIC counts
         self.auc_no_rt_dt_norm = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
 
@@ -774,25 +777,11 @@ class IsotopeCluster:
             auc_after_rt_dt = auc_after_rt
 
         self.auc_old = auc_after_rt_dt
+        #########################################################################################################
+        #########################################################################################################
 
-
-
+        # integrate area of IC and normalize according the TIC counts
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt / self.normalization_factor
-
-        # normalize auc with rt and dt auc
-        # if self.rt_auc > 0:
-        #     auc_after_rt = self.auc * (1/self.rt_auc)
-        # else:
-        #     auc_after_rt = self.auc
-        #
-        # if self.dt_auc > 0:
-        #     auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
-        # else:
-        #     auc_after_rt_dt = auc_after_rt
-        #
-        # self.auc = auc_after_rt_dt
-
-
 
         # identify peaks and find error from expected peak positions using raw mz
         
