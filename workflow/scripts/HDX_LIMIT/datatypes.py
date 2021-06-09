@@ -378,8 +378,8 @@ class Factor:
         self.baseline_subtracted_integrated_mz = self.integrated_mz_data
 
         # fit factor rts and dts to gaussian
-        rt_gauss_fit = fit_gaussian(np.arange(len(self.rts)), self.rts, data_label='rt')
-        dt_gauss_fit = fit_gaussian(np.arange(len(self.dts)), self.dts, data_label='dt')
+        rt_gauss_fit = fit_gaussian(self.retention_labels, self.rts, data_label='rt')
+        dt_gauss_fit = fit_gaussian(self.drift_labels, self.dts, data_label='dt')
 
         self.rt_gauss_fit_success = rt_gauss_fit['gauss_fit_success']
         self.rt_auc = rt_gauss_fit['auc']
