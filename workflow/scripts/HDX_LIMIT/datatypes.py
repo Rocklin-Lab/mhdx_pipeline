@@ -231,13 +231,12 @@ def cal_area_under_curve_from_normal_distribution(low_bound, upper_bound, center
 
 
 def estimate_gauss_param(ydata, xdata):
-    xdata_bin_value = (xdata[-1] - xdata[0])/len(xdata)
     ymax = np.max(ydata)
     maxindex = np.nonzero(ydata == ymax)[0]
     peakmax_x = xdata[maxindex][0]
     norm_arr = ydata/max(ydata)
     bins_for_width = norm_arr[norm_arr > 0.70]
-    width_bin = len(bins_for_width) * xdata_bin_value
+    width_bin = len(bins_for_width)
     init_guess = [0, ymax, peakmax_x, width_bin]
     # bounds = ([0, 0, 0, 0], [np.inf, np.inf, len(xdata)-1, len(xdata)-1])
     return init_guess
@@ -254,13 +253,6 @@ def adjrsquared(r2, param, num):
     return y
 
 
-def gen_center_of_mass_from_data(xdata, ydata):
-    center_of_mass_ydata = center_of_mass(ydata)[0]
-    poly_fit = np.polyfit(np.arange(len(xdata)), xdata, deg=1)
-    center_of_mass_xdata = np.polyval(poly_fit, center_of_mass_ydata)
-    return center_of_mass_xdata
-
-
 def fit_gaussian(xdata, ydata, data_label='dt'):
 
     init_guess = estimate_gauss_param(ydata, xdata)
@@ -268,7 +260,7 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
     gauss_fit_dict = dict()
     gauss_fit_dict['data_label'] = data_label
     gauss_fit_dict['gauss_fit_success'] = False
-    gauss_fit_dict['xc'] = gen_center_of_mass_from_data(xdata, ydata)
+    gauss_fit_dict['xc'] = center_of_mass(ydata)[0]
     gauss_fit_dict['auc'] = 1.0
     gauss_fit_dict['fit_rmse'] = 100.0
     gauss_fit_dict['fit_linregress_r2'] = 0.0
@@ -770,21 +762,21 @@ class IsotopeCluster:
         #########################################################################################################
         ### the following block of code is just for comparison with self.auc
         # integrate area of IC and normalize according the TIC counts
-        self.auc_no_rt_dt_norm = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
-
-        self.auc_old = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
-        # normalize auc with rt and dt auc
-        if self.rt_auc > 0:
-            auc_after_rt = self.auc_old * (1/self.rt_auc)
-        else:
-            auc_after_rt = self.auc_old
-
-        if self.dt_auc > 0:
-            auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
-        else:
-            auc_after_rt_dt = auc_after_rt
-
-        self.auc_old = auc_after_rt_dt
+        # self.auc_no_rt_dt_norm = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
+        #
+        # self.auc_old = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
+        # # normalize auc with rt and dt auc
+        # if self.rt_auc > 0:
+        #     auc_after_rt = self.auc_old * (1/self.rt_auc)
+        # else:
+        #     auc_after_rt = self.auc_old
+        #
+        # if self.dt_auc > 0:
+        #     auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
+        # else:
+        #     auc_after_rt_dt = auc_after_rt
+        #
+        # self.auc_old = auc_after_rt_dt
         #########################################################################################################
         #########################################################################################################
 
