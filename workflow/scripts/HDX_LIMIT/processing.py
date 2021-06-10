@@ -560,10 +560,10 @@ class PathOptimizer:
             for ic in timepoint:
                 undeut = undeut_grounds[ic.charge_states[0]]
 
-                # ic.dt_ground_err = abs(ic.dt_coms - undeut.dt_coms)
-                # ic.rt_ground_err = abs(ic.rt_com - undeut.rt_com)
-                ic.dt_ground_err = abs(ic.dt_coms - ic.dt_mean)
-                ic.rt_ground_err = abs(ic.rt_com - ic.rt_mean)
+                ic.dt_ground_err = abs(ic.dt_coms - undeut.dt_coms)
+                ic.rt_ground_err = abs(ic.rt_com - undeut.rt_com)
+                # ic.dt_ground_err = abs(ic.dt_coms - ic.dt_mean)
+                # ic.rt_ground_err = abs(ic.rt_com - ic.rt_mean)
                 ic.auc_ground_err = ic.log_baseline_auc - undeut.log_baseline_auc
                 ic.dt_ground_fit = max(
                     np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
