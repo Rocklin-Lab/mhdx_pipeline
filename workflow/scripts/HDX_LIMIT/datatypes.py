@@ -388,8 +388,8 @@ class Factor:
         self.baseline_subtracted_integrated_mz = self.integrated_mz_data
 
         # fit factor rts and dts to gaussian
-        rt_gauss_fit = fit_gaussian(self.retention_labels, self.rts, data_label='rt')
-        dt_gauss_fit = fit_gaussian(self.drift_labels, self.dts, data_label='dt')
+        rt_gauss_fit = fit_gaussian(np.arange(len(self.rts)), self.rts, data_label='rt')
+        dt_gauss_fit = fit_gaussian(np.arange(len(self.dts)), self.dts, data_label='dt')
 
         self.rt_gauss_fit_success = rt_gauss_fit['gauss_fit_success']
         self.rt_auc = rt_gauss_fit['auc']
@@ -407,13 +407,13 @@ class Factor:
         # calculate max rtdt and outer rtdt based on gauss fits
         if rt_gauss_fit['gauss_fit_success']:
             gauss_params = [rt_gauss_fit['y_baseline'], rt_gauss_fit['y_amp'], rt_gauss_fit['xc'], rt_gauss_fit['width']]
-            rt_fac = model_data_with_gauss(self.retention_labels, gauss_params)
+            rt_fac = model_data_with_gauss(np.arange(len(self.rts)), gauss_params)
         else:
             rt_fac = self.rts
 
         if dt_gauss_fit['gauss_fit_success']:
             gauss_params = [dt_gauss_fit['y_baseline'], dt_gauss_fit['y_amp'], dt_gauss_fit['xc'], dt_gauss_fit['width']]
-            dt_fac = model_data_with_gauss(self.drift_labels, gauss_params)
+            dt_fac = model_data_with_gauss(np.arange(len(self.dts)), gauss_params)
         else:
             dt_fac = self.rts
 
@@ -426,7 +426,9 @@ class Factor:
         self.max_rtdt = max(rt_fac) * max(dt_fac)
         self.outer_rtdt = sum(sum(np.outer(rt_fac, dt_fac)))
 
-        # assign dt and rt com
+        # assign mean rt and dt values
+        self.rt_mean = np.mean(np.arange(len(self.rts)))
+        self.dt_mean = np.mean(np.arange(len(self.dts)))
 
 
         ## old protocol.
@@ -535,6 +537,8 @@ class Factor:
                     high_idx = self.bins_per_isotope_peak * (integrated_indices[1] + 1),
                     rts=self.rts,
                     dts=self.dts,
+                    rt_mean=self.rt_mean,
+                    dt_mean=self.dt_mean,
                     rt_gauss_fit_success=self.rt_gauss_fit_success,
                     dt_gauss_fit_success=self.dt_gauss_fit_success,
                     rt_gaussian_rmse=self.rt_gaussian_rmse,
@@ -696,6 +700,8 @@ class IsotopeCluster:
         high_idx,
         rts,
         dts,
+        rt_mean,
+        dt_mean,
         rt_gauss_fit_success,
         dt_gauss_fit_success,
         rt_gaussian_rmse,
@@ -731,6 +737,8 @@ class IsotopeCluster:
         self.high_idx = high_idx
         self.rts = rts
         self.dts = dts
+        self.rt_mean = rt_mean
+        self.dt_mean = dt_mean
         self.rt_gauss_fit_success = rt_gauss_fit_success
         self.dt_gauss_fit_success = dt_gauss_fit_success
         self.rt_gaussian_rmse = rt_gaussian_rmse
