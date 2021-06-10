@@ -560,8 +560,10 @@ class PathOptimizer:
             for ic in timepoint:
                 undeut = undeut_grounds[ic.charge_states[0]]
 
-                ic.dt_ground_err = abs(ic.dt_coms - undeut.dt_coms)
-                ic.rt_ground_err = abs(ic.rt_com - undeut.rt_com)
+                # ic.dt_ground_err = abs(ic.dt_coms - undeut.dt_coms)
+                # ic.rt_ground_err = abs(ic.rt_com - undeut.rt_com)
+                ic.dt_ground_err = abs(ic.dt_coms - ic.dt_mean)
+                ic.rt_ground_err = abs(ic.rt_com - ic.rt_mean)
                 ic.auc_ground_err = ic.log_baseline_auc - undeut.log_baseline_auc
                 ic.dt_ground_fit = max(
                     np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
@@ -981,7 +983,7 @@ class PathOptimizer:
 
         for i in range(2, len(ics)):
             # if previous_rate == 0: diagnostic for /0 error
-            new_com = ics[i].baseline_integrated_mz_com
+            new_com = ics[i].baseline_integrated_mz_com #todo: tolerance for backward
             if new_com < ics[
                     i - 1].baseline_integrated_mz_com:  # if we went backwards
                 backward += (100 *
