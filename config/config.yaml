@@ -160,7 +160,7 @@ timepoints:
 "old_data_dir": "/projects/p30802/digs_old/HX/180604_mix2_MES/hx_fits/"
 
 #boundaries on tensor size in each dimension (LC-time in decimal minutes, IMS time in ms, M/Z by mass-units)
-"rt_radius": 0.4
+"rt_radius": 0.75
 "dt_radius_scale": 0.06
 
 #the two values below are added to the length of the protein sequence to determine the total_mass_window of a tensor (70 for a protein with 43 resiudes)
