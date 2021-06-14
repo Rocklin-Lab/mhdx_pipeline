@@ -69,7 +69,7 @@ rule gzip_mzmls:
 rule make_ims_mz_tics:
     # calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
     input:
-        "resources/mzml/{mzml}",
+        "resources/mzml/{mzml}.gz",
     output:
         "resources/tics/{mzml}.ims.mz.tic",
         "resources/tics/{mzml}_sum.txt"
