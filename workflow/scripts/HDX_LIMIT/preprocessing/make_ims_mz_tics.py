@@ -1,12 +1,20 @@
-import os
-import sys
-import gzip
-import ipdb
 import pymzml
 import argparse
 import collections
 import numpy as np
-import pandas as pd
+import _pickle as cpickle
+import zlib
+
+
+def save_obj_to_compressed_file(output_path, obj):
+    """
+    save object to a compressed file
+    :param output_path: file output path
+    :param object: object to save
+    :return: None
+    """
+    with open(output_path, "wb") as outfile:
+        outfile.write(zlib.compress(cpickle.dumps(obj)))
 
 
 def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
@@ -82,8 +90,22 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
                     print(rtIndex)
     mzml_sum = np.sum(ms1_ims_tic)
 
+    # convert ms1_ims_tic to tic_cumulative_sum and tic_base_sum and save those
+    tic_reshape = np.reshape(ms1_ims_tic, (200, 70, -1))
+    tic_ims_only = np.sum(tic_reshape, axis=1)
+    tic_base_sums = np.sum(tic_ims_only[:, 1:], axis=1)
+    tic_cumulative_sum = np.cumsum(tic_ims_only[:, 1:], axis=1)
+
+    out_dict = dict()
+    out_dict['tics_base_sums'] = tic_base_sums
+    out_dict['tic_cumulative_sum'] = tic_cumulative_sum
+
+    # ref_tic_ims_only = np.sum(ref_tic_reshape, axis=1)
+    # base_sums = np.sum(ref_tic_ims_only[:, 1:], axis=1)
+    # ref_tic_cumsum = np.cumsum(ref_tic_ims_only[:, 1:], axis=1)
+
     if out_path is not None:
-        np.savetxt(out_path, ms1_ims_tic, fmt="%i")
+        save_obj_to_compressed_file(output_path=out_path, obj=out_dict)
 
     if mzml_sum_outpath is not None:
         with open(mzml_sum_outpath, "w") as txt_file:
@@ -105,7 +127,7 @@ if __name__ == "__main__":
                         help="path/to/file for one timepoint .mzML")
     parser.add_argument("-o",
                         "--out_path",
-                        help="path/to/file for main output .ims.mz.tic")
+                        help="path/to/file for main tic output .tic.cpickle.zlib")
     parser.add_argument("-s",
                         "--mzml_sum_outpath",
                         help="path/to/file for <mzml>_sum.txt")
