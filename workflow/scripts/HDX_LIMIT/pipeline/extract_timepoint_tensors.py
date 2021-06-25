@@ -433,13 +433,17 @@ if __name__ == "__main__":
 
         open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
 
+        # obtain dt and rt radius from config file
+        rt_radius = open_timepoints["rt_radius"]
+        dt_radius_scale = open_timepoints["dt_radius_scale"]
+
         main(library_info_path=args.library_info_path,
              mzml_gz_path=args.mzml_gz_path,
              timepoints_dict=open_timepoints,
              outputs=args.outputs,
              low_mass_margin=args.low_mass_margin,
              high_mass_margin=args.high_mass_margin,
-             rt_radius=args.rt_radius,
-             dt_radius_scale=args.dt_radius_scale,
+             rt_radius=rt_radius,
+             dt_radius_scale=dt_radius_scale,
              polyfit_calibration_dict=args.polyfit_calibration_dict,
              indices=args.indices)
