@@ -160,7 +160,7 @@ timepoints:
 "old_data_dir": "/projects/p30802/digs_old/HX/180604_mix2_MES/hx_fits/"
 
 #boundaries on tensor size in each dimension (LC-time in decimal minutes, IMS time in ms, M/Z by mass-units)
-"rt_radius": 0.75
+"rt_radius": 0.40
 "dt_radius_scale": 0.06
 
 #the two values below are added to the length of the protein sequence to determine the total_mass_window of a tensor (70 for a protein with 43 resiudes)
@@ -196,8 +196,8 @@ timepoints:
 #factor filter option. bool (True or False)
 # set the r2 cutoff values for rt and dt data of the factors
 "filter_factor": True
-"factor_rt_r2_cutoff": 0.90
-"factor_dt_r2_cutoff": 0.90
+"factor_rt_r2_cutoff": 0.91
+"factor_dt_r2_cutoff": 0.91
 
 
 # ic generation options
@@ -219,7 +219,7 @@ timepoints:
 
 #mz calibration polyfit parameters
 "polyfit_calibration": False
-"polyfit_deg": 1
+"polyfit_deg": 2
 "ppm_tolerance": 50
 "intensity_tolerance": 10000
 "cluster_corr_tolerance": 0.99
