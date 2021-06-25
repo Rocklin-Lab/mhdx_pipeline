@@ -453,8 +453,6 @@ def main(names_and_seqs_path,
     if return_flag is not None:
         return {"library_info": catdf.to_dict(), "normalization_factors": normalization_factors}
 
-    # test committ
-
 
 if __name__ == "__main__":
 
@@ -536,7 +534,7 @@ if __name__ == "__main__":
         args.intermediates = list(
             glob.glob(args.intermediates_dir + "*intermediate.csv"))
     if args.tics_dir is not None and args.tics is None:
-        args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic"))
+        args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic.cpickle.zlib"))
     open_timepoints = yaml.load(open(args.timepoints, "rt"),
                                 Loader=yaml.FullLoader)
 
