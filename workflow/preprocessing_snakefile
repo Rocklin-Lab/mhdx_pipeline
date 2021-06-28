@@ -71,7 +71,7 @@ rule make_ims_mz_tics:
     input:
         "resources/mzml/{mzml}.gz",
     output:
-        "resources/tics/{mzml}.ims.mz.tic",
+        "resources/tics/{mzml}.ims.mz.tic.cpickle.zlib",
         "resources/tics/{mzml}_sum.txt"
     benchmark:
         "results/benchmarks/make_ims_mz_tics.{mzml}.benchmark.txt"
@@ -87,7 +87,7 @@ rule make_library_master_list:
         expand(
             "resources/imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
         ),
-        expand("resources/tics/{mzml}.ims.mz.tic", mzml=all_timepoint_files),
+        expand("resources/tics/{mzml}.ims.mz.tic.cpickle.zlib", mzml=all_timepoint_files),
         expand("resources/tics/{mzml}_sum.txt", mzml=all_timepoint_files)
     output:
         "results/plots/preprocessing/stretched_times_plots.png",

@@ -1,26 +1,30 @@
-import os
-import sys
 import copy
 import glob
 import yaml
 import pymzml
 import argparse
-import peakutils
-import statistics
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from fastdtw import fastdtw
 from collections import OrderedDict
 from matplotlib import pyplot as plt
-from scipy.signal import find_peaks
 from scipy.spatial.distance import euclidean
-
+import _pickle as cpickle
+import zlib
 import matplotlib
 
 matplotlib.use("Agg")
 
 ###Definitions###
+
+def load_tic_file(filepath):
+    """
+    load the tic file dictionary
+    :param filepath: tic file path
+    :return: tic dictionary
+    """
+    tic_dict = cpickle.loads(zlib.decompress(open(filepath, "rb").read()))
+    return tic_dict
 
 
 def path_to_stretch_times(path, to_stretch=0):
@@ -236,8 +240,9 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
         stretched_ts2_times (nested list): all rt-labels stretching later timepoints to the undeuterated
     
     """
-    ref_tic = np.loadtxt(tic_file_list[0])
-    ref_tic_norm = norm_tic(ref_tic)
+    ref_tic_dict = load_tic_file(tic_file_list[0])
+    ref_tic_base_sum = ref_tic_dict['tics_base_sums']
+    ref_tic_cumulative_sum = ref_tic_dict['tic_cumulative_sum']
     
     stretched_ts1_times = []
     stretched_ts2_times = []
@@ -246,10 +251,14 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
     fig, ax = plt.subplots()
 
     for index, tic_file in enumerate(tic_file_list):
-        tic = np.loadtxt(tic_file)
-        tic_norm = norm_tic(tic)
 
-        dist, path = gen_warp_path_for_timepoints(ref_tic_norm, tic_norm)
+        tic_dict = load_tic_file(tic_file)
+        tic_cumulative_sum = tic_dict['tic_cumulative_sum']
+        tic_base_sum = tic_dict['tics_base_sums']
+
+        tic_cumsum = ((tic_cumulative_sum.T / (tic_base_sum + 1)) * ref_tic_base_sum).T
+
+        dist, path = gen_warp_path_for_timepoints(ref_tic_cumulative_sum, tic_cumsum)
 
         stretched_ts1 = path_to_stretch_times(path, 0)
         stretched_ts2 = path_to_stretch_times(path, 1)
@@ -534,7 +543,7 @@ if __name__ == "__main__":
         args.intermediates = list(
             glob.glob(args.intermediates_dir + "*intermediate.csv"))
     if args.tics_dir is not None and args.tics is None:
-        args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic"))
+        args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic.cpickle.zlib"))
     open_timepoints = yaml.load(open(args.timepoints, "rt"),
                                 Loader=yaml.FullLoader)
 
