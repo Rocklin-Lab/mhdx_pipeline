@@ -145,6 +145,48 @@ def main(library_info_path,
         old_data_dir=old_data_dir,
     )
 
+    # Create folders for monobody score function
+    if not os.path.isdir('/'.join(winner_out_path.split('/')[:-1])):
+        os.mkdir('/'.join(winner_out_path.split('/')[:-1]))
+    if not os.path.isdir('resources/ic_time_series/monobody'):
+        os.mkdir('resources/ic_time_series/monobody')
+    if not os.path.isdir('results/plots/ic_time_series/winner_plots/monobody'):
+        os.mkdir('results/plots/ic_time_series/winner_plots/monobody')
+
+    # Generate best paths for monobody score function
+    p1.optimize_paths_mono()
+
+    if winner_out_path is not None:
+        limit_write(p1.winner, winner_out_path)
+    if runner_out_path is not None:
+        limit_write(p1.runners, runner_out_path)
+    if undeut_ground_out_path is not None:
+        limit_write([p1.undeut_grounds, p1.undeut_ground_dot_products],
+                    undeut_ground_out_path)
+    if winner_scores_out_path is not None:
+        limit_write(p1.winner_scores, winner_scores_out_path)
+    if rtdt_com_cvs_out_path is not None:
+        limit_write([p1.rt_com_cv, p1.dt_com_cv], rtdt_com_cvs_out_path)
+    if path_plot_out_path is not None:
+        undeut_grounds = [p1.undeut_grounds, p1.undeut_ground_dot_products]
+        plot_gjr_(winner=p1.winner,
+                  undeut_grounds=undeut_grounds,
+                  output_path=path_plot_out_path,
+                  prefix=name)
+
+    # Transfer files to monobody folder
+    shutil.move('/'.join(winner_out_path.split('/')[:-1]), 'resources/ic_time_series/monobody/')
+    shutil.move(path_plot_out_path, 'results/plots/ic_time_series/winner_plots/monobody/')
+
+    # Create folders and move files for multibody score terms
+    # Somewhat redundant to snakemake that already create those folders
+    if not os.path.isdir('/'.join(winner_out_path.split('/')[:-1])):
+        os.mkdir('/'.join(winner_out_path.split('/')[:-1]))
+    if not os.path.isdir('resources/ic_time_series/multibody'):
+        os.mkdir('resources/ic_time_series/multibody/')
+    if not os.path.isdir('results/plots/ic_time_series/winner_plots/multibody'):
+        os.mkdir('results/plots/ic_time_series/winner_plots/multibody')
+
     # Generate best paths for multibody score function
     p1.optimize_paths_multi()
 
@@ -169,55 +211,6 @@ def main(library_info_path,
                   output_path=path_plot_out_path,
                   prefix=name)
 
-    # Create folders and move files for multibody score terms
-    if not os.path.isdir('resources/ic_time_series/multibody'):
-        os.mkdir('resources/ic_time_series/multibody')
-    if not os.path.isdir('results/plots/ic_time_series/winner_plots/multibody'):
-        os.mkdir('results/plots/ic_time_series/winner_plots/multibody')
-
-    # Transfer files to proper folder
-    shutil.move(winner_out_path, 'resources/ic_time_series/multibody/')
-    shutil.move(runner_out_path, 'resources/ic_time_series/multibody/')
-    shutil.move(undeut_ground_out_path, 'resources/ic_time_series/multibody/')
-    shutil.move(winner_scores_out_path, 'resources/ic_time_series/multibody/')
-    shutil.move(rtdt_com_cvs_out_path, 'resources/ic_time_series/multibody/')
-    shutil.move(path_plot_out_path, 'results/plots/ic_time_series/winner_plots/multibody/')
-
-    # Generate best paths for monobody score function
-    p1.optimize_paths_mono()
-
-    if winner_out_path is not None:
-        limit_write(p1.winner, winner_out_path)
-    if runner_out_path is not None:
-        limit_write(p1.runners, runner_out_path)
-    if undeut_ground_out_path is not None:
-        limit_write([p1.undeut_grounds, p1.undeut_ground_dot_products],
-                    undeut_ground_out_path)
-    if winner_scores_out_path is not None:
-        limit_write(p1.winner_scores, winner_scores_out_path)
-    if rtdt_com_cvs_out_path is not None:
-        limit_write([p1.rt_com_cv, p1.dt_com_cv], rtdt_com_cvs_out_path)
-    if path_plot_out_path is not None:
-        undeut_grounds = [p1.undeut_grounds, p1.undeut_ground_dot_products]
-        plot_gjr_(winner=p1.winner,
-                  undeut_grounds=undeut_grounds,
-                  output_path=path_plot_out_path,
-                  prefix=name)
-
-    # Create folders and move files for monobody score terms
-    if not os.path.isdir('resources/ic_time_series/monobody'):
-        os.mkdir('resources/ic_time_series/monobody')
-    if not os.path.isdir('results/plots/ic_time_series/winner_plots/monobody'):
-        os.mkdir('results/plots/ic_time_series/winner_plots/monobody')
-
-    # Transfer files to proper folder
-    shutil.move(winner_out_path, 'resources/ic_time_series/monobody/')
-    shutil.move(runner_out_path, 'resources/ic_time_series/monobody/')
-    shutil.move(undeut_ground_out_path, 'resources/ic_time_series/monobody/')
-    shutil.move(winner_scores_out_path, 'resources/ic_time_series/monobody/')
-    shutil.move(rtdt_com_cvs_out_path, 'resources/ic_time_series/monobody/')
-    shutil.move(path_plot_out_path, 'results/plots/ic_time_series/winner_plots/monobody/')
-
     if return_flag:
         out_dict["PathOptimizer"] = p1
         return out_dict
@@ -225,7 +218,8 @@ def main(library_info_path,
     # Save all ics with all computed attributes to one file
     if not os.path.isdir('resources/ics'):
         os.mkdir('resources/ics')
-    limit_write(atc, 'resources/ics/' + name + '.gz.cpickle.zlib')
+    limit_write(atc, 'resources/ics/atc_' + name + '.gz.cpickle.zlib')
+    limit_write(p1.prefiltered_ics, 'resources/ics/prefiltered_' + name + '.gz.cpickle.zlib')
 
 
 if __name__ == "__main__":
