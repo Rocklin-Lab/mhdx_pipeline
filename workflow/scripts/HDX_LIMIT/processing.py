@@ -1219,18 +1219,17 @@ class PathOptimizer:
                   0.24236622286514023, 0.07221833422901867, 0.15051371151603132]
 
         return sum([
-            coeffs[0] * self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
-            coeffs[1] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
-            coeffs[2] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
-            coeffs[3] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
-            coeffs[4] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
-            coeffs[5] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
-            coeffs[6] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
-            coeffs[7] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
-            coeffs[8] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
-            coeffs[9] * self.rmses_sum_weight * self.rmses_sum(ics),
-            coeffs[11] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
-            coeffs[12] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
+            coeffs[0] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
+            coeffs[1] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
+            coeffs[2] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
+            coeffs[3] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
+            coeffs[4] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
+            coeffs[5] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
+            coeffs[6] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
+            coeffs[7] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
+            coeffs[8] * self.rmses_sum_weight * self.rmses_sum(ics),
+            coeffs[9] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
+            coeffs[10] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
         ])
 
     def combo_score_mono(self, ics):
@@ -1239,20 +1238,17 @@ class PathOptimizer:
                   0.24236622286514023, 0.07221833422901867, 0.15051371151603132]
 
         return sum([
-            # coeffs[0] * self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
-            coeffs[1] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
-            # coeffs[2] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
-            # coeffs[3] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
-            # self.int_mz_rot_fit_weight*self.int_mz_rot_fit(ics),
-            coeffs[4] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
-            coeffs[5] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
-            coeffs[6] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
-            coeffs[7] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
-            coeffs[8] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
-            coeffs[9] * self.rmses_sum_weight * self.rmses_sum(ics),
-            coeffs[10] * self.maxint_sum_weight * self.maxint_sum(ics),
-            # coeffs[11] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
-            coeffs[12] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
+            coeffs[0] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
+            #coeffs[1] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
+            #coeffs[2] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
+            coeffs[3] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
+            coeffs[4] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
+            coeffs[5] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
+            coeffs[6] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
+            coeffs[7] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
+            coeffs[8] * self.rmses_sum_weight * self.rmses_sum(ics),
+            #coeffs[9] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
+            coeffs[10] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
         ])
 
     def report_score_multi(self, ics):
