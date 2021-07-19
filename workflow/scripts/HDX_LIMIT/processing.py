@@ -56,6 +56,7 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.90, dt_r2_cuto
     return new_factor_list
 
 
+
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     """
     function to store factor data to factor data class
@@ -92,8 +93,7 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     return factor_data_dict
 
 
-def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, mz_centers,
-                            normalization_factors,
+def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gauss_params, mz_centers, normalization_factors,
                             n_factors=15,
                             factor_output_fpath=None,
                             factor_plot_output_path=None,
@@ -112,11 +112,11 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     :return: data_tensor
     """
 
-    # memory calculations
+    #memory calculations
     process = psutil.Process(os.getpid())
     # memory before init
     print("Pre-Tensor-Initialization: " + str(process.memory_info().rss /
-                                              (1024 * 1024 * 1024)))
+                                       (1024 * 1024 * 1024)))
 
     # data tensor initialization
     data_tensor = TensorGenerator(filename=tensor_fpath,
@@ -126,7 +126,7 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
                                   normalization_factors=normalization_factors)
 
     print("Post-Tensor-Pre-Factor-Initialization: " + str(process.memory_info().rss /
-                                                          (1024 * 1024 * 1024)))
+                                        (1024 * 1024 * 1024)))
 
     print('Factorizing ... ')
 
@@ -159,7 +159,9 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     return data_tensor
 
 
+
 class TensorGenerator:
+
     ###Class Attributes###
     hd_mass_diff = 1.006277
     c13_mass_diff = 1.00335
@@ -174,11 +176,10 @@ class TensorGenerator:
         self.mz_centers = mz_centers
         self.normalization_factors = normalization_factors
         my_mzml = ".".join("_".join(self.filename.split("/")[-1].split("_")[1:]).split(".")[:-3])
-        self.normalization_factor = \
-        normalization_factors.loc[normalization_factors["mzml"] == my_mzml]["normalization_factor"].values[0]
+        self.normalization_factor = normalization_factors.loc[normalization_factors["mzml"]==my_mzml]["normalization_factor"].values[0]
 
         if (
-            kwargs is not None
+                kwargs is not None
         ):
             for key in kwargs.keys():
                 setattr(self, key, kwargs[key])
@@ -204,7 +205,7 @@ class TensorGenerator:
         )  # expects format: path/to/{library_index}_{protein_name}_{time_point}.cpickle.zlib
         self.name = self.library_info.iloc[self.lib_idx]["name"]
         self.max_peak_center = len(self.library_info.loc[
-                                       self.library_info["name"] == self.name]["sequence"].values[0])
+            self.library_info["name"] == self.name]["sequence"].values[0])
         self.total_isotopes = self.max_peak_center + self.high_mass_margin
         self.total_mass_window = self.low_mass_margin + self.total_isotopes
 
@@ -239,9 +240,9 @@ class TensorGenerator:
             normalization_factor=self.normalization_factor
         )
 
-        # self.DataTensor.lows = searchsorted(self.DataTensor.mz_labels,
+        #self.DataTensor.lows = searchsorted(self.DataTensor.mz_labels,
         #                                    self.low_lims)
-        # self.DataTensor.highs = searchsorted(self.DataTensor.mz_labels,
+        #self.DataTensor.highs = searchsorted(self.DataTensor.mz_labels,
         #                                     self.high_lims)
 
         # Consider separating factorize from init
@@ -312,8 +313,9 @@ class PathOptimizer:
         self.select_undeuterated()
         self.precalculate_fit_to_ground()
         self.prefiltered_ics = self.weak_pareto_dom_filter()
-        # self.prefiltered_ics = self.all_tp_clusters
+        #self.prefiltered_ics = self.all_tp_clusters
         self.generate_sample_paths()
+
 
     def weak_pareto_dom_filter(self):
         out = []
@@ -325,19 +327,20 @@ class PathOptimizer:
                 for ic2 in tp:
                     if (
                         np.round(ic2.baseline_integrated_mz_com) == ic1_int_mz_com and
-                        ic2.rt_ground_err ** 2 < ic1.rt_ground_err ** 2 and
-                        ic2.dt_ground_err ** 2 < ic1.dt_ground_err ** 2 and
+                        ic2.rt_ground_err**2 < ic1.rt_ground_err**2 and
+                        ic2.dt_ground_err**2 < ic1.dt_ground_err**2 and
                         ic2.baseline_peak_error < ic1.baseline_peak_error and
                         ic2.rt_ground_fit > ic1.rt_ground_fit and
                         ic2.dt_ground_fit > ic1.dt_ground_fit and
-                        ic2.auc_ground_err ** 2 < ic1.auc_ground_err ** 2
-                    ):
+                        ic2.auc_ground_err**2 < ic1.auc_ground_err**2
+                       ):
                         compare_flag = True
                         break
                 if not compare_flag:
                     tp_buffer.append(ic1)
             out.append(tp_buffer)
         return out
+
 
     def alt_weak_pareto_dom_filter(self):
         # Filters input of PO ICs to ensure no IC is worse in every score dimension than another IC (weak Pareto domination)
@@ -354,8 +357,8 @@ class PathOptimizer:
 
             # add ic to bin list closest to center
             for ic in tp:
-                center_dict[min([len(tp[0].baseline_integrated_mz) - 1,
-                                 np.round(ic.baseline_integrated_mz_com)])].append(ic)
+                center_dict[min([len(tp[0].baseline_integrated_mz)-1,
+                                   np.round(ic.baseline_integrated_mz_com)])].append(ic)
 
             # score all ics in each int_mz bin, keep only those that are not worse than another IC in all dimensions
             low_score_keys = ["rt_ground_err", "dt_ground_err", "peak_err"]
@@ -402,10 +405,10 @@ class PathOptimizer:
 
                         # Check if there is some IC with a better score in all dimensions by set intersection
                         if int_mz_dom_dict[low_score_keys[0]].intersection(
-                            int_mz_dom_dict[low_score_keys[1]],
-                            int_mz_dom_dict[low_score_keys[2]],
-                            int_mz_dom_dict[high_score_keys[0]],
-                            int_mz_dom_dict[high_score_keys[1]],
+                                int_mz_dom_dict[low_score_keys[1]],
+                                int_mz_dom_dict[low_score_keys[2]],
+                                int_mz_dom_dict[high_score_keys[0]],
+                                int_mz_dom_dict[high_score_keys[1]],
                         ):
                             # ic is weakly Pareto dominated, leave out of output
                             pass
@@ -463,7 +466,7 @@ class PathOptimizer:
         my_seq = library_info.loc[library_info["name"] == name]["sequence"].values[0]
 
         if (
-            self.old_data_dir is not None
+                self.old_data_dir is not None
         ):  # if comparing to old data, save old-data's fits in-place TODO: CONSIDER OUTPUTTING TO SNAKEMAKE DIR
             # open first three (undeut) dicts in list, store fit to theoretical dist
             for charge_dict in self.old_data:
@@ -472,13 +475,12 @@ class PathOptimizer:
                         charge_dict["major_species_integrated_intensities"][i]
                 } for i in range(3)]  # hardcode for gabe's undeut idxs in list
                 charge_dict["fit_to_theo_dist"] = max(
-                    [self.calculate_isotope_dist_dot_product(sequence=my_seq, undeut_integrated_mz_array=d) for d in
-                     undeut_amds]
-                )
+                    [self.calculate_isotope_dist_dot_product(sequence=my_seq, undeut_integrated_mz_array=d) for d in undeut_amds]
+                    )
 
         undeuts = []
         for ic in all_tp_clusters[
-            0]:  # anticipates all undeuterated replicates being in the 0th index
+                0]:  # anticipates all undeuterated replicates being in the 0th index
             undeuts.append(ic)
         dot_products = []
 
@@ -488,15 +490,14 @@ class PathOptimizer:
                 ic.baseline_integrated_mz,
                 columns=["major_species_integrated_intensities"],
             )
-            fit = self.calculate_isotope_dist_dot_product(sequence=my_seq,
-                                                          undeut_integrated_mz_array=ic.baseline_integrated_mz)
+            fit = self.calculate_isotope_dist_dot_product(sequence=my_seq, undeut_integrated_mz_array=ic.baseline_integrated_mz)
             ic.undeut_ground_dot_product = fit
             dot_products.append((fit, ic.charge_states))
 
         # Append final (0, 0) to be called by charge_idxs which are not in the charge group for a single loop iteration
         dot_products.append((0, 0))
         charges = list(set(np.concatenate([ic.charge_states for ic in undeuts
-                                           ])))
+                                          ])))
         out = dict.fromkeys(charges)
         charge_fits = dict.fromkeys(charges)
         for charge in charges:
@@ -641,7 +642,7 @@ class PathOptimizer:
                                 sorted(
                                     prefiltered_ics[tp],
                                     key=lambda ic: ic.
-                                        baseline_integrated_mz_com,
+                                    baseline_integrated_mz_com,
                                 )[0])
                     else:
                         # No ics in tp, print message and append path[-1]
@@ -888,6 +889,8 @@ class PathOptimizer:
                 winner_scores["nearest_neighbor_penalty"]
                 - substituted_scores["nearest_neighbor_penalty"],
 
+
+
                 sum([winner_scores[key] for key in winner_scores.keys()]) -
                 sum([
                     substituted_scores[key]
@@ -1015,7 +1018,7 @@ class PathOptimizer:
         sd = 0
         for i in range(2, len(ics)):
             sd += (ics[i].baseline_integrated_mz_std -
-                   ics[i - 1].baseline_integrated_mz_std) ** 2.0
+                   ics[i - 1].baseline_integrated_mz_std)**2.0
 
         return math.sqrt(sd)
 
@@ -1030,43 +1033,41 @@ class PathOptimizer:
             [major_species_centroids.pop(0) for i in range(3)])
         sd = 0
         previous_rate = (major_species_centroids[1] - major_species_centroids[0]
-                         ) / (timepoints[1] - timepoints[0])
+                        ) / (timepoints[1] - timepoints[0])
         for i in range(2, len(major_species_centroids)):
             # if previous_rate == 0: diagnostic for /0 error
             new_com = major_species_centroids[i]
             if new_com < major_species_centroids[i - 1]:  # if we went backwards
-                sd += (100 * (new_com - major_species_centroids[i - 1]) ** 2.0
-                       )  # penalize for going backwards
+                sd += (100 * (new_com - major_species_centroids[i - 1])**2.0
+                      )  # penalize for going backwards
                 new_com = (
                     major_species_centroids[i - 1] + 0.01
                 )  # pretend we went forwards for calculating current rate
             current_rate = max([(new_com - major_species_centroids[i - 1]), 0.1
-                                ]) / (timepoints[i] - timepoints[i - 1])
+                               ]) / (timepoints[i] - timepoints[i - 1])
             if (current_rate / previous_rate) > 1.2:
-                sd += (current_rate / previous_rate) ** 2.0
+                sd += (current_rate / previous_rate)**2.0
             previous_rate = current_rate
         return sd / len(major_species_centroids)
 
     def delta_mz_rate(self, ics, timepoints=None):
-        # Two penalizations are computed: [0] if the ic is too fast (sd) and [1] if the ic goes backwards (back)
+    # Two penalizations are computed: [0] if the ic is too fast (sd) and [1] if the ic goes backwards (back)
 
         if timepoints is None:
             timepoints = self.timepoints
 
         backward = 0
         forward = 0
-        previous_rate = max(
-            [(ics[1].baseline_integrated_mz_com - ics[0].baseline_integrated_mz_com) / (timepoints[1] - timepoints[0]),
-             0.1])
+        previous_rate = max([(ics[1].baseline_integrated_mz_com - ics[0].baseline_integrated_mz_com) / (timepoints[1] - timepoints[0]), 0.1])
 
         for i in range(2, len(ics)):
             # if previous_rate == 0: diagnostic for /0 error
-            new_com = ics[i].baseline_integrated_mz_com  # todo: tolerance for backward
+            new_com = ics[i].baseline_integrated_mz_com #todo: tolerance for backward
             if new_com < ics[
-                i - 1].baseline_integrated_mz_com:  # if we went backwards
+                    i - 1].baseline_integrated_mz_com:  # if we went backwards
                 backward += (100 *
-                             (new_com - ics[i - 1].baseline_integrated_mz_com) ** 2.0
-                             )  # penalize for going backwards
+                       (new_com - ics[i - 1].baseline_integrated_mz_com)**2.0
+                      )  # penalize for going backwards
                 new_com = (
                     ics[i - 1].baseline_integrated_mz_com + 0.01
                 )  # pretend we went forwards for calculating current rate
@@ -1074,7 +1075,7 @@ class PathOptimizer:
                 (new_com - ics[i - 1].baseline_integrated_mz_com), 0.1
             ]) / (timepoints[i] - timepoints[i - 1])
             if (current_rate / previous_rate) > 1.2:
-                forward += (current_rate / previous_rate) ** 2.0
+                forward += (current_rate / previous_rate)**2.0
             previous_rate = current_rate
         return backward / len(ics), forward / len(ics),
 
@@ -1111,10 +1112,10 @@ class PathOptimizer:
     def dt_ground_rmse(
         self, ics
     ):  # rmse penalizes strong single outliers, score is minimized - lower is better
-        return math.sqrt(sum([ic.dt_ground_err ** 2 for ic in ics]) / len(ics))
+        return math.sqrt(sum([ic.dt_ground_err**2 for ic in ics]) / len(ics))
 
     def rt_ground_rmse(self, ics):
-        return math.sqrt(sum([ic.rt_ground_err ** 2 for ic in ics]) / len(ics))
+        return math.sqrt(sum([ic.rt_ground_err**2 for ic in ics]) / len(ics))
 
     def dt_ground_fit(self, ics):
         return sum([(1.0 / ic.dt_ground_fit) for ic in ics])
@@ -1127,11 +1128,11 @@ class PathOptimizer:
         return np.average([ic.baseline_peak_error for ic in ics])
 
     def auc_ground_rmse(self, ics):
-        return np.sqrt(np.mean([ic.auc_ground_err ** 2 for ic in ics]))
+        return np.sqrt(np.mean([ic.auc_ground_err**2 for ic in ics]))
 
     def auc_rmse(self,
-                 ics
-                 ):
+                        ics
+                       ):
         sd = 0
         for ic in ics:
             sd += ic.log_baseline_auc_diff ** 2
@@ -1140,21 +1141,21 @@ class PathOptimizer:
     def rmses_sum(self, ics):
         rmses = 0
         for ic in ics:
-            rmses += 100 * ic.baseline_integrated_mz_rmse
+            rmses += 100*ic.baseline_integrated_mz_rmse
         return rmses
 
     def maxint_sum(self, ics):
         maxint = 0
         for ic in ics:
             maxint += max(ic.baseline_integrated_mz)
-            return 100000 / maxint
+            return 100000/maxint
 
     def int_mz_FWHM_rmse(self, ics):
         sd = 0
         for i in range(2, len(ics)):
             sd += (
-                      ics[i].baseline_integrated_mz_FWHM - ics[i - 1].baseline_integrated_mz_FWHM
-                  ) ** 2.0
+                ics[i].baseline_integrated_mz_FWHM - ics[i - 1].baseline_integrated_mz_FWHM
+            ) ** 2.0
 
         return math.sqrt(sd)
 
@@ -1165,6 +1166,7 @@ class PathOptimizer:
                 np.min([abs(1.0 - ic.nearest_neighbor_correlation), 0.5])
             ) ** 2.0
         return nn_penalty
+
 
     # Eventually put defaults here as else statements
     def set_score_weights(
@@ -1209,7 +1211,7 @@ class PathOptimizer:
         if maxint_sum_weight != None:
             self.maxint_sum_weight = maxint_sum_weight
         if int_mz_FWHM_rmse_weight != None:
-            self.int_mz_FWHM_rmse_weight = int_mz_FWHM_rmse_weight
+            self.int_mz_FWHM_rmse_weight  = int_mz_FWHM_rmse_weight
         if nearest_neighbor_penalty_weight != None:
             self.nearest_neighbor_penalty_weight = nearest_neighbor_penalty_weight
 
@@ -1305,9 +1307,9 @@ class PathOptimizer:
             "rmses_sum": (self.rmses_sum_weight,
                           self.rmses_sum(ics)),
             "int_mz_FWHM_rmse": (self.int_mz_FWHM_rmse_weight,
-                                 self.int_mz_FWHM_rmse(ics)),
+                          self.int_mz_FWHM_rmse(ics)),
             "nearest_neighbor_penalty": (self.nearest_neighbor_penalty_weight,
-                                         self.nearest_neighbor_penalty(ics)),
+                                 self.nearest_neighbor_penalty(ics)),
         }
 
     def bokeh_plot(self, outpath):
@@ -1431,7 +1433,7 @@ class PathOptimizer:
         def winner_plotter(source, i, tooltips, old_source=None):
             if i == max([int(tp) for tp in source.data["timepoint"]]):
                 p = figure(title="Timepoint " + str(i) +
-                                 ": Winning Isotopic-Cluster Added-Mass Distribution",
+                           ": Winning Isotopic-Cluster Added-Mass Distribution",
                            plot_height=400,
                            plot_width=450,
                            y_range=(0, 1),
@@ -1439,7 +1441,7 @@ class PathOptimizer:
                 p.min_border_bottom = 100
             else:
                 p = figure(title="Timepoint " + str(i) +
-                                 ": Winning Isotopic Cluster Added-Mass Distribution",
+                           ": Winning Isotopic Cluster Added-Mass Distribution",
                            plot_height=300,
                            plot_width=450,
                            y_range=(0, 1),
@@ -1669,11 +1671,11 @@ class PathOptimizer:
 
                 # Add line to old_charges for each charge file
                 for key in [
-                    "major_species_integrated_intensities",
-                    "centroid",
-                    "fit_to_theo_dist",
-                    "delta_mz_rate",
-                    "charge",
+                        "major_species_integrated_intensities",
+                        "centroid",
+                        "fit_to_theo_dist",
+                        "delta_mz_rate",
+                        "charge",
                 ]:
                     old_charges[key].append(ts[key])
 
@@ -1742,7 +1744,7 @@ class PathOptimizer:
         all_data = []
 
         winner_rtxdt_rmse = np.sqrt(
-            np.mean([((ic.bokeh_tuple[18] * 0.07) * ic.bokeh_tuple[19]) ** 2
+            np.mean([((ic.bokeh_tuple[18] * 0.07) * ic.bokeh_tuple[19])**2
                      for ic in self.winner]))
         for tp in range(len(self.winner)):
             edit_buffer = copy.copy(self.winner[tp].bokeh_tuple)
@@ -1966,14 +1968,14 @@ class PathOptimizer:
                     + self.name + """</h1>"""),
                 Div(text=
                     "<h3 style='margin-left: 300px'>New Undeuterated-Ground Fits to Theoretical MZ Distribution: </h3>"
-                    ),
+                   ),
                 Div(text="<h3 style='margin-left: 300px'>" +
-                         str(self.undeut_ground_dot_products) + "</h3>"),
+                    str(self.undeut_ground_dot_products) + "</h3>"),
                 Div(text=
                     "<h3 style='margin-left: 300px'>Old Undeuterated-Ground Fits to Theoretical MZ Distribution: </h3>"
-                    ),
+                   ),
                 Div(text="<h3 style='margin-left: 300px'>" +
-                         str(self.old_undeut_ground_dot_products) + "</h3>"),
+                    str(self.old_undeut_ground_dot_products) + "</h3>"),
                 gridplot(rows,
                          sizing_mode="fixed",
                          toolbar_location=None,
@@ -1987,9 +1989,9 @@ class PathOptimizer:
                     + self.name + """</h1>"""),
                 Div(text=
                     "<h3 style='margin-left: 300px'>Undeuterated-Ground Fits to Theoretical MZ Distribution: </h3>"
-                    ),
+                   ),
                 Div(text="<h3 style='margin-left: 300px'>" +
-                         str(self.undeut_ground_dot_products) + "</h3>"),
+                    str(self.undeut_ground_dot_products) + "</h3>"),
                 gridplot(rows,
                          sizing_mode="fixed",
                          toolbar_location=None,
