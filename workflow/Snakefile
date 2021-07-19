@@ -23,7 +23,7 @@ print("Protein Names: "+str(len(names))+", Names with indices: "+str(len(names_w
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
     input:
-        expand("resources/ic_time_series/{name}/{name}_winner.cpickle.zlib", name=names_with_indices)
+        expand("resources/ic_time_series/multibody/{name}/{name}_winner.cpickle.zlib", name=names_with_indices)
         #expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
 
 
@@ -131,12 +131,12 @@ rule optimize_paths:
         "config/config.yaml",
         lambda wildcards: optimize_paths_inputs(wildcards.name, old_library_info, idotp_check_indices) 
     output:
-        "resources/ic_time_series/{name}/{name}_winner.cpickle.zlib",
-        "resources/ic_time_series/{name}/{name}_runners.cpickle.zlib",
-        "resources/ic_time_series/{name}/{name}_undeut_grounds.cpickle.zlib",
-        "resources/ic_time_series/{name}/{name}_winner_scores.cpickle.zlib",
-        "resources/ic_time_series/{name}/{name}_rtdt_com_cvs.cpickle.zlib",
-        "results/plots/ic_time_series/winner_plots/{name}_winner_path.pdf"
+        "resources/ic_time_series/multibody/{name}/{name}_winner.cpickle.zlib",
+        "resources/ic_time_series/multibody/{name}/{name}_runners.cpickle.zlib",
+        "resources/ic_time_series/multibody/{name}/{name}_undeut_grounds.cpickle.zlib",
+        "resources/ic_time_series/multibody/{name}/{name}_winner_scores.cpickle.zlib",
+        "resources/ic_time_series/multibody/{name}/{name}_rtdt_com_cvs.cpickle.zlib",
+        "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path.pdf"
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
     run:

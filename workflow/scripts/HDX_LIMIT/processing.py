@@ -180,7 +180,7 @@ class TensorGenerator:
 
         if (
                 kwargs is not None
-        ):  
+        ):
             for key in kwargs.keys():
                 setattr(self, key, kwargs[key])
 
@@ -244,7 +244,7 @@ class TensorGenerator:
         #                                    self.low_lims)
         #self.DataTensor.highs = searchsorted(self.DataTensor.mz_labels,
         #                                     self.high_lims)
-        
+
         # Consider separating factorize from init
         # self.DataTensor.factorize(gauss_params=(3,1))
 
@@ -284,7 +284,7 @@ class PathOptimizer:
         self.rt_ground_rmse_weight = 10
         self.dt_ground_rmse_weight = 10
         self.auc_ground_rmse_weight = 20
-        self.rmses_sum_weight = 1 
+        self.rmses_sum_weight = 1
         self.maxint_sum_weight = 1
         self.int_mz_FWHM_rmse_weight = 1
         self.nearest_neighbor_penalty_weight = 1
@@ -330,8 +330,8 @@ class PathOptimizer:
                         ic2.rt_ground_err**2 < ic1.rt_ground_err**2 and
                         ic2.dt_ground_err**2 < ic1.dt_ground_err**2 and
                         ic2.baseline_peak_error < ic1.baseline_peak_error and
-                        ic2.rt_ground_fit > ic1.rt_ground_fit and 
-                        ic2.dt_ground_fit > ic1.dt_ground_fit and 
+                        ic2.rt_ground_fit > ic1.rt_ground_fit and
+                        ic2.dt_ground_fit > ic1.dt_ground_fit and
                         ic2.auc_ground_err**2 < ic1.auc_ground_err**2
                        ):
                         compare_flag = True
@@ -654,7 +654,7 @@ class PathOptimizer:
 
         return tuple(path)
 
-    def optimize_paths(self, sample_paths=None, prefiltered_ics=None):
+    def optimize_paths_multi(self, sample_paths=None, prefiltered_ics=None):
         # Main function of PO, returns the best-scoring HDX IC time-series 'path' of a set of bootstrapped paths.
 
         if sample_paths is None:
@@ -682,35 +682,35 @@ class PathOptimizer:
                 # Decorate alt_paths
                 combo_scoring = []
                 for pth in alt_paths:
-                    combo_scoring.append(self.combo_score(pth))
+                    combo_scoring.append(self.combo_score_multi(pth))
 
-                if min(combo_scoring) < self.combo_score(current):
+                if min(combo_scoring) < self.combo_score_multi(current):
                     current = alt_paths[combo_scoring.index(min(combo_scoring))]
                     n_changes += 1
                     edited = True
 
-                current_score = self.combo_score(current)
+                current_score = self.combo_score_multi(current)
 
                 if edited == False:
                     final_paths.append(current)
         final_scores = []
         for pth in final_paths:
-            final_scores.append(self.combo_score(pth))
+            final_scores.append(self.combo_score_multi(pth))
 
         # This order must be maintained, self.winner must exist before calling find_runners; winner and runners are both needed for set_bokeh tuple
         self.winner = final_paths[final_scores.index(min(final_scores))]
-        self.winner_scores = self.report_score(self.winner)
-        self.find_runners()
+        self.winner_scores = self.report_score_multi(self.winner)
+        self.find_runners_multi()
         self.set_bokeh_tuples()
         self.filter_runners()
-        self.rt_com_cv = (np.var([ic.rt_com for ic in self.winner if ic.rt_com is not None])**
+        self.rt_com_cv = (np.var([ic.rt_com for ic in self.winner if ic.rt_com is not None]) **
                           0.5) / np.mean([ic.rt_com for ic in self.winner if ic.rt_com is not None])
         self.dt_com_cv = (np.var([
             np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None
-        ])**0.5) / np.mean([np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None])
+        ]) ** 0.5) / np.mean([np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None])
         # Doesn't return, only sets PO attributes
 
-    def find_runners(self):
+    def find_runners_multi(self):
         # sets self.runners atr. sorts 'runner-up' single substitutions for each tp by score, lower is better.
         winner = self.winner
         prefiltered_ics = self.prefiltered_ics
@@ -727,7 +727,92 @@ class PathOptimizer:
 
             combo_scoring = []
             for pth in alt_paths:
-                combo_scoring.append(self.combo_score(pth))
+                combo_scoring.append(self.combo_score_multi(pth))
+
+            out_buffer = []
+            for i in range(len(combo_scoring)):
+                min_idx = combo_scoring.index(min(combo_scoring))
+                out_buffer.append(alt_paths[min_idx][tp])
+                alt_paths.pop(min_idx)
+                combo_scoring.pop(min_idx)
+            runners.append(out_buffer)
+
+        self.runners = runners
+
+    def optimize_paths_mono(self, sample_paths=None, prefiltered_ics=None):
+        # Main function of PO, returns the best-scoring HDX IC time-series 'path' of a set of bootstrapped paths.
+
+        if sample_paths is None:
+            sample_paths = self.sample_paths
+        if prefiltered_ics is None:
+            prefiltered_ics = self.prefiltered_ics
+
+        final_paths = []
+        for sample in sample_paths[:1]:
+            current = copy.copy(sample)
+            edited = True
+            while edited:
+
+                edited = False
+                n_changes = 0
+                ic_indices = []
+                alt_paths = []
+
+                for tp in range(1, len(current)):
+                    for ic in prefiltered_ics[tp]:
+                        buffr = copy.copy(current)
+                        buffr[tp] = ic
+                        alt_paths.append(buffr)
+
+                # Decorate alt_paths
+                combo_scoring = []
+                for pth in alt_paths:
+                    combo_scoring.append(self.combo_score_mono(pth))
+
+                if min(combo_scoring) < self.combo_score_mono(current):
+                    current = alt_paths[combo_scoring.index(min(combo_scoring))]
+                    n_changes += 1
+                    edited = True
+
+                current_score = self.combo_score_mono(current)
+
+                if edited == False:
+                    final_paths.append(current)
+        final_scores = []
+        for pth in final_paths:
+            final_scores.append(self.combo_score_mono(pth))
+
+        # This order must be maintained, self.winner must exist before calling find_runners; winner and runners are both needed for set_bokeh tuple
+        self.winner = final_paths[final_scores.index(min(final_scores))]
+        self.winner_scores = self.report_score_mono(self.winner)
+        self.find_runners_mono()
+        self.set_bokeh_tuples()
+        self.filter_runners()
+        self.rt_com_cv = (np.var([ic.rt_com for ic in self.winner if ic.rt_com is not None]) **
+                          0.5) / np.mean([ic.rt_com for ic in self.winner if ic.rt_com is not None])
+        self.dt_com_cv = (np.var([
+            np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None
+        ]) ** 0.5) / np.mean([np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None])
+        # Doesn't return, only sets PO attributes
+
+    def find_runners_mono(self):
+        # sets self.runners atr. sorts 'runner-up' single substitutions for each tp by score, lower is better.
+        winner = self.winner
+        prefiltered_ics = self.prefiltered_ics
+
+        runners = []
+        for tp in range(len(winner)):
+
+            alt_paths = []
+            for ic in prefiltered_ics[tp]:
+                if ic is not winner[tp]:
+                    buffr = copy.copy(winner)
+                    buffr[tp] = ic
+                    alt_paths.append(buffr)
+
+            combo_scoring = []
+            for pth in alt_paths:
+                combo_scoring.append(self.combo_score_mono(pth))
 
             out_buffer = []
             for i in range(len(combo_scoring)):
@@ -892,13 +977,13 @@ class PathOptimizer:
     def calculate_empirical_isotope_dist_from_integrated_mz(self, integrated_mz_array,
                                                             n_isotopes=None):
         """Calculate the isotope distribution from the integrated mz intensitities.
-        
-        Args: 
+
+        Args:
             integrated_mz_values (Numpy ndarray): array of integrated mz intensitites
             n_isotopes (int): number of isotopes to include. If none, includes all
-        Returns: 
+        Returns:
             isotope_dist (Numpy ndarray): isotope distribution with magnitude normalized to 1
-        
+
         """
         isotope_dist = integrated_mz_array / max(integrated_mz_array)
         if n_isotopes:
@@ -907,7 +992,7 @@ class PathOptimizer:
 
     def calculate_isotope_dist_dot_product(self, sequence, undeut_integrated_mz_array):
         """Calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array.
-        
+
         Args:
             sequence (string): single-letter sequence of the library protein-of-interest
             undeut_integrated_mz_array (Numpy ndarray): observed integrated mz array from an undeuterated .mzML
@@ -970,7 +1055,7 @@ class PathOptimizer:
 
         if timepoints is None:
             timepoints = self.timepoints
-        
+
         backward = 0
         forward = 0
         previous_rate = max([(ics[1].baseline_integrated_mz_com - ics[0].baseline_integrated_mz_com) / (timepoints[1] - timepoints[0]), 0.1])
@@ -1052,26 +1137,26 @@ class PathOptimizer:
         for ic in ics:
             sd += ic.log_baseline_auc_diff ** 2
         return math.sqrt(np.mean(sd))
-    
+
     def rmses_sum(self, ics):
         rmses = 0
         for ic in ics:
             rmses += 100*ic.baseline_integrated_mz_rmse
         return rmses
-  
+
     def maxint_sum(self, ics):
         maxint = 0
         for ic in ics:
             maxint += max(ic.baseline_integrated_mz)
             return 100000/maxint
-  
+
     def int_mz_FWHM_rmse(self, ics):
         sd = 0
         for i in range(2, len(ics)):
             sd += (
                 ics[i].baseline_integrated_mz_FWHM - ics[i - 1].baseline_integrated_mz_FWHM
             ) ** 2.0
- 
+
         return math.sqrt(sd)
 
     def nearest_neighbor_penalty(self, ics):
@@ -1130,32 +1215,46 @@ class PathOptimizer:
         if nearest_neighbor_penalty_weight != None:
             self.nearest_neighbor_penalty_weight = nearest_neighbor_penalty_weight
 
-    def combo_score(self, ics):
-        coeffs = [0.9481400235551269, 1.0, 0.6857576300966942, 0.6857576300966942,
-                  0.0786558334589346, 0.9967249515098907, 0.4243143790063924, 0.5264894567616325,
-                  0.17675817484302364, 0.5805056564516656, 0.23990639906231667, 0.9793122004592688,
-                  0.10941341245792748]
+    def combo_score_multi(self, ics):
+        coeffs = [1.0, 0.10008302970275278, 0.09845279850378537, 0.772117631651534,
+                  0.5310720751993441, 0.26070374293926435, 0.38586818508608206, 0.2522380132144197,
+                  0.24236622286514023, 0.07221833422901867, 0.15051371151603132]
 
         return sum([
-            coeffs[0] * self.int_mz_std_rmse_weight * self.int_mz_std_rmse(ics),
-            coeffs[1] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
-            coeffs[2] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
-            coeffs[3] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
-            # self.int_mz_rot_fit_weight*self.int_mz_rot_fit(ics),
-            coeffs[4] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
-            coeffs[5] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
-            coeffs[6] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
-            coeffs[7] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
-            coeffs[8] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
-            coeffs[9] * self.rmses_sum_weight * self.rmses_sum(ics),
-            coeffs[10] * self.maxint_sum_weight * self.maxint_sum(ics),
-            coeffs[11] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
-            coeffs[12] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
+            coeffs[0] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
+            coeffs[1] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
+            coeffs[2] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
+            coeffs[3] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
+            coeffs[4] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
+            coeffs[5] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
+            coeffs[6] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
+            coeffs[7] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
+            coeffs[8] * self.rmses_sum_weight * self.rmses_sum(ics),
+            coeffs[9] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
+            coeffs[10] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
         ])
-           
-                                         
-    def report_score(self, ics):
-    # TODO Add additional scores to this function                                    
+
+    def combo_score_mono(self, ics):
+        coeffs = [1.0, 0.10008302970275278, 0.09845279850378537, 0.772117631651534,
+                  0.5310720751993441, 0.26070374293926435, 0.38586818508608206, 0.2522380132144197,
+                  0.24236622286514023, 0.07221833422901867, 0.15051371151603132]
+
+        return sum([
+            coeffs[0] * self.baseline_peak_error_weight * self.baseline_peak_error(ics),
+            #coeffs[1] * self.delta_mz_rate_backward_weight * self.delta_mz_rate(ics)[0],
+            #coeffs[2] * self.delta_mz_rate_forward_weight * self.delta_mz_rate(ics)[1],
+            coeffs[3] * self.dt_ground_rmse_weight * self.dt_ground_rmse(ics),
+            coeffs[4] * self.dt_ground_fit_weight * self.dt_ground_fit(ics),
+            coeffs[5] * self.rt_ground_fit_weight * self.rt_ground_fit(ics),
+            coeffs[6] * self.rt_ground_rmse_weight * self.rt_ground_rmse(ics),
+            coeffs[7] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
+            coeffs[8] * self.rmses_sum_weight * self.rmses_sum(ics),
+            #coeffs[9] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
+            coeffs[10] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
+        ])
+
+    def report_score_multi(self, ics):
+        # TODO Add additional scores to this function
 
         return {
             "int_mz_std_rmse": (self.int_mz_std_rmse_weight,
@@ -1180,9 +1279,33 @@ class PathOptimizer:
             "auc_ground_rmse": (self.auc_ground_rmse_weight,
                                 self.auc_ground_rmse(ics)),
             "rmses_sum": (self.rmses_sum_weight,
-                                self.rmses_sum(ics)),
-            "maxint_sum": (self.maxint_sum_weight,
-                          self.maxint_sum(ics)),
+                          self.rmses_sum(ics)),
+            "int_mz_FWHM_rmse": (self.int_mz_FWHM_rmse_weight,
+                                 self.int_mz_FWHM_rmse(ics)),
+            "nearest_neighbor_penalty": (self.nearest_neighbor_penalty_weight,
+                                         self.nearest_neighbor_penalty(ics)),
+        }
+
+    def report_score_mono(self, ics):
+        # TODO Add additional scores to this function
+
+        return {
+            "baseline_peak_error": (
+                self.baseline_peak_error_weight,
+                self.baseline_peak_error(ics),
+            ),
+            "dt_ground_rmse": (self.dt_ground_rmse_weight,
+                               self.dt_ground_rmse(ics)),
+            "dt_ground_fit":
+                (self.dt_ground_fit_weight, self.dt_ground_fit(ics)),
+            "rt_ground_fit":
+                (self.rt_ground_fit_weight, self.rt_ground_fit(ics)),
+            "rt_ground_rmse": (self.rt_ground_rmse_weight,
+                               self.rt_ground_rmse(ics)),
+            "auc_ground_rmse": (self.auc_ground_rmse_weight,
+                                self.auc_ground_rmse(ics)),
+            "rmses_sum": (self.rmses_sum_weight,
+                          self.rmses_sum(ics)),
             "int_mz_FWHM_rmse": (self.int_mz_FWHM_rmse_weight,
                           self.int_mz_FWHM_rmse(ics)),
             "nearest_neighbor_penalty": (self.nearest_neighbor_penalty_weight,
