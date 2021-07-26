@@ -1,77 +1,127 @@
-# Define config file and import libraries
+"""
+The third and final (maybe) snakefile of the HDX_LIMIT pipeline.
+Extracts signals for quality-checked charge states, deconvolutes and outputs candidate IsotopeCluster objects.
+Candidate IsotopeClusters from all charge states of an rt-group are pooled and a best-estimate HDX mass-addition timeseries is generated.
+(Soon) Each mass-addition timeseries is used to estimate a set of amide hydrogen-deuterium exchange rates for the rt-group. 
+(Soon) HDX rate sets are used to determine a Delta_G_unfolding for the protein. 
+"""
+
 configfile: "config/config.yaml"
-
-
 import glob
 import shutil
 import pandas as pd
 from collections import OrderedDict
 
-# Read list of candidate POI charge states produced by preprocessing snakefile
-old_library_info_fn = "resources/library_info/library_info.json"
-old_library_info = pd.read_json(old_library_info_fn)
+# Read post idotp_check library_info. 
 library_info_fn = "resources/idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
-proc = glob.glob("resources/ic_time_series/*.zlib")
-# names = [fn.split('_')[:-3] for fn in proc]
-names = list(set(library_info["name"].values))
-idotp_check_indices = pd.read_csv("resources/idotp_filter/filter_passing_indices.csv")['index'].values
-names_with_indices = [name for name in names if any(True for idx in library_info.loc[library_info["name"]==name].index if idx in idotp_check_indices)]
-print("Protein Names: "+str(len(names))+", Names with indices: "+str(len(names_with_indices)))
+names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
 
-# all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
+# Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
+zippable_names = list(library_info["name"].values)
+zippable_charges = list(library_info["charge"].values)
+
+# Creates three zippable lists that are used for mv_passing_tensors: rt-group names, charges, and undeut_mzmls.
+mv_passing_tensors_zippable_names = []
+mv_passing_tensors_zippable_charges = []
+mv_passing_tensors_zippable_undeut_mzmls = []
+for name, charge in zip(zippable_names, zippable_charges):
+    for undeut_mzml in config[0]:
+        mv_passing_tensors_zippable_names.append(name)
+        mv_passing_tensors_zippable_charges.append(charge)
+        mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
+
+
 rule all:
+    """
+    Defines final outputs desired by pipeline run.
+    """
     input:
-        expand("resources/ic_time_series/multibody/{name}/{name}_winner.cpickle.zlib", name=names_with_indices)
-        #expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
+        expand("resources/ic_time_series/{name}/{name}_winner.cpickle.zlib", name=names)
 
 
-def optimize_paths_inputs(name, library_info, idotp_check_indices):
-    # Pass inputs as fxn of rt-group name wildcard. Creates analyze_tensor() input filenames in fixed pattern, input tensor names include library_info.index and rt-group avg elution time.
+def optimize_paths_inputs(name, library_info): 
+    """Generate inputs to optimize_paths rule with rt-group name wildcard
+
+        Args:
+            name (str): The rt-group name passed as a wildcard.
+            library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
+
+        Returns:
+            name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
+
+    """
     name_inputs = []
     for key in config["timepoints"]:
         if len(config[key]) > 1:
-            for file in config[key]:
-                passing_indices = [i for i in library_info.loc[library_info["name"]==name].index if i in idotp_check_indices]
-                for idx in passing_indices:
+            for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+                for file in config[key]:
                     name_inputs.append(
                         "resources/subtensor_ics/"
-                        + str(idx)
+                        + name
                         + "/"
-                        + str(idx)
+                        + name
+                        + "_"
+                        + str(charge)
                         + "_"
                         + file
-                        + ".gz.cpickle.zlib"
+                        + ".cpickle.zlib"
                     )  
         else:
             file = config[key][0]
-            passing_indices = [i for i in library_info.loc[library_info["name"]==name].index if i in idotp_check_indices]
-            for idx in passing_indices:
-                name_inputs.append(
+            for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+                    name_inputs.append(
                     "resources/subtensor_ics/"
-                    + str(idx)
+                    + name
                     + "/"
-                    + str(idx)
+                    + name
+                    + "_"
+                    + str(charge)
                     + "_"
                     + file
-                    + ".gz.cpickle.zlib"
+                    + ".cpickle.zlib"
                 )
 
     return name_inputs
 
+
 rule mv_passing_tensors:
-# Move tensors that pass 
+    """
+    Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
+    """
     input:
-        sorted(expand("resources/tensors/{lib_idx}/{lib_idx}_{mzml}.gz.cpickle.zlib", lib_idx=idotp_check_indices, mzml=[fn for fn in config[0]]))
+        sorted(
+            expand(
+                "resources/tensors/{name}/{name}_{charge}_{mzml}.gz.cpickle.zlib", 
+                zip,
+                name=mv_passing_tensors_zippable_names,
+                charge=mv_passing_tensors_zippable_charges,
+                mzml=mv_passing_tensors_zippable_undeut_mzmls
+            )
+        )
     output:
-        sorted(expand("resources/passing_tensors/{lib_idx}/{lib_idx}_{mzml}.gz.cpickle.zlib", lib_idx=idotp_check_indices, mzml=[fn for fn in config[0]]))
+        sorted(
+            expand(
+                "resources/passing_tensors/{name}/{name}_{charge}_{mzml}.gz.cpickle.zlib", 
+                zip,
+                name=zippable_names,
+                charge=zippable_charges,
+                mzml=mv_passing_tensors_zippable_undeut_mzmls
+            )
+        )
+    conda:
+        "envs/test_1.yaml"
     benchmark:
         "results/benchmarks/mv_passing_tensors.benchmark.txt"
     script:
         "scripts/HDX_LIMIT/pipeline/mv_passing_tensors.py"
 
+
 if config['polyfit_calibration']:
+    """
+    Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
+    """
     rule extract_tensors:
         input:
             library_info_fn,
@@ -79,30 +129,39 @@ if config['polyfit_calibration']:
             "config/config.yaml",
             expand(
                 "results/imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
-            ),
-            "resources/idotp_filter/filter_passing_indices.csv"
+            )
         output:
             expand(
-                "resources/passing_tensors/{lib_idx}/{lib_idx}_{{mzml}}.gz.cpickle.zlib",
-                lib_idx=idotp_check_indices
+                "resources/passing_tensors/{name}/{name}_{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
             )
+        conda:
+            "envs/test_1.yaml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         
         script:
             "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
 else:
+    """
+    Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
+    """
     rule extract_tensors:
         input:
             library_info_fn,
             "resources/mzml/{mzml}.gz",
-            "config/config.yaml",
-            "resources/idotp_filter/filter_passing_indices.csv"
+            "config/config.yaml"
         output:
             expand(
-                "resources/passing_tensors/{lib_idx}/{lib_idx}_{{mzml}}.gz.cpickle.zlib",
-                lib_idx=idotp_check_indices
-            ),
+                "resources/passing_tensors/{name}/{name}_{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
+            )
+        conda:
+            "envs/test_1.yaml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         script:
@@ -110,33 +169,41 @@ else:
 
 
 rule generate_tensor_ics:
-    # TODO: docstring
+    """
+    Deconvolutes tensor signal and outputs candidate IsotopeClusters for path optimization.
+    """
     input:
         library_info_fn,
-        "resources/passing_tensors/{lib_idx}/{lib_idx}_{mzml}.cpickle.zlib",
+        "resources/passing_tensors/{name}/{name}_{charge}_{mzml}.gz.cpickle.zlib",
         "config/config.yaml",
         "resources/library_info/normalization_factors.csv"
     output:
-        "resources/subtensor_ics/{lib_idx}/{lib_idx}_{mzml}.cpickle.zlib",
-        "results/plots/factors/{lib_idx}/{lib_idx}_{mzml}.cpickle.zlib.factor.pdf",
-        "results/plots/ics/{lib_idx}/{lib_idx}_{mzml}.cpickle.zlib.ics.pdf"
+        "resources/subtensor_ics/{name}/{name}_{charge}_{mzml}.cpickle.zlib",
+        "results/plots/factors/{name}/{name}_{charge}_{mzml}.cpickle.zlib.factor.pdf",
+        "results/plots/ics/{name}/{name}_{charge}_{mzml}.cpickle.zlib.ics.pdf"
+    conda:
+        "envs/test_1.yaml"
     benchmark:
-        "results/benchmarks/generate_subtensor_ics.{lib_idx}_{mzml}.benchmark.txt"
+        "results/benchmarks/generate_subtensor_ics.{name}/{name}_{charge}_{mzml}.benchmark.txt"
     shell:
         "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
 
+
 rule optimize_paths:
+    """
+    Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
+    """
     input:
         library_info_fn,
         "config/config.yaml",
-        lambda wildcards: optimize_paths_inputs(wildcards.name, old_library_info, idotp_check_indices) 
+        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info) 
     output:
-        "resources/ic_time_series/multibody/{name}/{name}_winner.cpickle.zlib",
-        "resources/ic_time_series/multibody/{name}/{name}_runners.cpickle.zlib",
-        "resources/ic_time_series/multibody/{name}/{name}_undeut_grounds.cpickle.zlib",
-        "resources/ic_time_series/multibody/{name}/{name}_winner_scores.cpickle.zlib",
-        "resources/ic_time_series/multibody/{name}/{name}_rtdt_com_cvs.cpickle.zlib",
-        "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path.pdf"
+        "resources/ic_time_series/{name}/{name}_winner.cpickle.zlib",
+        "resources/ic_time_series/{name}/{name}_runners.cpickle.zlib",
+        "resources/ic_time_series/{name}/{name}_undeut_grounds.cpickle.zlib",
+        "resources/ic_time_series/{name}/{name}_winner_scores.cpickle.zlib",
+        "resources/ic_time_series/{name}/{name}_rtdt_com_cvs.cpickle.zlib",
+        "results/plots/ic_time_series/winner_plots/{name}_winner_path.pdf"
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
     run:
@@ -144,6 +211,7 @@ rule optimize_paths:
         shell('''
             python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} {input[1]} --all_ic_input_paths {inputs} --winner_out_path {output[0]} --runner_out_path {output[1]} --undeut_ground_out_path {output[2]} --winner_scores_out_path {output[3]} --rtdt_com_cvs_out_path {output[4]} --path_plot_out_path {output[5]}
         ''')
+
 
 """
 #REVIEW FUNCTIONALITY

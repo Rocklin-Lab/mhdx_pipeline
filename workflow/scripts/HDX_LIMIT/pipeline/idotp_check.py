@@ -8,6 +8,7 @@ import copy
 import ipdb
 import pickle
 import pymzml
+import molmass
 import argparse
 import importlib.util
 import numpy as np
@@ -20,12 +21,21 @@ from scipy.signal import find_peaks
 from collections import defaultdict as ddict
 from scipy.ndimage.filters import gaussian_filter
 
-sys.path.append(os.getcwd() + "/workflow/scripts/")
-import molmass
+# TODO: This is bad andd should be done away with by installing hdx_limit with a setup.py.
+sys.path.append("./workflow/scripts/")
 from HDX_LIMIT.processing import TensorGenerator, generate_tensor_factors
 
-
 def cum_peak_gaps_from_sequence(sequence):
+    """Determine expected cumulative mass distances between isotopes of a given protein sequence. 
+    Later divided by charge and added to observed m/Z.
+
+    Args:
+        sequence (str): Single letter amino acid sequence of a protein.
+
+    Returns:
+        cumulative_peak_gaps (list): List of floats containing cumulative expected mass differences between isotopes.
+
+    """
     deut = molmass.Formula('D')
     hyd = molmass.Formula('H')
 
@@ -134,11 +144,19 @@ def gen_tensors_factorize(library_info_df,
     """Instantiates TensorGenerator and factorizes.
     
     Args:
-        library_info_df: library info data france
-        undeut_tensor_path_list: undeuterated tensor file path list
-        timepoint_index: time point index
-        n_factors: number of factors for factorization
-        gauss_params: gaussian paramters for factorization
+        library_info_df (Pandas DataFrame): library info data frame
+        undeut_tensor_path_list (List of strs): undeuterated tensor file path list
+        timepoint_index (int): time point index
+        n_factors (int): number of factors for factorization
+        gauss_params (tuple of two ints): Paramters for gaussian smoothing of DataTensor, format: (RT, DT); default: (3, 1).
+        filter_factors (bool): Boolean switch for filtering factors by gaussian fits in RT and DT dimensions.
+        factor_dt_r2_cutoff (float): Minimum R^2 for gaussian fit to pass filter in DT dimension.
+        factor_rt_r2_cutoff (float): Minimum R^2 for gaussian fit to pass filter in RT dimension
+        ic_peak_prominence (float): Minimum ratio of intensity between an isotope-cluster-like signal and highest m/Z peak.
+        ic_peak_width (int): Minumum m/Z width for an isotope-cluster-like signal to be condsidered.
+        ic_rel_height_filter (bool): Boolean switch to filter IsotopeClusters by their relative height.
+        ic_rel_height_filter_baseline (float): Minimum ratio of intensity between total factor intensity and isotope-cluster-like signal. 
+        ic_rel_height_threshold (float): Bounding criteria for a single IsotopeCluster, ratio of signal to peak height to be accepted as part of IC.
 
     Return:
         undeut_ics_list (list): list of all IsotopeCluster objects from factorized tensors
@@ -157,8 +175,7 @@ def gen_tensors_factorize(library_info_df,
     for undeut_tensor_path, factor_output_path, factor_plot_output_path in zip(
         undeut_tensor_path_list, factor_output_path_list, factor_plot_output_path_list
         ):
-
-        # gen data tensor and factors
+        # Generate DataTensor from extracted data.
         data_tensor = generate_tensor_factors(tensor_fpath=undeut_tensor_path,
                                               library_info_df=library_info_df,
                                               timepoint_index=timepoint_index,
@@ -172,52 +189,47 @@ def gen_tensors_factorize(library_info_df,
                                               filter_factors=filter_factors,
                                               factor_rt_r2_cutoff=factor_rt_r2_cutoff,
                                               factor_dt_r2_cutoff=factor_dt_r2_cutoff)
-
+        # Generate Factors and IsotopeClusters from DataTensor. 
         for factor in data_tensor.DataTensor.factors:
-
-            # generate isotope cluster list
             factor.find_isotope_clusters(prominence=ic_peak_prominence,
                                          width_val=ic_peak_width,
                                          rel_height_filter=ic_rel_height_filter,
                                          baseline_threshold=ic_rel_height_filter_baseline,
                                          rel_height_threshold=ic_rel_height_threshold)
-
             for isotope_cluster in factor.isotope_clusters:
                 undeut_ics_list.append(
                     isotope_cluster
                 )
-
         data_tensor_list.append(data_tensor)
-
     return undeut_ics_list, data_tensor_list
 
 
 def calc_dot_prod_for_isotope_clusters(sequence, undeut_isotope_clusters):
     """Calculate normalized dot product [0-1] of undeuterated IsotopeCluster.baseline_subtracted_int_mz to sequence determined theoretical distribution
     
-    Parameters:
-    sequence (str): sequence of the protein-of-interest in single-letter format
-    undeut_isotope_clusters (list): list of IsotopeCluster objects to be compared against reference 
+    Args:
+        sequence (str): sequence of the protein-of-interest in single-letter format
+        undeut_isotope_clusters (list): list of IsotopeCluster objects to be compared against reference 
 
     Returns:
-    dot_product_list (list): list of dot product results, index matched to integrated_mz_list
-    integrated_mz_list (list): list of integrated m/Z arrays, index matched to dot_product_list
+        dot_product_list (list): list of dot product results, index matched to integrated_mz_list
+        integrated_mz_list (list): list of integrated m/Z arrays, index matched to dot_product_list
 
     """
     dot_product_list = []
     integrated_mz_list = []
     integrated_mz_width_list = []
-
+    out_theor_mz_dist = None # Need this because the return statement can't see theor_mz_dist from the loop sometimes?
     for index, isotope_clusters in enumerate(undeut_isotope_clusters):
         integrated_mz_array = isotope_clusters.baseline_integrated_mz
         int_mz_width = isotope_clusters.integrated_mz_peak_width
-        dot_product, theor_mz_dist = calculate_isotope_dist_dot_product(
+        dot_product, out_theor_mz_dist = calculate_isotope_dist_dot_product(
             sequence=sequence, undeut_integrated_mz_array=integrated_mz_array)
         dot_product_list.append(dot_product)
         integrated_mz_list.append(integrated_mz_array)
         integrated_mz_width_list.append(int_mz_width)
 
-    return dot_product_list, integrated_mz_list, integrated_mz_width_list, theor_mz_dist
+    return dot_product_list, integrated_mz_list, integrated_mz_width_list, out_theor_mz_dist
 
 
 def main(library_info_path,
@@ -246,21 +258,35 @@ def main(library_info_path,
         return_flag (bool): option to return output in python, for notebook context
         n_factors (int): high number of factors to start factorization with
         gauss_params (tuple of floats): gaussian smoothing parameters in tuple (rt-sigma, dt-sigma), default (3,1)
+        filter_factors (bool): Boolean switch for filtering factors by gaussian fits in RT and DT dimensions.
+        factor_dt_r2_cutoff (float): Minimum R^2 for gaussian fit to pass filter in DT dimension.
+        factor_rt_r2_cutoff (float): Minimum R^2 for gaussian fit to pass filter in RT dimension
+        ic_peak_prominence (float): Minimum ratio of intensity between an isotope-cluster-like signal and highest m/Z peak.
+        ic_peak_width (int): Minumum m/Z width for an isotope-cluster-like signal to be condsidered.
+        ic_rel_height_filter (bool): Boolean switch to filter IsotopeClusters by their relative height.
+        ic_rel_height_filter_baseline (float): Minimum ratio of intensity between total factor intensity and isotope-cluster-like signal. 
+        ic_rel_height_threshold (float): Bounding criteria for a single IsotopeCluster, ratio of signal to peak height to be accepted as part of IC.
     
     Returns:
-        iso_cluster_list (list): list of IsotopeCluster objects produced from factorized input tensors
-        data_tensor_list (list): list of DataTensor objects produced from input tensor paths
-        idotp_list (list): list of resulting idotps for charge states
-        integrated_mz_list (list): list containing integrated mzs of IsotopeClusters
+        out_dict (dict): containing - 
+            iso_cluster_list (list): list of IsotopeCluster objects produced from factorized input tensors
+            data_tensor_list (list): list of DataTensor objects produced from input tensor paths
+            idotp_list (list): list of resulting idotps for charge states
+            integrated_mz_list (list): list containing integrated mzs of IsotopeClusters
 
     """
     print(undeut_tensor_path_list)
-    lib_idx = int(undeut_tensor_path_list[0].split("/")[-1].split("_")[0])
     library_info = pd.read_json(library_info_path)
-    prot_name = library_info.iloc[lib_idx]["name"]
-    prot_seq = library_info.iloc[lib_idx]["sequence"]
+    prot_name = undeut_tensor_path_list[0].split("/")[-2]
+    prot_charge = int(undeut_tensor_path_list[0].split("_")[-6])
+    lib_idx = library_info.loc[(library_info["name"]==prot_name) & (library_info["charge"]==prot_charge)].index
+    prot_seq = library_info.iloc[lib_idx]["sequence"].values[0]
+    print("Protein Sequence: "+prot_seq)
     prot_cum_peak_gaps = cum_peak_gaps_from_sequence(prot_seq)
-    mz_centers = (prot_cum_peak_gaps/library_info.iloc[lib_idx]["charge"]) + library_info.iloc[lib_idx]['obs_mz']
+    print("Cumulative Peak Gaps: "+str(prot_cum_peak_gaps))
+    print("Protein Charge States: "+str(library_info.iloc[lib_idx]["charge"].values[0]))
+    print("Observed m/Z: "+str(library_info.iloc[lib_idx]['obs_mz'].values[0]))
+    mz_centers = (prot_cum_peak_gaps/int(library_info.iloc[lib_idx]["charge"].values[0])) + library_info.iloc[lib_idx]['obs_mz'].values[0]
 
     iso_clusters_list, data_tensor_list = gen_tensors_factorize(
         library_info_df=library_info,
@@ -283,15 +309,19 @@ def main(library_info_path,
     idotp_list, integtd_mz_list, integt_mz_width_list, theo_mz_dist = calc_dot_prod_for_isotope_clusters(
         sequence=prot_seq, undeut_isotope_clusters=iso_clusters_list)
 
-    max_idotp_idx = np.argmax(np.array(idotp_list))
-    max_idotp = np.array(idotp_list)[max_idotp_idx]
-    int_mz_width = np.array(integt_mz_width_list)[max_idotp_idx]
+    if len(idotp_list) > 0:
+        max_idotp_idx = np.argmax(np.array(idotp_list))
+        max_idotp = np.array(idotp_list)[max_idotp_idx]
+        int_mz_width = np.array(integt_mz_width_list)[max_idotp_idx]
+    else: 
+        max_idotp = 0
+        int_mz_width = 0 
 
     if output_path is not None:
         pd.DataFrame({
             "idotp": max_idotp,
             "integrated_mz_width": int_mz_width,
-            "mz_centers": [mz_centers], # Cast as nested list to force into single index
+            "mz_centers": [mz_centers], # Cast as nested list to force into single index.
             "theor_mz_dist": [theo_mz_dist]
             }, index=[0]).to_json(output_path)
 
@@ -348,7 +378,6 @@ if __name__ == "__main__":
         library_info = pd.read_json(args.library_info_path)
         args.undeut_tensor_path_list = [fn for i in library_info.loc[library_info["name"]==args.rt_group_name].index.values for fn in glob.glob(args.input_directory+str(i)+"/*.zlib")]
 
-
     config_dict = yaml.load(open(args.config_file_path, 'rb'), Loader=yaml.Loader)
 
     filter_factors = config_dict["filter_factor"]
@@ -363,7 +392,6 @@ if __name__ == "__main__":
 
     normalization_factors = pd.read_csv(args.normalization_factors)
 
-    # main operation
     main(library_info_path=args.library_info_path,
          normalization_factors=normalization_factors,
          undeut_tensor_path_list=args.undeut_tensor_path_list,

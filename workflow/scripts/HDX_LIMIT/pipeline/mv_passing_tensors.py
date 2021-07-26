@@ -3,6 +3,16 @@ import shutil
 import argparse
 
 def main(input_paths, output_paths):
+	"""Moves idotp_check passing tensors to a new directory to simplify downstream input calling.
+
+    Args:
+        input_paths (list of strings): Sorted list of paths/to/inputs in the same order as the output list.
+        output_paths (list of strings): Sorted list of paths/to/outputs in the same order as the input list.
+
+    Returns:
+        None
+
+    """
 	for fin, fout in zip(input_paths, output_paths):
 		os.makedirs(os.path.dirname(fout), exist_ok=True)
 		shutil.copy(fin, fout)

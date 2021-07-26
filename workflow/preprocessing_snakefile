@@ -1,32 +1,44 @@
+"""
+The first snakefile of the HDX_LIMIT pipeline. 
+Determines signals to analyze by similarity to library protein expected values.
+"""
+
 configfile: "config/config.yaml"
 
 """ Eventual implementation of wine/docker use of convert.exe
 rule raw_to_mzml:
-	input:
-		"data/raw/{timepoint}.RAW"
-	output:
-		"data/mzml/{timepoint}.mzML"
-	script:
-		script to run docker/wine env for msconvert.exe
+    input:
+        "data/raw/{timepoint}.RAW"
+    output:
+        "data/mzml/{timepoint}.mzML"
+    script:
+        script to run docker/wine env for msconvert.exe
 """
 
-# make flat list of all MS datafiles
+# Make flat list of all MS datafiles.
 all_timepoint_files = []
 for key in config["timepoints"]:
     for file in config[key]:
         all_timepoint_files.append(file)
+        
 
-# snakefile targets creation of library_info.csv and gzipping all .mzMLs
 rule all:
+    """
+    Defines final outputs desired by pipeline run.
+    """
     input:
-        "resources/library_info/library_info.json",
-        expand("resources/mzml/{mzml}.gz", mzml=all_timepoint_files),
+        "resources/library_info/library_info.json"
 
 
 if config['polyfit_calibration']:
     rule read_imtbx:
+        """
+        Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
+        Determines associations between identified peaks and expected masses of library proteins. 
+        Feeds forward identified peaks with mass suffuciently similar to some library protein for further consideration. 
+        """
         input:
-            # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
+            # The .peaks.isotopes files must be made in windows, but only for undeuterated MS runs.
             "resources/isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
         output:
@@ -38,11 +50,15 @@ if config['polyfit_calibration']:
             "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
             "python workflow/scripts/HDX_LIMIT/preprocessing/imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
-
 else: 
     rule read_imtbx:
+        """
+        Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
+        Determines associations between identified peaks and expected masses of library proteins. 
+        Feeds forward identified peaks with mass suffuciently similar to some library protein for further consideration. 
+        """
         input:
-            # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
+            # The .peaks.isotopes files must be made in windows, but only for undeuterated MS runs.
             "resources/isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
         output:
@@ -56,6 +72,9 @@ else:
 
 
 rule gzip_mzmls:
+    """
+    Uses the pymzml module to make all .mzML files into randomly accessible .mzML.gz file, removes .mzMLs after conversion to save space.
+    """
     input:
         "resources/mzml/{mzml}",
     output:
@@ -67,12 +86,15 @@ rule gzip_mzmls:
 
 
 rule make_ims_mz_tics:
-    # calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
+    """
+    Calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
+    """
     input:
         "resources/mzml/{mzml}.gz",
     output:
         "resources/tics/{mzml}.ims.mz.tic.cpickle.zlib",
         "resources/tics/{mzml}_sum.txt"
+    priority: 1
     benchmark:
         "results/benchmarks/make_ims_mz_tics.{mzml}.benchmark.txt"
     shell:
@@ -80,6 +102,11 @@ rule make_ims_mz_tics:
 
 
 rule make_library_master_list:
+    """
+    Reads all candidate peaks from imtbx_reader output, 
+    combines redundant references, clusters by retention-time,
+    and generates final list of signals to consider for analysis.
+    """
     input:
         config["names_and_seqs"],
         "config/config.yaml",

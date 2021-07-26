@@ -31,6 +31,8 @@ def main(library_info_path,
 
     """
     library_info = pd.read_json(library_info_path)
+    sorted_inputs = sorted(all_idotp_csv_inputs, key=lambda fn: int(fn.split("_")[-3]))
+    print("Length of inputs: "+str(len(sorted_inputs)))
 
     out_dict = {}
     filter_passing_indices = []
@@ -39,10 +41,10 @@ def main(library_info_path,
     theor_mz_dists = []
     integrated_mz_width_list = []
 
-    sorted_inputs = sorted(all_idotp_csv_inputs, key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
-
     for fn in sorted_inputs:
-        lib_idx = int(fn.split("/")[-1].split("_")[0])
+        prot_name = fn.split("/")[-2]
+        prot_charge = int(fn.split("_")[-3]) # This is bad but works for the naming scheme.
+        lib_idx = library_info.loc[(library_info["name"]==prot_name) & (library_info["charge"]==prot_charge)].index
         idpc = pd.read_json(fn)
         idotps.append(idpc["idotp"].values[0])
         mz_centers.append(idpc["mz_centers"][0]) # Account for nested list structure
@@ -83,7 +85,7 @@ def main(library_info_path,
 
 
 if __name__ == "__main__":
-
+    # If the snakemake global object is present, save expected arguments from snakemake to be passed to main().
     if "snakemake" in globals():
         library_info_path = snakemake.input.pop(0)
         all_idotp_csv_inputs = snakemake.input
@@ -98,9 +100,8 @@ if __name__ == "__main__":
              indices_out_path=indices_out_path,
              library_info_out_path=library_info_out_path,
              plot_out_path=plot_out_path)
-
     else:
-        # set expected command line arguments
+        # CLI context, set expected arguments with argparse module.
         parser = argparse.ArgumentParser(
             description=
             "Reads all rt-group idotp csvs and returns or saves a list of indices with idotp >= idotp_cutoff."

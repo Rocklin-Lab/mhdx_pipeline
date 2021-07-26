@@ -6,13 +6,11 @@ import math
 import molmass
 import numpy as np
 import pandas as pd
-from scipy.stats import gmean
+from scipy.stats import gmean, norm, linregress
 from HDX_LIMIT import io, datatypes
 from numpy import linspace, cumsum, searchsorted
-
 from HDX_LIMIT.plot_factor_data import plot_factor_data_from_data_dict, plot_factor_data_from_data_tensor
 
-### BOKEH ###
 from bokeh.plotting import figure
 from bokeh.palettes import Spectral6
 from bokeh.transform import linear_cmap
@@ -27,15 +25,23 @@ from bokeh.models.filters import Filter, GroupFilter, IndexFilter
 import scipy as sp
 from scipy.optimize import curve_fit
 from sklearn.metrics import mean_squared_error
-from scipy.stats import norm
-from scipy.stats import linregress
 
 
 def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.90, dt_r2_cutoff=0.90):
+    """Filter Factors based on quality of RT and DT gaussian fit.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
     """
-    factor filters based on rt and dt gaussian fit. new factor list is created if the factor rt
-    and factor dt gauss fit r2 value is higher than the cutoff values. If none of the factors pass
-    the filtering criteria, the original factor list is returned
+
+    """
+    New factor list is created if the Factor 
+    DT and RT gaussian fit r^2 values are high. If none of the Factors pass
+    the filtering criteria, returns original Factor list.
     :param factor_list: gauss fitted factor list
     :param rt_r2_cutoff: rt gauss fit r2 cutoff
     :param dt_r2_cutoff: dt gauss fit r2 cutoff
@@ -56,8 +62,17 @@ def filter_factors_on_rt_dt_gauss_fit(factor_list, rt_r2_cutoff=0.90, dt_r2_cuto
     return new_factor_list
 
 
-
 def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
+    """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+    """
+
     """
     function to store factor data to factor data class
     :param data_tensor:
@@ -66,28 +81,29 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
     :return:
     """
 
-    factor_data_dict = dict()
-
-    factor_data_dict['name'] = data_tensor.DataTensor.name
-    factor_data_dict['charge_state'] = data_tensor.DataTensor.charge_states[0]
-    factor_data_dict['timepoint_index'] = data_tensor.DataTensor.timepoint_idx
-    factor_data_dict['timepoint_label'] = timepoint_label
-    factor_data_dict['retention_labels'] = data_tensor.DataTensor.retention_labels
-    factor_data_dict['drift_labels'] = data_tensor.DataTensor.drift_labels
-    factor_data_dict['mz_labels'] = data_tensor.DataTensor.mz_labels
-    factor_data_dict['bins_per_isotope_peak'] = data_tensor.DataTensor.bins_per_isotope_peak
-    factor_data_dict['tensor_3d_grid'] = data_tensor.DataTensor.full_grid_out
-    factor_data_dict['gauss_params'] = gauss_params
-    factor_data_dict['num_factors'] = len(data_tensor.DataTensor.factors)
-    factor_data_dict['factors'] = []
+    factor_data_dict = {
+    "name": data_tensor.DataTensor.name,
+    "charge_state": data_tensor.DataTensor.charge_states[0],
+    "timepoint_index": data_tensor.DataTensor.timepoint_idx,
+    "timepoint_label": timepoint_label,
+    "retention_labels": data_tensor.DataTensor.retention_labels,
+    "drift_labels": data_tensor.DataTensor.drift_labels,
+    "mz_labels": data_tensor.DataTensor.mz_labels,
+    "bins_per_isotope_peak": data_tensor.DataTensor.bins_per_isotope_peak,
+    "tensor_3d_grid": data_tensor.DataTensor.full_grid_out,
+    "gauss_params": gauss_params,
+    "num_factors": len(data_tensor.DataTensor.factors),
+    "factors": []
+    }
 
     for num, factor in enumerate(data_tensor.DataTensor.factors):
-        factor_dict = dict()
-        factor_dict['factor_num'] = factor.factor_idx
-        factor_dict['factor_dt'] = factor.dts
-        factor_dict['factor_rt'] = factor.rts
-        factor_dict['factor_mz'] = factor.mz_data
-        factor_dict['factor_integrated_mz'] = factor.baseline_subtracted_integrated_mz
+        factor_dict = {
+        "factor_num": factor.factor_idx,
+        "factor_dt": factor.dts,
+        "factor_rt": factor.rts,
+        "factor_mz": factor.mz_data,
+        "factor_integrated_mz": factor.baseline_subtracted_integrated_mz
+        }
         factor_data_dict['factors'].append(factor_dict)
 
     return factor_data_dict
@@ -101,6 +117,16 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
                             filter_factors=False,
                             factor_rt_r2_cutoff=0.90,
                             factor_dt_r2_cutoff=0.90):
+    """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+    """
+
     """
     generate data tensor from a given tensor file path, library info file path, and timepoint index
     :param tensor_fpath: tensor file path
@@ -159,14 +185,45 @@ def generate_tensor_factors(tensor_fpath, library_info_df, timepoint_index, gaus
     return data_tensor
 
 
-
 class TensorGenerator:
+    """The summary line for a class docstring should fit on one line.
 
-    ###Class Attributes###
+    If the class has public attributes, they may be documented here
+    in an ``Attributes`` section and follow the same formatting as a
+    function's ``Args`` section. Alternatively, attributes may be documented
+    inline with the attribute's declaration (see __init__ method below).
+
+    Properties created with the ``@property`` decorator should be documented
+    in the property's getter method.
+
+    Attributes:
+        attr1 (str): Description of `attr1`.
+        attr2 (:obj:`int`, optional): Description of `attr2`.
+
+    """
     hd_mass_diff = 1.006277
     c13_mass_diff = 1.00335
 
+
     def __init__(self, filename, timepoint_index, library_info, mz_centers, normalization_factors, **kwargs):
+        """Example of docstring on the __init__ method.
+
+        The __init__ method may be documented in either the class level
+        docstring, or as a docstring on the __init__ method itself.
+
+        Either form is acceptable, but the two should not be mixed. Choose one
+        convention to document the __init__ method and be consistent with it.
+
+        Note:
+            Do not include the `self` parameter in the ``Args`` section.
+
+        Args:
+            param1 (str): Description of `param1`.
+            param2 (:obj:`int`, optional): Description of `param2`. Multiple
+                lines are supported.
+            param3 (:obj:`list` of :obj:`str`): Description of `param3`.
+
+        """
 
         ###Set Instance Attributes###
 
@@ -175,12 +232,13 @@ class TensorGenerator:
         self.library_info = library_info
         self.mz_centers = mz_centers
         self.normalization_factors = normalization_factors
-        my_mzml = ".".join("_".join(self.filename.split("/")[-1].split("_")[1:]).split(".")[:-3])
+        my_mzml = ".".join("_".join(self.filename.split("_")[-5:]).split(".")[:2]) # Fix for updated rt-group directories.
+        print(my_mzml)
         self.normalization_factor = normalization_factors.loc[normalization_factors["mzml"]==my_mzml]["normalization_factor"].values[0]
 
         if (
                 kwargs is not None
-        ):
+        ):  
             for key in kwargs.keys():
                 setattr(self, key, kwargs[key])
 
@@ -200,10 +258,9 @@ class TensorGenerator:
             self.bins_per_isotope_peak = 7
 
         self.tensor = io.limit_read(self.filename)
-        self.lib_idx = int(
-            filename.split("/")[-1].split("_")[0]
-        )  # expects format: path/to/{library_index}_{protein_name}_{time_point}.cpickle.zlib
-        self.name = self.library_info.iloc[self.lib_idx]["name"]
+        self.name = filename.split("/")[-2] # Expects format: path/to/{rt-group-name}/{rt-group-name}_{charge}_{file.mzML.gz}.cpickle.zlib.
+        self.charge = int(filename.split("_")[-6]) # This is bad but works for the naming scheme.
+        self.lib_idx = self.library_info.loc[(library_info["name"]==self.name) & (library_info["charge"]==self.charge)].index
         self.max_peak_center = len(self.library_info.loc[
             self.library_info["name"] == self.name]["sequence"].values[0])
         self.total_isotopes = self.max_peak_center + self.high_mass_margin
@@ -244,7 +301,7 @@ class TensorGenerator:
         #                                    self.low_lims)
         #self.DataTensor.highs = searchsorted(self.DataTensor.mz_labels,
         #                                     self.high_lims)
-
+        
         # Consider separating factorize from init
         # self.DataTensor.factorize(gauss_params=(3,1))
 
@@ -256,9 +313,27 @@ class TensorGenerator:
 ### Timeseries with best score at the end of all minimizations is selected as the winning path, which is output along with the alternatives for each timepoint.
 ###
 class PathOptimizer:
+    """The summary line for a class docstring should fit on one line.
+
+    If the class has public attributes, they may be documented here
+    in an ``Attributes`` section and follow the same formatting as a
+    function's ``Args`` section. Alternatively, attributes may be documented
+    inline with the attribute's declaration (see __init__ method below).
+
+    Properties created with the ``@property`` decorator should be documented
+    in the property's getter method.
+
+    Attributes:
+        attr1 (str): Description of `attr1`.
+        attr2 (:obj:`int`, optional): Description of `attr2`.
+
+    """
+
     """
     Generates sample 'paths' - trajectories through HDX timeseries - optimizes 'path' through hdx timeseries for all sample paths and selects an overall winning path.
+
     all_tp_clusters = <list> of <lists> of <TA.isotope_cluster>s for each HDX timepoint,
+
     """
 
     # TODO: add info_tuple-like struct, eventually change IC, PO, and bokeh related scoring systems to use dicts? Dicts would make changing column names simpler.
@@ -272,6 +347,24 @@ class PathOptimizer:
                  prefilter=0,
                  old_data_dir=None,
                  **kwargs):
+        """Example of docstring on the __init__ method.
+
+        The __init__ method may be documented in either the class level
+        docstring, or as a docstring on the __init__ method itself.
+
+        Either form is acceptable, but the two should not be mixed. Choose one
+        convention to document the __init__ method and be consistent with it.
+
+        Note:
+            Do not include the `self` parameter in the ``Args`` section.
+
+        Args:
+            param1 (str): Description of `param1`.
+            param2 (:obj:`int`, optional): Description of `param2`. Multiple
+                lines are supported.
+            param3 (:obj:`list` of :obj:`str`): Description of `param3`.
+
+        """
 
         # Set score weights
         self.int_mz_std_rmse_weight = 1
@@ -284,12 +377,11 @@ class PathOptimizer:
         self.rt_ground_rmse_weight = 10
         self.dt_ground_rmse_weight = 10
         self.auc_ground_rmse_weight = 20
-        self.rmses_sum_weight = 1
+        self.rmses_sum_weight = 1 
         self.maxint_sum_weight = 1
         self.int_mz_FWHM_rmse_weight = 1
         self.nearest_neighbor_penalty_weight = 1
 
-        # Set internal variables
         self.name = name
         self.all_tp_clusters = all_tp_clusters
         self.library_info = library_info
@@ -318,6 +410,15 @@ class PathOptimizer:
 
 
     def weak_pareto_dom_filter(self):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         out = []
         for tp in self.all_tp_clusters:
             tp_buffer = []
@@ -330,8 +431,8 @@ class PathOptimizer:
                         ic2.rt_ground_err**2 < ic1.rt_ground_err**2 and
                         ic2.dt_ground_err**2 < ic1.dt_ground_err**2 and
                         ic2.baseline_peak_error < ic1.baseline_peak_error and
-                        ic2.rt_ground_fit > ic1.rt_ground_fit and
-                        ic2.dt_ground_fit > ic1.dt_ground_fit and
+                        ic2.rt_ground_fit > ic1.rt_ground_fit and 
+                        ic2.dt_ground_fit > ic1.dt_ground_fit and 
                         ic2.auc_ground_err**2 < ic1.auc_ground_err**2
                        ):
                         compare_flag = True
@@ -343,6 +444,15 @@ class PathOptimizer:
 
 
     def alt_weak_pareto_dom_filter(self):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         # Filters input of PO ICs to ensure no IC is worse in every score dimension than another IC (weak Pareto domination)
 
         out = []
@@ -423,7 +533,17 @@ class PathOptimizer:
 
         return out
 
+
     def gather_old_data(self):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         if self.old_data_dir is not None:
             self.old_files = sorted([
                 fn for fn in glob.iglob(self.old_data_dir + "*.pickle")
@@ -440,11 +560,22 @@ class PathOptimizer:
                 ]
                 self.old_data.append(ts)
 
+
     def select_undeuterated(self,
                             all_tp_clusters=None,
                             library_info=None,
                             name=None,
                             n_undeut_runs=None):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
+
         """
         Selects undeuterated isotope cluster which best matches theoretically calculated isotope distribution for POI sequence, for each observed charge state of the POI
         all_tp_clusters = TensorGenerator attribute, e.g. T1 = TensorGenerator(...); select_undeuterated(T1.all_tp_clusters)
@@ -524,10 +655,30 @@ class PathOptimizer:
         self.undeut_grounds = out
         self.undeut_ground_dot_products = charge_fits
 
+
     def gaussian_function(self, x, H, A, x0, sigma):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         return H + A * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
 
+
     def gauss_fit(self, x, y):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         mean = sum(x * y) / sum(y)
         sigma = np.sqrt(sum(y * (x - mean) ** 2) / sum(y))
         nonzeros = [index for index, value in enumerate(list(y)) if value != 0]
@@ -535,7 +686,17 @@ class PathOptimizer:
                                bounds=([0, 0, nonzeros[0], 0], [np.inf, np.inf, nonzeros[-1], np.inf]))
         return popt
 
+
     def rmse_from_gaussian_fit(self, distribution):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         try:
             xdata = [i for i in range(len(distribution))]
             ydata = distribution
@@ -545,10 +706,19 @@ class PathOptimizer:
         except:
             return 100
 
+
     def precalculate_fit_to_ground(self,
                                    all_tp_clusters=None,
                                    undeut_grounds=None):
+        """Description of function.
 
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         if all_tp_clusters is None:
             all_tp_clusters = self.all_tp_clusters
         if undeut_grounds is None:
@@ -560,8 +730,6 @@ class PathOptimizer:
 
                 ic.dt_ground_err = abs(ic.dt_coms - undeut.dt_coms)
                 ic.rt_ground_err = abs(ic.rt_com - undeut.rt_com)
-                # ic.dt_ground_err = abs(ic.dt_coms - ic.dt_mean)
-                # ic.rt_ground_err = abs(ic.rt_com - ic.rt_mean)
                 ic.auc_ground_err = ic.log_baseline_auc - undeut.log_baseline_auc
                 ic.dt_ground_fit = max(
                     np.correlate(undeut.dt_norms[0], ic.dt_norms[0], mode='full'))
@@ -573,7 +741,17 @@ class PathOptimizer:
 
                 ic.log_baseline_auc_diff = ic.log_baseline_auc - undeut.log_baseline_auc
 
+
     def generate_sample_paths(self):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         starts = np.linspace(0, 0.7, 8)
         sample_paths = []
         for start in starts:
@@ -583,6 +761,7 @@ class PathOptimizer:
 
         self.sample_paths = [list(path) for path in set(sample_paths)]
 
+
     def clusters_close_to_line(
         self,
         start,
@@ -591,7 +770,15 @@ class PathOptimizer:
         prefiltered_ics=None,
         max_peak_center=None,
     ):
+        """Description of function.
 
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         if undeut_grounds is None:
             undeut_grounds = self.undeut_grounds
         if prefiltered_ics is None:
@@ -654,7 +841,17 @@ class PathOptimizer:
 
         return tuple(path)
 
+
     def optimize_paths_multi(self, sample_paths=None, prefiltered_ics=None):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         # Main function of PO, returns the best-scoring HDX IC time-series 'path' of a set of bootstrapped paths.
 
         if sample_paths is None:
@@ -681,8 +878,8 @@ class PathOptimizer:
 
                 # Decorate alt_paths
                 combo_scoring = []
-                for pth in alt_paths:
-                    combo_scoring.append(self.combo_score_multi(pth))
+                for path in alt_paths:
+                    combo_scoring.append(self.combo_score_multi(path))
 
                 if min(combo_scoring) < self.combo_score_multi(current):
                     current = alt_paths[combo_scoring.index(min(combo_scoring))]
@@ -693,22 +890,23 @@ class PathOptimizer:
 
                 if edited == False:
                     final_paths.append(current)
+
         final_scores = []
-        for pth in final_paths:
-            final_scores.append(self.combo_score_multi(pth))
+        for path in final_paths:
+            final_scores.append(self.combo_score_multi(path))
 
         # This order must be maintained, self.winner must exist before calling find_runners; winner and runners are both needed for set_bokeh tuple
         self.winner = final_paths[final_scores.index(min(final_scores))]
-        self.winner_scores = self.report_score_multi(self.winner)
+        self.winner_scores = self.report_score_mutli(self.winner)
         self.find_runners_multi()
         self.set_bokeh_tuples()
         self.filter_runners()
+        # Compute the coefficient of variation (std.dev./mean) for RT and DT dimensions.
         self.rt_com_cv = (np.var([ic.rt_com for ic in self.winner if ic.rt_com is not None]) **
                           0.5) / np.mean([ic.rt_com for ic in self.winner if ic.rt_com is not None])
         self.dt_com_cv = (np.var([
             np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None
-        ]) ** 0.5) / np.mean([np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None])
-        # Doesn't return, only sets PO attributes
+        ])**0.5) / np.mean([np.mean(ic.dt_coms) for ic in self.winner if ic.dt_coms is not None])
 
     def find_runners_multi(self):
         # sets self.runners atr. sorts 'runner-up' single substitutions for each tp by score, lower is better.
@@ -726,8 +924,8 @@ class PathOptimizer:
                     alt_paths.append(buffr)
 
             combo_scoring = []
-            for pth in alt_paths:
-                combo_scoring.append(self.combo_score_multi(pth))
+            for path in alt_paths:
+                combo_scoring.append(self.combo_score_multi(path))
 
             out_buffer = []
             for i in range(len(combo_scoring)):
@@ -825,11 +1023,29 @@ class PathOptimizer:
         self.runners = runners
 
     def set_bokeh_tuples(self):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         # Sets IC.bokeh_tuple to be passed to bokeh for display through the HoverTool
         # Winners store the full values of the winning series scores
         # Runners store the differences between the winning scores and the score if they were to be substituted
 
         def score_dict(series):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             return {
                 "int_mz_std_rmse":
                     self.int_mz_std_rmse(series) * self.int_mz_std_rmse_weight,
@@ -861,6 +1077,15 @@ class PathOptimizer:
             }
 
         def score_diff(winner_scores, substituted_scores):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             return (
                 winner_scores["int_mz_std_rmse"] -
                 substituted_scores["int_mz_std_rmse"],
@@ -935,6 +1160,15 @@ class PathOptimizer:
                                   score_diff(winner_scores, substituted_scores))
 
     def filter_runners(self, n_runners=5):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         filtered_runners = []
         for tp in self.runners:
             if len(tp) > n_runners:
@@ -957,11 +1191,14 @@ class PathOptimizer:
 
     def calculate_theoretical_isotope_dist_from_sequence(self, sequence, n_isotopes=None):
         """Calculate theoretical isotope distribtuion from the given one-letter sequence of a library protein.
+
         Args:
             sequence (string): sequence in one letter code
             n_isotopes (int): number of isotopes to include. If none, includes all
+
         Return:
             isotope_dist (numpy ndarray): resulting theoretical isotope distribution
+
         """
         seq_formula = molmass.Formula(sequence)
         isotope_dist = np.array([x[1] for x in seq_formula.spectrum().values()])
@@ -977,13 +1214,13 @@ class PathOptimizer:
     def calculate_empirical_isotope_dist_from_integrated_mz(self, integrated_mz_array,
                                                             n_isotopes=None):
         """Calculate the isotope distribution from the integrated mz intensitities.
-
-        Args:
+        
+        Args: 
             integrated_mz_values (Numpy ndarray): array of integrated mz intensitites
             n_isotopes (int): number of isotopes to include. If none, includes all
-        Returns:
+        Returns: 
             isotope_dist (Numpy ndarray): isotope distribution with magnitude normalized to 1
-
+        
         """
         isotope_dist = integrated_mz_array / max(integrated_mz_array)
         if n_isotopes:
@@ -992,12 +1229,13 @@ class PathOptimizer:
 
     def calculate_isotope_dist_dot_product(self, sequence, undeut_integrated_mz_array):
         """Calculate dot product between theoretical isotope distribution from the sequence and experimental integrated mz array.
-
+        
         Args:
             sequence (string): single-letter sequence of the library protein-of-interest
             undeut_integrated_mz_array (Numpy ndarray): observed integrated mz array from an undeuterated .mzML
         Returns:
             dot_product (float): result of dot product between theoretical and observed integrated-m/Z, from [0-1]
+
         """
         theo_isotope_dist = self.calculate_theoretical_isotope_dist_from_sequence(
             sequence=sequence)
@@ -1014,6 +1252,15 @@ class PathOptimizer:
     ##########################################################################################################################################################################################################################################
 
     def int_mz_std_rmse(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         # calculates the difference in standard deviation from the mean from timepoint i-1 to i for i in [2, len(ics)]
         sd = 0
         for i in range(2, len(ics)):
@@ -1023,6 +1270,15 @@ class PathOptimizer:
         return math.sqrt(sd)
 
     def gabe_delta_mz_rate(self, major_species_centroids, timepoints=None):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         # reproduce logic of delta_mz_rate for Gabe's old data
 
         if timepoints is None:
@@ -1051,18 +1307,27 @@ class PathOptimizer:
         return sd / len(major_species_centroids)
 
     def delta_mz_rate(self, ics, timepoints=None):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
     # Two penalizations are computed: [0] if the ic is too fast (sd) and [1] if the ic goes backwards (back)
 
         if timepoints is None:
             timepoints = self.timepoints
-
+        
         backward = 0
         forward = 0
         previous_rate = max([(ics[1].baseline_integrated_mz_com - ics[0].baseline_integrated_mz_com) / (timepoints[1] - timepoints[0]), 0.1])
 
         for i in range(2, len(ics)):
             # if previous_rate == 0: diagnostic for /0 error
-            new_com = ics[i].baseline_integrated_mz_com #todo: tolerance for backward
+            new_com = ics[i].baseline_integrated_mz_com
             if new_com < ics[
                     i - 1].baseline_integrated_mz_com:  # if we went backwards
                 backward += (100 *
@@ -1111,55 +1376,153 @@ class PathOptimizer:
 
     def dt_ground_rmse(
         self, ics
-    ):  # rmse penalizes strong single outliers, score is minimized - lower is better
+    ):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
+      # rmse penalizes strong single outliers, score is minimized - lower is better
         return math.sqrt(sum([ic.dt_ground_err**2 for ic in ics]) / len(ics))
 
     def rt_ground_rmse(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         return math.sqrt(sum([ic.rt_ground_err**2 for ic in ics]) / len(ics))
 
     def dt_ground_fit(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         return sum([(1.0 / ic.dt_ground_fit) for ic in ics])
 
     def rt_ground_fit(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         return sum([(1.0 / ic.rt_ground_fit) for ic in ics])
 
     def baseline_peak_error(self, ics):  # Use RMSE instead TODO
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         # returns avg of peak_errors from baseline subtracted int_mz -> minimize score
         return np.average([ic.baseline_peak_error for ic in ics])
 
     def auc_ground_rmse(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         return np.sqrt(np.mean([ic.auc_ground_err**2 for ic in ics]))
 
-    def auc_rmse(self,
-                        ics
-                       ):
+    def auc_rmse(self,ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         sd = 0
         for ic in ics:
             sd += ic.log_baseline_auc_diff ** 2
         return math.sqrt(np.mean(sd))
-
+    
     def rmses_sum(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         rmses = 0
         for ic in ics:
             rmses += 100*ic.baseline_integrated_mz_rmse
         return rmses
-
+  
     def maxint_sum(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         maxint = 0
         for ic in ics:
             maxint += max(ic.baseline_integrated_mz)
             return 100000/maxint
-
+  
     def int_mz_FWHM_rmse(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         sd = 0
         for i in range(2, len(ics)):
             sd += (
                 ics[i].baseline_integrated_mz_FWHM - ics[i - 1].baseline_integrated_mz_FWHM
             ) ** 2.0
-
+ 
         return math.sqrt(sd)
 
     def nearest_neighbor_penalty(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         nn_penalty = 0
         for ic in ics:
             nn_penalty += 100 * (
@@ -1185,6 +1548,15 @@ class PathOptimizer:
         int_mz_FWHM_rmse_weight=None,
         nearest_neighbor_penalty_weight=None
     ):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
 
         if int_mz_std_rmse_weight != None:
             self.int_mz_std_rmse_weight = int_mz_std_rmse_weight
@@ -1216,6 +1588,15 @@ class PathOptimizer:
             self.nearest_neighbor_penalty_weight = nearest_neighbor_penalty_weight
 
     def combo_score_multi(self, ics):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
         coeffs = [1.0, 0.10008302970275278, 0.09845279850378537, 0.772117631651534,
                   0.5310720751993441, 0.26070374293926435, 0.38586818508608206, 0.2522380132144197,
                   0.24236622286514023, 0.07221833422901867, 0.15051371151603132]
@@ -1231,7 +1612,7 @@ class PathOptimizer:
             coeffs[7] * self.auc_ground_rmse_weight * self.auc_ground_rmse(ics),
             coeffs[8] * self.rmses_sum_weight * self.rmses_sum(ics),
             coeffs[9] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
-            coeffs[10] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
+            coeffs[10] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics)
         ])
 
     def combo_score_mono(self, ics):
@@ -1252,9 +1633,19 @@ class PathOptimizer:
             #coeffs[9] * self.int_mz_FWHM_rmse_weight * self.int_mz_FWHM_rmse(ics),
             coeffs[10] * self.nearest_neighbor_penalty_weight * self.nearest_neighbor_penalty(ics),
         ])
-
+           
+                                         
     def report_score_multi(self, ics):
-        # TODO Add additional scores to this function
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
+    # TODO Add additional scores to this function                                    
 
         return {
             "int_mz_std_rmse": (self.int_mz_std_rmse_weight,
@@ -1279,7 +1670,7 @@ class PathOptimizer:
             "auc_ground_rmse": (self.auc_ground_rmse_weight,
                                 self.auc_ground_rmse(ics)),
             "rmses_sum": (self.rmses_sum_weight,
-                          self.rmses_sum(ics)),
+                                self.rmses_sum(ics)),
             "int_mz_FWHM_rmse": (self.int_mz_FWHM_rmse_weight,
                                  self.int_mz_FWHM_rmse(ics)),
             "nearest_neighbor_penalty": (self.nearest_neighbor_penalty_weight,
@@ -1313,8 +1704,26 @@ class PathOptimizer:
         }
 
     def bokeh_plot(self, outpath):
+        """Description of function.
+
+        Args:
+            arg_name (type): Description of input variable.
+
+        Returns:
+            out_name (type): Description of any returned objects.
+
+        """
 
         def manual_cmap(value, low, high, palette):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             interval = (high - low) / len(palette)
             n_colors = len(palette)
             if value <= interval:
@@ -1328,6 +1737,15 @@ class PathOptimizer:
                             return palette[i]
 
         def winner_added_mass_plotter(source, tooltips, old_source=None):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             p = figure(
                 title=
                 "Winning Timeseries Mean Added-Mass, Colored by RTxDT Error in ms",
@@ -1404,6 +1822,15 @@ class PathOptimizer:
             return p
 
         def winner_rtdt_plotter(source, tooltips):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             # set top margin
             p = figure(
                 title=
@@ -1431,6 +1858,15 @@ class PathOptimizer:
             return p
 
         def winner_plotter(source, i, tooltips, old_source=None):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             if i == max([int(tp) for tp in source.data["timepoint"]]):
                 p = figure(title="Timepoint " + str(i) +
                            ": Winning Isotopic-Cluster Added-Mass Distribution",
@@ -1520,6 +1956,15 @@ class PathOptimizer:
             return p
 
         def runner_plotter(source, i, tooltips):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             if i == max([int(tp) for tp in source.data["timepoint"]]):
                 p = figure(
                     title="Runner-Up Isotopic Cluster Added-Mass Distributions",
@@ -1562,6 +2007,15 @@ class PathOptimizer:
             return p
 
         def rtdt_plotter(source, i, tooltips):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             if i == max([int(tp) for tp in source.data["timepoint"]]):
                 p = figure(title="RT and DT Error from Undeuterated",
                            plot_height=400,
@@ -1845,8 +2299,7 @@ class PathOptimizer:
             ("Charge State(s)", "@charge_states"),
             ("Timepoint", "@timepoint"),
             ("Peak Error", "@baseline_subtracted_peak_error"),
-            ("Center of Mass in Added-Mass_Units",
-             "@baseline_integrated_mz_com"),
+            ("Center of Mass in Added-Mass_Units", "@baseline_integrated_mz_com"),
             ("Center of Mass in M/Z", "@abs_mz_com"),
             ("Retention Time COM Error to Ground", "@rt_ground_err"),
             ("Drift Time COM Error to Ground", "@dt_ground_err"),
@@ -1867,8 +2320,7 @@ class PathOptimizer:
             ("Charge State(s)", "@charge_states"),
             ("Timepoint", "@timepoint"),
             ("Peak Error", "@baseline_subtracted_peak_error"),
-            ("Center of Mass in Added-Mass_Units",
-             "@baseline_integrated_mz_com"),
+            ("Center of Mass in Added-Mass_Units", "@baseline_integrated_mz_com"),
             ("Center of Mass in M/Z", "@abs_mz_com"),
             ("Retention Time COM Error to Ground", "@rt_ground_err"),
             ("Drift Time COM Error to Ground", "@dt_ground_err"),
@@ -1898,8 +2350,6 @@ class PathOptimizer:
             ("RT COM Error (ms)", "@rt_ground_err"),
             ("DT COM Error (ms)", "@dt_ground_err"),
         ]
-
-        # ipdb.set_trace()
 
         n_timepoints = len(self.winner)
         # print("internal n_timepoints: "+str(n_timepoints))

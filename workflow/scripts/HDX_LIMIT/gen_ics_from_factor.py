@@ -647,6 +647,9 @@ def load_factor_data(factor_data_filepath):
 
 if __name__ == '__main__':
 
+    # NO HARDCODED PATHS! THESE VALUES SHOULD BE HANDLED BY ARGPARSE!
+    # TODO: Set up argparse for CLI inputs.
+
     factor_dict_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/factor.factor'
     tensor_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/tensor_files/old_tensor_files/_eehee_rd4_0871_tensor_files/113_20210323_lib15_ph6_0sec_01.mzML.gz.cpickle.zlib'
     library_info_fpath = '/Users/smd4193/Documents/MS_data/2021_lib15_ph6/library_info/old_library_info/library_info.csv'

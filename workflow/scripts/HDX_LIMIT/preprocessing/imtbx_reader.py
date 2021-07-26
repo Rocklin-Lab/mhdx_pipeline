@@ -17,13 +17,10 @@ from sklearn.cluster import DBSCAN
 from sklearn.metrics import pairwise_distances
 from scipy.stats import gaussian_kde
 import pickle as pk
-
 matplotlib.use("Agg")
 
 
-### DEFINITIONS ###
-#TODO this references an unpassed variable, bad style - fix
-def plotcluster(i=0):
+def plotcluster(testq, i=0):
     """Plots rt and ims values of lines of a cluster
 
     Args:
@@ -554,14 +551,12 @@ def apply_cluster_weights(dataframe,
         None
     
     """
-    # TODO This is not great style, this should accept 3 lists and 3 weights and return 3 new lists
-    # applies scoring weights to clustering columns in-place, doesn't return
+    # TODO: This is not great style, this should accept 3 lists and 3 weights and return 3 new lists
     dataframe["cluster_im"] = dataframe["im_mono"] / dt_weight
     dataframe["cluster_RT"] = dataframe["RT"] / rt_weight
     dataframe["cluster_mz"] = dataframe["mz_mono"] / mz_weight
 
 
-### SCRIPT ###
 def main(isotopes_path,
          names_and_seqs_path,
          out_path=None,
@@ -607,10 +602,26 @@ def main(isotopes_path,
                 j += 1
 
     df = pd.DataFrame(out)
-    df.columns = "mz_mono im_mono ab_mono_peak ab_mono_total mz_top im_top ab_top_peak ab_top_total cluster_peak_count idx_top charge mz_cluster_avg ab_cluster_peak ab_cluster_total cluster_corr noise RT".split(
-    )
-
-    # buffer df
+    df.columns = [
+                    "mz_mono",
+                    "im_mono",
+                    "ab_mono_peak",
+                    "ab_mono_total",
+                    "mz_top",
+                    "im_top",
+                    "ab_top_peak",
+                    "ab_top_total",
+                    "cluster_peak_count",
+                    "idx_top",
+                    "charge",
+                    "mz_cluster_avg",
+                    "ab_cluster_peak",
+                    "ab_cluster_total",
+                    "cluster_corr",
+                    "noise",
+                    "RT"
+                 ]
+    # Make buffer of df.
     testq = copy.deepcopy(df)
 
     # read list of all proteins in sample
@@ -622,10 +633,10 @@ def main(isotopes_path,
     ]
     allseq["len"] = [len(seq) for seq in allseq["sequence"]]
 
-    # cluster IMTBX lines corresponding to designed sequence estimates, code values are heuristic weights for clustering, all weights are inverse
+    # Cluster IMTBX lines corresponding to designed sequence estimates, code values are heuristic weights for clustering, all weights are inverse.
     apply_cluster_weights(testq)
 
-    # create dbscan object, fit, and apply cluster ids to testq lines
+    # Create dbscan object, fit, and apply cluster ids to testq lines.
     db = DBSCAN()
     db.fit(testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
     clusters = db.fit_predict(
@@ -633,19 +644,18 @@ def main(isotopes_path,
     testq["cluster"] = clusters
 
     # for z in range(3): For visualizing cluster characteristics
-    #    plotcluster(z)
+    #    plotcluster(testq, i=z)
 
-    # average clusters within a ppm window of their suspected proteins
+    # Average clusters within a ppm window of their suspected proteins.
     sum_df = cluster_df(testq, allseq, ppm=50)
 
-    #check mz_error kde plotting flags
+    # Check mz_error kde plotting flags.
     if original_mz_kde_path is not None and adjusted_mz_kde_path is not None:
-        # generate plot of KDE before ppm correction
+        # Generate plot of KDE before ppm correction.
         kde_plot(sum_df, original_mz_kde_path)
 
     if calibration_outpath is not None:
-        # apply polyfit mz calibration
-
+        # Apply polyfit mz calibration.
         calib_dict = gen_mz_error_calib_output(
             testq=testq,
             allseq=allseq,
@@ -659,10 +669,8 @@ def main(isotopes_path,
         testq["mz_mono_fix_round"] = np.round(testq["mz_mono_fix"].values, 3)
 
     else:
-
-        # this is what is initially implemented for mz correction
-
-        # identify major peak of abs_ppm_error clusters, apply correction to all monoisotopic mz values
+        # This is what is initially implemented for mz correction.
+        # Identify major peak of abs_ppm_error clusters, apply correction to all monoisotopic mz values.
         offset, offset_peak_width = find_offset(sum_df)
         if offset > 0:
             testq["mz_mono_fix"] = [
@@ -679,7 +687,7 @@ def main(isotopes_path,
 
         ppm_refilter = math.ceil(offset_peak_width / 2)
 
-    # re-cluster on the adjusted MZ, same weights
+    # Re-cluster on the adjusted MZ, same weights.
     apply_cluster_weights(testq, dt_weight=5.0, rt_weight=0.6, mz_weight=0.006)
 
     db = DBSCAN()
@@ -688,11 +696,11 @@ def main(isotopes_path,
         testq[["cluster_im", "cluster_RT", "cluster_mz", "charge"]])
     testq["cluster"] = clusters
 
-    # re-average clusters to single lines, check for duplicate RTs, save sum_df to outfile
+    # Re-average clusters to single lines, check for duplicate RTs, save sum_df to outfile.
     sum_df = cluster_df(testq, allseq, ppm=ppm_refilter, adjusted=True)
 
     if original_mz_kde_path is not None and adjusted_mz_kde_path is not None:
-        # plot adjusted_mz KDE
+        # Plot adjusted_mz KDE.
         kde_plot(sum_df, adjusted_mz_kde_path)
 
     # check for duplicate RT-groups THIS MAY BE USELESS TODO
@@ -711,24 +719,22 @@ def main(isotopes_path,
 
 if __name__ == "__main__":
 
-    # set expected command line arguments
-
-    # positional arguments
+    # Set expected command line arguments.
     parser = argparse.ArgumentParser(
         description=
         "Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by make_library_master_list.py"
     )
     parser.add_argument(
         "isotopes_path",
-        help="path/to/.peaks.isotopes file from undeuterated mzml")
+        help="path/to/.peaks.isotopes file from undeuterated mzml"
+    )
     parser.add_argument(
         "names_and_seqs_path",
-        help="path/to/.csv with names and sequences of library proteins")
+        help="path/to/.csv with names and sequences of library proteins"
+    )
     parser.add_argument("-q",
                         "--out_path",
                         help="path/to/_intermediate.csv main output file")
-
-    # optional arguments
     parser.add_argument(
         "-p",
         "--plot",

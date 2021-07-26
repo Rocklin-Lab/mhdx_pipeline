@@ -2,7 +2,7 @@ import zlib
 import _pickle as cpickle
 
 
-def limit_write(obj, outpath):
+def limit_write(obj, out_path):
     """ Writes a Python object as a zlib-compressed pickle.
 
 	Args:
@@ -13,7 +13,7 @@ def limit_write(obj, outpath):
 		None
 
 	"""
-    with open(outpath, "wb") as file:
+    with open(out_path, "wb") as file:
         file.write(zlib.compress(cpickle.dumps(obj)))
 
 
