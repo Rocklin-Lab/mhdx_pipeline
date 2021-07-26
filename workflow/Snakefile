@@ -142,7 +142,7 @@ rule optimize_paths:
     run:
         inputs = [input[i] for i in range(2, len(input))]
         shell('''
-            python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} {input[1]} --all_ic_input_paths {inputs} --winner_out_path {output[0]} --runner_out_path {output[1]} --undeut_ground_out_path {output[2]} --winner_scores_out_path {output[3]} --rtdt_com_cvs_out_path {output[4]} --path_plot_out_path {output[5]}
+            python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} {input[1]} --all_ic_input_paths {inputs} --winner_out_path {output[0]} --runner_out_path {output[1]} --undeut_ground_out_path {output[2]} --winner_scores_out_path {output[3]} --rtdt_com_cvs_out_path {output[4]} --path_plot_out_path {output[5]} --out_monobody_path
         ''')
 
 """
