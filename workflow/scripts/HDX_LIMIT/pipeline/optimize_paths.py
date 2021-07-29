@@ -1,12 +1,47 @@
-import os, shutil
+"""Example Google style docstrings.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
+import os
 import sys
 import copy
 import math
+import yaml
+import shutil
 import argparse
 import numpy as np
 import pandas as pd
-import yaml
 
+# TODO: This will be replaced by an installable hdx_limit.
 sys.path.append(os.getcwd() + "/workflow/scripts/")
 from HDX_LIMIT.io import limit_read, limit_write
 from HDX_LIMIT.processing import PathOptimizer
@@ -16,41 +51,56 @@ from HDX_LIMIT.gjr_plot import plot_gjr_
 def optimize_paths_inputs(library_info_path, input_directory_path,
                           rt_group_name, timepoints):
     """Generate explicit PathOptimizer input paths for one rt_group.
+
     Args:
         library_info_path (str): path/to/checked_library_info.json
         input_directory_path (str): /path/to/dir/ to prepend to each outpath
         rt_group_name (str): value from 'name' column of library_info
         timepoints (dict): dictionary containing list of hdx timepoints in seconds, where each timepoint is also an integer key corresponding to that timepoint's .mzML filenames
+
     Returns:
         name_inputs (list of strings): flat list of all IsotopeCluster inputs to PathOptimizer
+
     """
     name_inputs = []
     library_info = pd.read_json(library_info_path)
-    idxs = library_info.index[library_info["name"] == rt_group_name].tolist()
+    charges = library_info.loc[library_info["name"]==name]['charge'].values
     for key in timepoints["timepoints"]:
         if len(timepoints[key]) > 1:
             for file in timepoints[key]:
-                for idx in idxs:
+                for charge in charges:
                     name_inputs.append(
-                        input_directory_path + str(idx) + "_" + file +
-                        ".gz.cpickle.zlib"
-                    )  # TODO: This won't work if we go to .mzML .RAW interoperability,
+                        input_directory_path 
+                        + name 
+                        + "_" 
+                        + str(charge) 
+                        + "_" 
+                        + file 
+                        +".cpickle.zlib"
+                    )  # TODO: This won't work if we go to .mzML/.RAW interoperability.
         else:
             file = timepoints[key][0]
-            for idx in idxs:
-                name_inputs.append(input_directory_path + str(idx) + "_" +
-                                   file + ".gz.cpickle.zlib")
+            for charge in charges:
+                name_inputs.append(
+                    input_directory_path 
+                    + name 
+                    + "_" 
+                    + str(charge)
+                    + "_"
+                    + file 
+                    + ".cpickle.zlib")
 
     return name_inputs
 
-
 def gen_correlate_matrix(list_of_arrays):
-    """
-    generate a correlation matrix
-    :param list_of_arrays: list of arrays
-    :return: correlation matrix
-    """
+    """Takes a list of 1D signal arrays and generates a correlation matrix for those signals. 
+    Args:
+        list_of_arrays (list of number arrays): A flat iterable of signals (arrays) to be compared.
 
+    Returns:
+        corr_matrix (numpy array): A correlation matrix containing correlation coefficients for each pair of signal arrays.
+
+    """
     corr_matrix = np.zeros((len(list_of_arrays), len(list_of_arrays)))
     for ind1, arr1 in enumerate(list_of_arrays):
         for ind2, arr2 in enumerate(list_of_arrays):
@@ -73,6 +123,7 @@ def main(library_info_path,
          winner_scores_out_path=None,
          rtdt_com_cvs_out_path=None):
     """Uses PathOptimzier class to generate best-estimate hdx-timeseries of IsotopeClusters for a given library protein.
+
     Args:
         library_info_path (str): path/to/checked_library_info.json
         all_ic_input_paths (list of strings): list of paths/to/files.cpickle.zlib for all lists of IsotopeClusters from generate_tensor_ics.py
@@ -86,21 +137,20 @@ def main(library_info_path,
         undeut_ground_out_path (str): path/to/file for undeuterated ground-truth IsotopeClusters
         winner_scores_out_path (str): path/to/file for winner path score values
         rtdt_com_cvs_out_path (str): path/to/file for rt and dt correlation values
+
     Returns:
         out_dict (dict): dictionary containing 'path_optimizer' key, and corresponding PathOptimizer object 
+
     """
     out_dict = {}
-
-    # open library_info
     library_info = pd.read_json(library_info_path)
 
     if rt_group_name is None:
-        name = library_info.iloc[int(
-            all_ic_input_paths[0].split("/")[-1].split("_")[0])]["name"]
+        name = all_ic_input_paths[0].split("/")[-2]
     else:
         name = rt_group_name
 
-    # order files, pooling all replicates and charges by timepoint
+    # Order files, pooling all replicates and charges by timepoint.
     atc = []
     for tp in timepoints["timepoints"]:
         tp_buf = []
@@ -114,8 +164,8 @@ def main(library_info_path,
 
         atc.append(tp_buf)
 
-    # Generate nearest_neighbor_correlation for each ic
-    # Maybe atc should be saved as a gz.cpickle.zlib file?
+    # Generate nearest_neighbor_correlation for each ic.
+    # TODO: Maybe atc should be saved as a gz.cpickle.zlib file?
     for ics in atc:
         all_baseline_integrated_mz = []
         all_rts = []
@@ -145,10 +195,8 @@ def main(library_info_path,
         old_data_dir=old_data_dir,
     )
 
-    # Generate best paths for multibody score function
     p1.optimize_paths_multi()
 
-    # write outputs
     # if html_plot_out_path is not None:
     #     p1.bokeh_plot(html_plot_out_path)
     if winner_out_path is not None:
@@ -303,7 +351,7 @@ if __name__ == "__main__":
         if args.input_directory_path is not None and args.rt_group_name is not None:
             args.all_ic_input_paths = optimize_paths_inputs(
                 args.library_info_path, args.input_directory_path,
-                args.rt_group_name, args.timepoints_yaml)
+                args.rt_group_name, timepoints)
         else:
             parser.print_help()
             sys.exit()

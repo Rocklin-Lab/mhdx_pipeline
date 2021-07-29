@@ -1,3 +1,36 @@
+"""Example Google style docstrings.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
 import os
 import sys
 import yaml
@@ -16,6 +49,15 @@ from HDX_LIMIT.io import limit_write
 
 
 def convert_factor_mz_data_to_cont(mz_data, mz_labels, bins_per_isotope_peak):
+    """Description of function.
+
+    Args:
+        arg_name (type): Description of input variable.
+
+    Returns:
+        out_name (type): Description of any returned objects.
+
+    """
     padded_mz_labels = []
     padded_factor_mz = []
     mz_label_spacing = mz_labels[1] - mz_labels[0]
@@ -33,7 +75,21 @@ def convert_factor_mz_data_to_cont(mz_data, mz_labels, bins_per_isotope_peak):
 
 
 def plot_mz_data(fig, gs, row_num, col_num, mz_label, mz_data, plot_label):
+    """Creates a subplot in a given figure at set row/column position, plots the m/Z of a passed IC or Factor.
 
+    Args:
+        fig (matplotlib.figure): The figure object where m/Z will be plotted.
+        gs (gridspec.GridSpec): GridSpec object determining number of rows and columns.
+        row_num (int): Dictates the row of the plot being made on the figure.
+        col_num (int): Dictates the column of the plot being made on the figure.
+        mz_label (list of floats): Labels connecting m/Z values to bins.
+        mz_data (list of floats): Binned intensities of m/Z signal.
+        plot_label (str): Title of the subplot being made.
+
+    Returns:
+        None
+
+    """
     mz_sum = np.round(np.sum(mz_data), 2)
 
     ax = fig.add_subplot(gs[row_num, col_num])
@@ -48,17 +104,22 @@ def plot_mz_data(fig, gs, row_num, col_num, mz_label, mz_data, plot_label):
 
 
 def plot_ics(list_of_ics_from_a_factor):
+    """Creates a plot showing a Factor's m/Z and the m/Z of all ICs made from that Factor.
 
+    Args:
+        list_of_ics_from_a_factor(list of IsotopeCluster objects): List of ICs made from a Factor.
 
+    Returns:
+        None
+
+    """
     num_of_mz_plots = len(list_of_ics_from_a_factor) + 1
-
     num_columns = 3
     num_rows = 0
 
     for num in range(num_of_mz_plots):
         if num % num_columns == 0:
             num_rows += 1
-
 
     pad_factor_mz_label, pad_factor_mz = convert_factor_mz_data_to_cont(
         mz_data=list_of_ics_from_a_factor[0].factor_mz_data,
@@ -67,11 +128,10 @@ def plot_ics(list_of_ics_from_a_factor):
 
     fig = plt.figure(figsize=(15, num_rows * 1.6))
     gs = gridspec.GridSpec(ncols=num_columns, nrows=num_rows, figure=fig)
-
     n_rows = 0
     n_cols = 0
 
-    # plot factor mz data
+    # Plot Factor m/Z.
     plot_mz_data(fig=fig,
                  gs=gs,
                  row_num=n_rows,
@@ -81,7 +141,7 @@ def plot_ics(list_of_ics_from_a_factor):
                  plot_label='factor_mz')
 
 
-    # plot ics from the factor
+    # Plot m/Z for all ICs from Factor.
     n_cols = 1
 
     for num, ic in enumerate(list_of_ics_from_a_factor):
@@ -111,8 +171,19 @@ def plot_ics(list_of_ics_from_a_factor):
 
 
 def plot_ics_from_ic_list(list_of_ics, output_path):
+    """Creates a .pdf plot of all ICs resulting from factorization of a DataTensor.
 
-    ### sort ics with factor number
+    Args:
+        list_of_ics (list of IsotopeCluster objects): A list of all ICs resulting from a factorization.
+        output_path (str): A path/to/output.pdf.
+
+    Returns:
+        None
+
+    """
+
+    # TODO: Do this with new_list = sorted(list_of_ics, key = lambda ic: ic.factor_idx)? Or something similar.
+    # Sort IC lists by parent factor index.
     factor_indices = [x.factor_idx for x in list_of_ics]
     unique_factor_idx = np.unique(factor_indices)
     sorted_list_ics = [[] for _ in range(len(unique_factor_idx))]
@@ -123,11 +194,9 @@ def plot_ics_from_ic_list(list_of_ics, output_path):
             if ics.factor_idx == factor_idx:
                 sorted_list_ics[ind].append(ics)
 
-    ### plotting ics
     with PdfPages(output_path) as pdf:
         for ind, ic_list in enumerate(sorted_list_ics):
             plot_ics(ic_list)
-
             pdf.savefig()
             plt.close()
 
@@ -152,29 +221,27 @@ def main(library_info_path,
          ic_rel_height_filter=True,
          ic_rel_height_filter_baseline=0.10,
          ic_rel_height_threshold=0.10):
-    """Performs nonnegative tensor factorization to deconvolute input tensor, identifies IsotopeCluster objects, 
-    and optionally returns or writes output list of IsotopeClusters.
+    """Performs factorization to deconvolute tensor, identifies IsotopeCluster objects, and can return and/or write output list of IsotopeClusters.
 
     Args:
-        library_info_path (str): path/to/library_info.json
-        tensor_input_path (str): path/to/tensor.cpickle.zlib
-        timepoints_dict (dict): dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, which are keys mapping to lists of each timepoint's replicate .mzML filenames 
-        isotope_clusters_out_path (str): path/to/file for main output - list of IsotopeClusters objects
-        return_flag (bool): option to return output in python, for notebook context
-        gauss_params (tuple of ints/floats): Gaussian smoothing parameters in LC-RT and IMS-DT dimensions, (rt_sigma, dt_sigma)
+        library_info_path (str): A path/to/library_info.json.
+        tensor_input_path (str): A path/to/tensor.cpickle.zlib.
+        timepoints_dict (dict): Dictionary with 'timepoints' key containing list of hdx timepoints in integer seconds, 
+            which are keys mapping to lists of each timepoint's replicate .mzML filenames. 
+        isotope_clusters_out_path (str): path/to/file for main output - list of IsotopeClusters objects.
+        return_flag (bool): Option to return output in python, for notebook context.
+        gauss_params (tuple of ints/floats): Gaussian smoothing parameters in LC-RT and IMS-DT dimensions (rt_sigma, dt_sigma).
 
     Returns:
         out_dict (dict): dictionary containing TensorGenerator object
     
     """
     out_dict = {}
-
-    # open library_info
     library_info = pd.read_json(library_info_path)
-    my_idx = int(tensor_input_path.split("/")[-1].split("_")[0])
-    # my_centers = library_info.iloc[my_idx]["mz_centers"].values
-    ## temporary fix for getting mz center values in an array
-    my_centers = library_info.iloc[my_idx]["mz_centers"]
+    my_name = tensor_input_path.split("/")[-2]
+    my_charge = int(tensor_input_path.split("/")[-1].split())
+    my_idx = library_info.loc[(library_info["name"]==my_name) & (library_info["charge"]==my_charge)].index
+    my_centers = library_info.loc[(library_info["name"]==my_name) & (library_info["charge"]==my_charge)]["mz_centers"].values
     centers = np.array(my_centers)
 
     # find timepoint of passed filename by config comparison
