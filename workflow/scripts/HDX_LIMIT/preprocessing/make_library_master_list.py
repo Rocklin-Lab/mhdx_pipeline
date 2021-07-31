@@ -504,96 +504,117 @@ def main(names_and_seqs_path,
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(
-        description=
-        "Creates a list of library proteins observed in HDX-LC-IM-MS from imtbx .peaks.isotopes, undeuterated .mzML, and .ims.mz.tic files."
-    )
-    # inputs
-    parser.add_argument(
-        "names_and_seqs_path",
-        help="path/to/file .csv of protein library names and sequences")
-    parser.add_argument("-m",
-                        "--mzml_dir",
-                        help="path/to/dir/ containing undeuterated .mzML files")
-    parser.add_argument(
-        "-s",
-        "--undeut_match_string",
-        help="unique part of undeuterated mzML filename to be used in matching")
-    parser.add_argument("-i",
-                        "--intermediates_dir",
-                        help="path/to/dir/ containing intermediate imtbx files")
-    parser.add_argument("-t",
-                        "--tics_dir",
-                        help="path/to/dir/ containing .ims.mz.tic files")
-    parser.add_argument("-n",
-                        "--undeut_mzml",
-                        help="path/to/file, one undeuterated .mzML")
-    parser.add_argument(
-        "-j",
-        "--intermediates",
-        nargs="+",
-        help="used in snakemake, list of all imtbx intermediate file paths")
-    parser.add_argument(
-        "-u",
-        "--tics",
-        nargs="+",
-        help="used in snakemake, list of all .imx.mz.tic file paths")
-    parser.add_argument(
-        "-v",
-        "--mzml_sum_paths",
-        nargs="+",
-        help="used in snakemake, list of all mzml_sum.txt file paths")
-    parser.add_argument(
-        "-e",
-        "--timepoints",
-        required=True,
-        help=
-        "path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint"
-    )
-    parser.add_argument(
-        "-c",
-        "--rt_group_cutoff",
-        default=0.2,
-        type=float,
-        help=
-        "control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters"
-    )
-    # outputs
-    parser.add_argument("-p",
-                        "--stretched_times_plot_outpath",
-                        help="path/to/stretched_times_plot.png")
-    parser.add_argument("-o",
-                        "--out_path",
-                        help="path/to/library_info.json main output file")
-    parser.add_argument("-f",
-                        "--normalization_factors_outpath",
-                        help="path/to/normalization_factors.csv")
-    parser.add_argument("-l",
-                        "--normalization_factors_plot_outpath",
-                        help="path/to/normalization_factors_plot.png")
+    if "snakemake" in globals():
+        names_and_seqs_path = snakemake.input[0]
+        open_timepoints = yaml.load(open(snakemake.input[1], "rt"),Loader=yaml.FullLoader)
+        undeut_mzml = [fn for fn in snakemake.input if fn.endswith('.mzML.gz')][0]
+        tics = [fn for fn in snakemake.input if '.tic' in fn]
+        intermediates = [fn for fn in snakemake.input if '_intermediate.csv' in fn]
+        mzml_sum_paths = [fn for fn in snakemake.input if '_sum.txt' in fn]
+        out_path = snakemake.output[0]
+        stretched_times_plot_outpath = snakemake.output[1]
+        normalization_factors_outpath = snakemake.output[2]
+        normalization_factors_plot_outpath = snakemake.output[3]
 
-    args = parser.parse_args()
+        main(names_and_seqs_path=names_and_seqs_path,
+             out_path=out_path,
+             undeut_mzml=undeut_mzml,
+             intermediates=intermediates,
+             tics=tics,
+             mzml_sum_paths=mzml_sum_paths,
+             timepoints=open_timepoints,
+             stretched_times_plot_outpath=stretched_times_plot_outpath,
+             normalization_factors_outpath=normalization_factors_outpath,
+             normalization_factors_plot_outpath=normalization_factors_plot_outpath)
 
-    #Generate explicit filenames and open timepoints .yaml
-    if args.mzml_dir is not None and args.undeut_match_string is not None and args.undeut_mzMLs is None:
-        args.undeut_mzml = list(
-            glob.glob(args.mzml_dir + "*" + args.undeut_match_string + "*" + ".mzML"))
-    if args.intermediates_dir is not None and args.intermediates is None:
-        args.intermediates = list(
-            glob.glob(args.intermediates_dir + "*intermediate.csv"))
-    if args.tics_dir is not None and args.tics is None:
-        args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic.cpickle.zlib"))
-    open_timepoints = yaml.load(open(args.timepoints, "rt"),
-                                Loader=yaml.FullLoader)
+    else:
+        parser = argparse.ArgumentParser(
+            description=
+            "Creates a list of library proteins observed in HDX-LC-IM-MS from imtbx .peaks.isotopes, undeuterated .mzML, and .ims.mz.tic files."
+        )
+        parser.add_argument(
+            "names_and_seqs_path",
+            help="path/to/file .csv of protein library names and sequences")
+        parser.add_argument("-m",
+                            "--mzml_dir",
+                            help="path/to/dir/ containing undeuterated .mzML files")
+        parser.add_argument(
+            "-s",
+            "--undeut_match_string",
+            help="unique part of undeuterated mzML filename to be used in matching")
+        parser.add_argument("-i",
+                            "--intermediates_dir",
+                            help="path/to/dir/ containing intermediate imtbx files")
+        parser.add_argument("-t",
+                            "--tics_dir",
+                            help="path/to/dir/ containing .ims.mz.tic files")
+        parser.add_argument("-n",
+                            "--undeut_mzml",
+                            help="path/to/file, one undeuterated .mzML")
+        parser.add_argument(
+            "-j",
+            "--intermediates",
+            nargs="+",
+            help="used in snakemake, list of all imtbx intermediate file paths")
+        parser.add_argument(
+            "-u",
+            "--tics",
+            nargs="+",
+            help="used in snakemake, list of all .imx.mz.tic file paths")
+        parser.add_argument(
+            "-v",
+            "--mzml_sum_paths",
+            nargs="+",
+            help="used in snakemake, list of all mzml_sum.txt file paths")
+        parser.add_argument(
+            "-e",
+            "--timepoints",
+            required=True,
+            help=
+            "path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint"
+        )
+        parser.add_argument(
+            "-c",
+            "--rt_group_cutoff",
+            default=0.2,
+            type=float,
+            help=
+            "control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters"
+        )
+        parser.add_argument("-p",
+                            "--stretched_times_plot_outpath",
+                            help="path/to/stretched_times_plot.png")
+        parser.add_argument("-o",
+                            "--out_path",
+                            help="path/to/library_info.json main output file")
+        parser.add_argument("-f",
+                            "--normalization_factors_outpath",
+                            help="path/to/normalization_factors.csv")
+        parser.add_argument("-l",
+                            "--normalization_factors_plot_outpath",
+                            help="path/to/normalization_factors_plot.png")
+        args = parser.parse_args()
 
-    main(args.names_and_seqs_path,
-         out_path=args.out_path,
-         undeut_mzml=args.undeut_mzml,
-         intermediates=args.intermediates,
-         tics=args.tics,
-         mzml_sum_paths=args.mzml_sum_paths,
-         timepoints=open_timepoints,
-         rt_group_cutoff=args.rt_group_cutoff,
-         stretched_times_plot_outpath=args.stretched_times_plot_outpath,
-         normalization_factors_outpath=args.normalization_factors_outpath,
-         normalization_factors_plot_outpath=args.normalization_factors_plot_outpath)
+        #Generate explicit filenames and open timepoints .yaml
+        if args.mzml_dir is not None and args.undeut_match_string is not None and args.undeut_mzMLs is None:
+            args.undeut_mzml = list(
+                glob.glob(args.mzml_dir + "*" + args.undeut_match_string + "*" + ".mzML"))
+        if args.intermediates_dir is not None and args.intermediates is None:
+            args.intermediates = list(
+                glob.glob(args.intermediates_dir + "*intermediate.csv"))
+        if args.tics_dir is not None and args.tics is None:
+            args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic.cpickle.zlib"))
+        open_timepoints = yaml.load(open(args.timepoints, "rt"),
+                                    Loader=yaml.FullLoader)
+
+        main(args.names_and_seqs_path,
+             out_path=args.out_path,
+             undeut_mzml=args.undeut_mzml,
+             intermediates=args.intermediates,
+             tics=args.tics,
+             mzml_sum_paths=args.mzml_sum_paths,
+             timepoints=open_timepoints,
+             rt_group_cutoff=args.rt_group_cutoff,
+             stretched_times_plot_outpath=args.stretched_times_plot_outpath,
+             normalization_factors_outpath=args.normalization_factors_outpath,
+             normalization_factors_plot_outpath=args.normalization_factors_plot_outpath)
