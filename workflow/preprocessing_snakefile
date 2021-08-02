@@ -45,8 +45,9 @@ rule raw_to_mzml:
         "data/raw/{timepoint}.RAW"
     output:
         "data/mzml/{timepoint}.mzML"
-    script:
-        script to run docker/wine env for msconvert.exe
+    shell:
+        # This command only displays help, needs in/out args.
+        [sbc538@quser24 973060]$ WINEPREFIX=/projects/b1095/sbc538/NUIT/973060/.wine singularity exec pwiz-skyline-i-agree-to-the-vendor-licenses_latest.sif wine /wineprefix64/drive_c/pwiz/msconvert --help
 """
 
 # Make flat list of all MS datafiles.

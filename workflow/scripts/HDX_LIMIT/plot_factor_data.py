@@ -62,7 +62,7 @@ def plot_factor_row(fig, gs, retention_labels, drift_labels, mz_labels, bins_per
         else:
             factor_rt_dt_grid = np.multiply.outer(factor.dts, factor.rts)
             factor_mz = factor.mz_data
-            factor_integrated_mz = factor.baseline_subtracted_integrated_mz
+            factor_integrated_mz = factor.integrated_mz_data
     else:
         factor_rt_dt_grid = np.sum(tensor3, axis=2).T
         factor_mz = np.sum(tensor3, axis=(0, 1))
@@ -228,7 +228,7 @@ def plot_factor_data(retention_labels, drift_labels, mz_labels, bins_per_isotope
                 factor_dts.append(factor.dts / max(factor.dts))
                 factor_rts.append(factor.rts / max(factor.rts))
                 factor_mzs.append(factor.mz_data / max(factor.mz_data))
-                total_factor_masses.append(sum(factor.baseline_subtracted_integrated_mz))
+                total_factor_masses.append(sum(factor.integrated_mz_data))
 
 
         total_factor_masses = np.array(total_factor_masses)

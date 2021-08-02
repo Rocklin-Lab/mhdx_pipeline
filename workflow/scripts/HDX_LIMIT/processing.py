@@ -135,7 +135,7 @@ def create_factor_data_object(data_tensor, gauss_params, timepoint_label=None):
         "factor_dt": factor.dts,
         "factor_rt": factor.rts,
         "factor_mz": factor.mz_data,
-        "factor_integrated_mz": factor.baseline_subtracted_integrated_mz
+        "factor_integrated_mz": factor.integrated_mz_data
         }
         factor_data_dict['factors'].append(factor_dict)
 

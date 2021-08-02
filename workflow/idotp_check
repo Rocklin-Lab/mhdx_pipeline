@@ -112,6 +112,8 @@ if config['polyfit_calibration']:
                 name=zippable_names,
                 charge=zippable_charges
             )
+        #conda: 
+            #"envs/hdx_test_1.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
 
@@ -133,6 +135,8 @@ else:
                 name=zippable_names,
                 charge=zippable_charges
             )
+        #conda: 
+            #"envs/hdx_test_1.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         script:
@@ -150,17 +154,14 @@ rule idotp_check:
         lambda wildcards: idotp_check_inputs(wildcards.name, wildcards.charge),
     output:
         "resources/idotp_check/{name}/{name}_{charge}_idotp_check.json",
-        #expand("resources/factor_data/{{name}}/{{name}}_{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
+        expand("resources/factor_data/{{name}}/{{name}}_{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
         expand("results/plots/factors/{{name}}/{{name}}_{{charge}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
+    conda: 
+        "envs/hdx_test_1.yml"
     benchmark:
         "results/benchmarks/idotp_check.{name}_{charge}.benchmark.txt"
-    run:
-        inputs = [input[i] for i in range(3, len(input))]
-        #outputs_factor_dict = [output[i] for i in range(1, len(output)) if output[i].endswith(".factor")]
-        outputs_factor_plot = [output[i] for i in range(1, len(output)) if output[i].endswith(".factor.pdf")]
-        shell('''
-            python workflow/scripts/HDX_LIMIT/pipeline/idotp_check.py {input[0]} {input[1]} {input[2]} --undeut_tensor_path_list {inputs} --output_path {output[0]} --factor_plot_output_path {outputs_factor_plot}
-        ''')
+    script:
+        "scripts/HDX_LIMIT/pipeline/idotp_check.py"
 
 
 rule idotp_filter:
@@ -180,6 +181,8 @@ rule idotp_filter:
         "resources/idotp_filter/filter_passing_indices.csv",
         "resources/idotp_filter/checked_library_info.json",
         "results/plots/idotp_distribution.png"
+    conda: 
+        "envs/hdx_test_1.yml"
     benchmark:
         "results/benchmarks/idotp_filter.benchmark.txt"
     script:

@@ -495,21 +495,21 @@ def fit_gaussian(x_data, y_data, data_label="dt"):
         return gauss_fit_dict
 
 
-    def model_data_with_gauss(x_data, gauss_params):
-        # TODO: Add docstring.
+def model_data_with_gauss(x_data, gauss_params):
+    # TODO: Add docstring.
 
-        data_length = len(x_data)
-        bin_value = (x_data[-1] - x_data[0])/data_length
-        center = gauss_params[2]
-        data_length_half = int(data_length/2)
-        low_val = center - (data_length_half * bin_value)
-        new_x_data = []
-        for num in range(data_length):
-            val = low_val + (num * bin_value)
-            new_x_data.append(val)
-        new_x_data = np.array(new_x_data)
-        new_gauss_data = gauss_func(new_x_data, *gauss_params)
-        return new_gauss_data
+    data_length = len(x_data)
+    bin_value = (x_data[-1] - x_data[0])/data_length
+    center = gauss_params[2]
+    data_length_half = int(data_length/2)
+    low_val = center - (data_length_half * bin_value)
+    new_x_data = []
+    for num in range(data_length):
+        val = low_val + (num * bin_value)
+        new_x_data.append(val)
+    new_x_data = np.array(new_x_data)
+    new_gauss_data = gauss_func(new_x_data, *gauss_params)
+    return new_gauss_data
 
 
 class Factor:
@@ -724,12 +724,12 @@ class Factor:
 
         """
         self.isotope_clusters = []
-        norm_integrated_mz = self.baseline_subtracted_integrated_mz/max(self.baseline_subtracted_integrated_mz)
+        norm_integrated_mz = self.integrated_mz_data/max(self.integrated_mz_data)
         peaks, feature_dict = find_peaks(norm_integrated_mz,
                                          prominence=prominence,
                                          width=width_val)
         if len(peaks) == 0:
-            ic_idxs = [(0, len(self.baseline_subtracted_integrated_mz)-1)]
+            ic_idxs = [(0, len(self.integrated_mz_data)-1)]
             int_mz_width = [2]
             #return
         else:

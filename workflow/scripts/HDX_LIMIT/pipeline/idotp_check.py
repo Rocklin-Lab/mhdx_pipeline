@@ -369,73 +369,103 @@ def main(library_info_path,
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(
-        description=
-        "Checks observed undeuterated signal against theoretical isotopic distribution, returns dataframe with highest idotp of all undeut"
-    )
-    parser.add_argument("library_info_path", help="path/to/library_info.json")
-    parser.add_argument("config_file_path", help='path/to/config.yaml')
-    parser.add_argument("normalization_factors", help="path/to/normalization_factors.csv")
-    parser.add_argument(
-        "-l",
-        "--undeut_tensor_path_list",
-        nargs="+",
-        help=
-        "list of paths to undeuterated tensor outputs from extract_tensors.py")
-    parser.add_argument("-d", "--input_directory", help="path/to/dir/ containing undeuterated tensor inputs")
-    parser.add_argument("-r", "--rt_group_name", help="rt-group name to capture for idotp check")
-    parser.add_argument("-o", "--output_path", help="path/to/file for main .json output")
-    parser.add_argument("-f", "--factor_output_path_list", nargs="+", help="list of paths/to/file for factor data .factor output")
+    if "snakemake" in globals():
+        config_dict = yaml.load(open(snakemake.input[1], 'rb'), Loader=yaml.Loader)
+        normalization_factors = pd.read_csv(snakemake.input[2])
+        undeut_tensor_path_list = snakemake.input[3:]
+        output_path = snakemake.output[0]
+        factor_output_path_list = [item for item in snakemake.output if item.endswith(".factor")]
+        factor_plot_output_path_list = [item for item in snakemake.output if item.endswith(".factor.pdf")]
+        filter_factors = config_dict["filter_factor"]
+        factor_rt_r2_cutoff = config_dict["factor_rt_r2_cutoff"]
+        factor_dt_r2_cutoff = config_dict["factor_dt_r2_cutoff"]
+        ic_peak_prom = config_dict["ic_peak_prominence"]
+        ic_peak_width = config_dict["ic_peak_width"]
+        ic_rel_ht_filter = config_dict["ic_rel_height_filter"]
+        ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
+        ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
 
-    parser.add_argument("-p", "--factor_plot_output_path_list", nargs="+", help="list of paths/to/files for factor data plot output .pdf")
-    parser.add_argument(
-        "-n",
-        "--n_factors",
-        default=15,
-        help=
-        "high number of factors to use in non_negative_parafac decomposition, counts down until correlation constraint is reached - see DataTensor.factorize()"
-    )
-    parser.add_argument(
-        "-g",
-        "--gauss_params",
-        type=tuple,
-        default=(3, 1),
-        help="parameters for smoothing rt and dt dimensions"
-    )
-    args = parser.parse_args()
-    if args.undeut_tensor_path_list is None:
-        if args.input_directory is None or args.rt_group_name is None:
-            parser.print_help()
-            sys.exit()
-        #ipdb.set_trace()
-        library_info = pd.read_json(args.library_info_path)
-        args.undeut_tensor_path_list = [fn for i in library_info.loc[library_info["name"]==args.rt_group_name].index.values for fn in glob.glob(args.input_directory+str(i)+"/*.zlib")]
+        main(library_info_path=snakemake.input[0],
+             normalization_factors=normalization_factors,
+             undeut_tensor_path_list=undeut_tensor_path_list,
+             factor_output_path_list=factor_output_path_list,
+             output_path=output_path,
+             factor_plot_output_path_list=factor_plot_output_path_list,
+             filter_factors=filter_factors,
+             factor_rt_r2=factor_rt_r2_cutoff,
+             factor_dt_r2=factor_dt_r2_cutoff,
+             ic_peak_prominence=ic_peak_prom,
+             ic_peak_width=ic_peak_width,
+             ic_rel_height_filter=ic_rel_ht_filter,
+             ic_rel_height_filter_baseline=ic_rel_ht_baseline,
+             ic_rel_height_threshold=ic_rel_ht_threshold)
 
-    config_dict = yaml.load(open(args.config_file_path, 'rb'), Loader=yaml.Loader)
+    else:
+        parser = argparse.ArgumentParser(
+            description=
+            "Checks observed undeuterated signal against theoretical isotopic distribution, returns dataframe with highest idotp of all undeut"
+        )
+        parser.add_argument("library_info_path", help="path/to/library_info.json")
+        parser.add_argument("config_file_path", help='path/to/config.yaml')
+        parser.add_argument("normalization_factors", help="path/to/normalization_factors.csv")
+        parser.add_argument(
+            "-l",
+            "--undeut_tensor_path_list",
+            nargs="+",
+            help=
+            "list of paths to undeuterated tensor outputs from extract_tensors.py")
+        parser.add_argument("-d", "--input_directory", help="path/to/dir/ containing undeuterated tensor inputs")
+        parser.add_argument("-r", "--rt_group_name", help="rt-group name to capture for idotp check")
+        parser.add_argument("-o", "--output_path", help="path/to/file for main .json output")
+        parser.add_argument("-f", "--factor_output_path_list", nargs="+", help="list of paths/to/file for factor data .factor output")
+        parser.add_argument("-p", "--factor_plot_output_path_list", nargs="+", help="list of paths/to/files for factor data plot output .pdf")
+        parser.add_argument(
+            "-n",
+            "--n_factors",
+            default=15,
+            help=
+            "high number of factors to use in non_negative_parafac decomposition, counts down until correlation constraint is reached - see DataTensor.factorize()"
+        )
+        parser.add_argument(
+            "-g",
+            "--gauss_params",
+            type=tuple,
+            default=(3, 1),
+            help="parameters for smoothing rt and dt dimensions"
+        )
+        args = parser.parse_args()
+        if args.undeut_tensor_path_list is None:
+            if args.input_directory is None or args.rt_group_name is None:
+                parser.print_help()
+                sys.exit()
+            library_info = pd.read_json(args.library_info_path)
+            args.undeut_tensor_path_list = [fn for i in library_info.loc[library_info["name"]==args.rt_group_name].index.values for fn in glob.glob(args.input_directory+str(i)+"/*.zlib")]
 
-    filter_factors = config_dict["filter_factor"]
-    factor_rt_r2_cutoff = config_dict["factor_rt_r2_cutoff"]
-    factor_dt_r2_cutoff = config_dict["factor_dt_r2_cutoff"]
+        config_dict = yaml.load(open(args.config_file_path, 'rb'), Loader=yaml.Loader)
 
-    ic_peak_prom = config_dict["ic_peak_prominence"]
-    ic_peak_width = config_dict["ic_peak_width"]
-    ic_rel_ht_filter = config_dict["ic_rel_height_filter"]
-    ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
-    ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
+        filter_factors = config_dict["filter_factor"]
+        factor_rt_r2_cutoff = config_dict["factor_rt_r2_cutoff"]
+        factor_dt_r2_cutoff = config_dict["factor_dt_r2_cutoff"]
 
-    normalization_factors = pd.read_csv(args.normalization_factors)
+        ic_peak_prom = config_dict["ic_peak_prominence"]
+        ic_peak_width = config_dict["ic_peak_width"]
+        ic_rel_ht_filter = config_dict["ic_rel_height_filter"]
+        ic_rel_ht_baseline = config_dict["ic_rel_height_filter_baseline"]
+        ic_rel_ht_threshold = config_dict["ic_rel_height_threshold"]
 
-    main(library_info_path=args.library_info_path,
-         normalization_factors=normalization_factors,
-         undeut_tensor_path_list=args.undeut_tensor_path_list,
-         factor_output_path_list=args.factor_output_path_list,
-         output_path=args.output_path,
-         factor_plot_output_path_list=args.factor_plot_output_path_list,
-         filter_factors=filter_factors,
-         factor_rt_r2=factor_rt_r2_cutoff,
-         factor_dt_r2=factor_dt_r2_cutoff,
-         ic_peak_prominence=ic_peak_prom,
-         ic_peak_width=ic_peak_width,
-         ic_rel_height_filter=ic_rel_ht_filter,
-         ic_rel_height_filter_baseline=ic_rel_ht_baseline,
-         ic_rel_height_threshold=ic_rel_ht_threshold)
+        normalization_factors = pd.read_csv(args.normalization_factors)
+
+        main(library_info_path=args.library_info_path,
+             normalization_factors=normalization_factors,
+             undeut_tensor_path_list=args.undeut_tensor_path_list,
+             factor_output_path_list=args.factor_output_path_list,
+             output_path=args.output_path,
+             factor_plot_output_path_list=args.factor_plot_output_path_list,
+             filter_factors=filter_factors,
+             factor_rt_r2=factor_rt_r2_cutoff,
+             factor_dt_r2=factor_dt_r2_cutoff,
+             ic_peak_prominence=ic_peak_prom,
+             ic_peak_width=ic_peak_width,
+             ic_rel_height_filter=ic_rel_ht_filter,
+             ic_rel_height_filter_baseline=ic_rel_ht_baseline,
+             ic_rel_height_threshold=ic_rel_ht_threshold)
