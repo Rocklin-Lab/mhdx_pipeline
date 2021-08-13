@@ -281,3 +281,4 @@ dependencies:
 - zstd=1.4.9=haebb681_0
 - pip:
   - nn-fac==0.1.2
+  - molmass

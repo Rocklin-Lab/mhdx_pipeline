@@ -46,7 +46,7 @@ def limit_write(obj, out_path):
 		None
 
 	"""
-    with open(out_path, "wb") as file:
+    with open(out_path, "wb+") as file:
         file.write(zlib.compress(cpickle.dumps(obj)))
 
 

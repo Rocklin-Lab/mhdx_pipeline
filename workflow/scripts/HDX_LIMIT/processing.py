@@ -305,10 +305,8 @@ class TensorGenerator:
         self.mz_highs = self.library_info["obs_mz"].values[i] + (
             self.total_isotopes / self.library_info["charge"].values[i])
 
-        low_mz_limits = self.mz_centers * (
-            (1000000.0 - self.ppm_radius) / 1000000.0)
-        high_mz_limits = self.mz_centers * (
-            (1000000.0 + self.ppm_radius) / 1000000.0)
+        low_mz_limits = [center * ((1000000.0 - self.ppm_radius) / 1000000.0) for center in self.mz_centers]
+        high_mz_limits = [center * ((1000000.0 + self.ppm_radius) / 1000000.0) for center in self.mz_centers]
 
         self.integrated_mz_limits = np.stack((low_mz_limits, high_mz_limits)).T
 

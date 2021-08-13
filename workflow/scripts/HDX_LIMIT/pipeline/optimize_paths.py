@@ -279,93 +279,121 @@ def main(library_info_path,
 
 if __name__ == "__main__":
 
-    # set expected command line arguments
-    parser = argparse.ArgumentParser(
-        description=
-        "Generate a best-estimate HDX-timeseries of IsotopeClusters for a given library protein"
-    )
-    # inputs
-    parser.add_argument("library_info_path", help="path/to/checked_library_info.json")
-    parser.add_argument(
-        "timepoints_yaml",
-        help=
-        "path/to/file.yaml containing list of hdx timepoints in integer seconds which are also keys mapping to lists of each timepoint's .mzML file, can pass config/config.yaml - for Snakemake context"
-    )
-    parser.add_argument(
-        "-i",
-        "--all_ic_input_paths",
-        nargs="*",
-        help=
-        "structured 2D list of extracted IsotopeCluster objects from each tensor included in the rt_group."
-    )
-    parser.add_argument(
-        "-d",
-        "--input_directory_path",
-        help=
-        "path/to/directory to search for relevant files if assembling filenames automatically, requires --rt_group_name"
-    )
-    parser.add_argument(
-        "-n",
-        "--rt_group_name",
-        help=
-        "rt-group name to use for generating relevant tensor files, requires --input_directory_path"
-    )
-    parser.add_argument(
-        "-g",
-        "--old_data_dir",
-        help=
-        "directory containing Gabe's pickled output files, using this option prints old data on plots"
-    )
-    # outputs
-    parser.add_argument("-o",
-                        "--html_plot_out_path",
-                        help="path/to/file for .html plot of results")
-    parser.add_argument(
-        "-w",
-        "--winner_out_path",
-        help="path/to/file to save winning IsotopeCluster objects")
-    parser.add_argument("-r",
-                        "--runner_out_path",
-                        help="path/to/file to save runner-up IsotopeClusters")
-    parser.add_argument(
-        "-p",
-        "--undeut_ground_out_path",
-        help=
-        "path/to/file to save selected highest-confidence undeuterated IsotopeClusters"
-    )
-    parser.add_argument("-s",
-                        "--winner_scores_out_path",
-                        help="path/to/file to save winning path IC scores")
-    parser.add_argument("-c",
-                        "--rtdt_com_cvs_out_path",
-                        help="path/to/file to save rt/dt error measurement")
-    parser.add_argument("-po",
-                        "--path_plot_out_path",
-                        help="path/to/file to save path plot .pdf")
-    args = parser.parse_args()
+    # Checks for Snakemake context and parses arguments.
+    if "snakemake" in globals():
 
-    timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
-    
-    # generate explicit inputs and open timpoints .yaml
-    if args.all_ic_input_paths is None:
-        if args.input_directory_path is not None and args.rt_group_name is not None:
-            args.all_ic_input_paths = optimize_paths_inputs(
-                args.library_info_path, args.input_directory_path,
-                args.rt_group_name, timepoints)
-        else:
-            parser.print_help()
-            sys.exit()
+        library_info_path = snakemake.input[0]
+        timepoints = yaml.load(open(snakemake.input[1], "rb").read(), Loader=yaml.Loader)
+        all_ic_input_paths = snakemake.input[2:]
+        old_data_dir = None
+        html_plot_out_path = None
+        winner_out_path = snakemake.output[0]
+        runner_out_path = snakemake.output[1]
+        undeut_ground_out_path = snakemake.output[2]
+        winner_scores_out_path = snakemake.output[3]
+        rtdt_com_cvs_out_path = snakemake.output[4]
+        path_plot_out_path = snakemake.output[5]
+
+        main(library_info_path=library_info_path,
+             all_ic_input_paths=all_ic_input_paths,
+             timepoints=timepoints,
+             old_data_dir = old_data_dir,
+             rt_group_name=rt_group_name,
+             path_plot_out_path=path_plot_out_path,
+             html_plot_out_path=html_plot_out_path,
+             winner_out_path=winner_out_path,
+             runner_out_path=runner_out_path,
+             undeut_ground_out_path=undeut_ground_out_path,
+             winner_scores_out_path=winner_scores_out_path,
+             rtdt_com_cvs_out_path=rtdt_com_cvs_out_path)
+
+    # Access command line arguments.
+    else:
+        parser = argparse.ArgumentParser(
+            description=
+            "Generate a best-estimate HDX-timeseries of IsotopeClusters for a given library protein"
+        )
+        # inputs
+        parser.add_argument("library_info_path", help="path/to/checked_library_info.json")
+        parser.add_argument(
+            "timepoints_yaml",
+            help=
+            "path/to/file.yaml containing list of hdx timepoints in integer seconds which are also keys mapping to lists of each timepoint's .mzML file, can pass config/config.yaml - for Snakemake context"
+        )
+        parser.add_argument(
+            "-i",
+            "--all_ic_input_paths",
+            nargs="*",
+            help=
+            "structured 2D list of extracted IsotopeCluster objects from each tensor included in the rt_group."
+        )
+        parser.add_argument(
+            "-d",
+            "--input_directory_path",
+            help=
+            "path/to/directory to search for relevant files if assembling filenames automatically, requires --rt_group_name"
+        )
+        parser.add_argument(
+            "-n",
+            "--rt_group_name",
+            help=
+            "rt-group name to use for generating relevant tensor files, requires --input_directory_path"
+        )
+        parser.add_argument(
+            "-g",
+            "--old_data_dir",
+            help=
+            "directory containing Gabe's pickled output files, using this option prints old data on plots"
+        )
+        # outputs
+        parser.add_argument("-o",
+                            "--html_plot_out_path",
+                            help="path/to/file for .html plot of results")
+        parser.add_argument(
+            "-w",
+            "--winner_out_path",
+            help="path/to/file to save winning IsotopeCluster objects")
+        parser.add_argument("-r",
+                            "--runner_out_path",
+                            help="path/to/file to save runner-up IsotopeClusters")
+        parser.add_argument(
+            "-p",
+            "--undeut_ground_out_path",
+            help=
+            "path/to/file to save selected highest-confidence undeuterated IsotopeClusters"
+        )
+        parser.add_argument("-s",
+                            "--winner_scores_out_path",
+                            help="path/to/file to save winning path IC scores")
+        parser.add_argument("-c",
+                            "--rtdt_com_cvs_out_path",
+                            help="path/to/file to save rt/dt error measurement")
+        parser.add_argument("-po",
+                            "--path_plot_out_path",
+                            help="path/to/file to save path plot .pdf")
+        args = parser.parse_args()
 
 
-    main(library_info_path=args.library_info_path,
-         all_ic_input_paths=args.all_ic_input_paths,
-         timepoints=timepoints,
-         rt_group_name=args.rt_group_name,
-         old_data_dir=args.old_data_dir,
-         path_plot_out_path=args.path_plot_out_path,
-         html_plot_out_path=args.html_plot_out_path,
-         winner_out_path=args.winner_out_path,
-         runner_out_path=args.runner_out_path,
-         undeut_ground_out_path=args.undeut_ground_out_path,
-         winner_scores_out_path=args.winner_scores_out_path,
-         rtdt_com_cvs_out_path=args.rtdt_com_cvs_out_path)
+        # Opens timepoints .yaml and generates explicit inputs.
+        timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
+        if args.all_ic_input_paths is None:
+            if args.input_directory_path is not None and args.rt_group_name is not None:
+                args.all_ic_input_paths = optimize_paths_inputs(
+                    args.library_info_path, args.input_directory_path,
+                    args.rt_group_name, timepoints)
+            else:
+                parser.print_help()
+                sys.exit()
+
+        main(library_info_path=args.library_info_path,
+             all_ic_input_paths=args.all_ic_input_paths,
+             timepoints=timepoints,
+             rt_group_name=args.rt_group_name,
+             old_data_dir=args.old_data_dir,
+             path_plot_out_path=args.path_plot_out_path,
+             html_plot_out_path=args.html_plot_out_path,
+             winner_out_path=args.winner_out_path,
+             runner_out_path=args.runner_out_path,
+             undeut_ground_out_path=args.undeut_ground_out_path,
+             winner_scores_out_path=args.winner_scores_out_path,
+             rtdt_com_cvs_out_path=args.rtdt_com_cvs_out_path)

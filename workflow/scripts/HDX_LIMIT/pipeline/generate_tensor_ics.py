@@ -239,10 +239,10 @@ def main(library_info_path,
     out_dict = {}
     library_info = pd.read_json(library_info_path)
     my_name = tensor_input_path.split("/")[-2]
-    my_charge = int(tensor_input_path.split("/")[-1].split())
+    my_charge = int(tensor_input_path.split("/")[-1].split("_")[-6])
     my_idx = library_info.loc[(library_info["name"]==my_name) & (library_info["charge"]==my_charge)].index
     my_centers = library_info.loc[(library_info["name"]==my_name) & (library_info["charge"]==my_charge)]["mz_centers"].values
-    centers = np.array(my_centers)
+    centers = my_centers[0]
 
     # find timepoint of passed filename by config comparison
     for tp in timepoints_dict["timepoints"]:
@@ -266,7 +266,7 @@ def main(library_info_path,
 
     all_ics = []
 
-    ic_peak_width_auto = 0.8 * library_info['integrated_mz_width'].values[my_idx]
+    ic_peak_width_auto = 0.8 * library_info['integrated_mz_width'].values[my_idx][0]
 
     for factor in data_tensor.DataTensor.factors:
 

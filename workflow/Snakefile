@@ -145,7 +145,7 @@ rule mv_passing_tensors:
             )
         )
     conda:
-        "envs/test_1.yaml"
+        "envs/hdx_test_2.yml"
     benchmark:
         "results/benchmarks/mv_passing_tensors.benchmark.txt"
     script:
@@ -172,7 +172,7 @@ if config['polyfit_calibration']:
                 charge=zippable_charges
             )
         conda:
-            "envs/test_1.yaml"
+            "envs/hdx_test_2.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         
@@ -195,7 +195,7 @@ else:
                 charge=zippable_charges
             )
         conda:
-            "envs/test_1.yaml"
+            "envs/hdx_test_2.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         script:
@@ -216,7 +216,7 @@ rule generate_tensor_ics:
         "results/plots/factors/{name}/{name}_{charge}_{mzml}.cpickle.zlib.factor.pdf",
         "results/plots/ics/{name}/{name}_{charge}_{mzml}.cpickle.zlib.ics.pdf"
     conda:
-        "envs/test_1.yaml"
+        "envs/hdx_test_2.yml"
     benchmark:
         "results/benchmarks/generate_subtensor_ics.{name}/{name}_{charge}_{mzml}.benchmark.txt"
     shell:
@@ -240,11 +240,10 @@ rule optimize_paths:
         "results/plots/ic_time_series/winner_plots/{name}_winner_path.pdf"
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
-    run:
-        inputs = [input[i] for i in range(2, len(input))]
-        shell('''
-            python workflow/scripts/HDX_LIMIT/pipeline/optimize_paths.py {input[0]} {input[1]} --all_ic_input_paths {inputs} --winner_out_path {output[0]} --runner_out_path {output[1]} --undeut_ground_out_path {output[2]} --winner_scores_out_path {output[3]} --rtdt_com_cvs_out_path {output[4]} --path_plot_out_path {output[5]}
-        ''')
+    conda:
+        "envs/hdx_test_2.yml"
+    script:
+        "scripts/HDX_LIMIT/pipeline/optimize_paths.py"
 
 
 """
