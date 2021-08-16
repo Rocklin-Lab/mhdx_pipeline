@@ -97,6 +97,7 @@ def optimize_paths_inputs(name, library_info):
                         + "/"
                         + name
                         + "_"
+                        + "charge"
                         + str(charge)
                         + "_"
                         + file
@@ -111,6 +112,7 @@ def optimize_paths_inputs(name, library_info):
                     + "/"
                     + name
                     + "_"
+                    + "charge"
                     + str(charge)
                     + "_"
                     + file
@@ -127,7 +129,7 @@ rule mv_passing_tensors:
     input:
         sorted(
             expand(
-                "resources/tensors/{name}/{name}_{charge}_{mzml}.gz.cpickle.zlib", 
+                "resources/tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
                 zip,
                 name=mv_passing_tensors_zippable_names,
                 charge=mv_passing_tensors_zippable_charges,
@@ -137,7 +139,7 @@ rule mv_passing_tensors:
     output:
         sorted(
             expand(
-                "resources/passing_tensors/{name}/{name}_{charge}_{mzml}.gz.cpickle.zlib", 
+                "resources/passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
                 zip,
                 name=zippable_names,
                 charge=zippable_charges,
@@ -145,7 +147,7 @@ rule mv_passing_tensors:
             )
         )
     conda:
-        "envs/hdx_test_2.yml"
+        "envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/mv_passing_tensors.benchmark.txt"
     script:
@@ -166,13 +168,13 @@ if config['polyfit_calibration']:
             )
         output:
             expand(
-                "resources/passing_tensors/{name}/{name}_{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
             )
         conda:
-            "envs/hdx_test_2.yml"
+            "envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         
@@ -189,13 +191,13 @@ else:
             "config/config.yaml"
         output:
             expand(
-                "resources/passing_tensors/{name}/{name}_{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
             )
         conda:
-            "envs/hdx_test_2.yml"
+            "envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         script:
@@ -208,17 +210,17 @@ rule generate_tensor_ics:
     """
     input:
         library_info_fn,
-        "resources/passing_tensors/{name}/{name}_{charge}_{mzml}.gz.cpickle.zlib",
+        "resources/passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
         "config/config.yaml",
         "resources/library_info/normalization_factors.csv"
     output:
-        "resources/subtensor_ics/{name}/{name}_{charge}_{mzml}.cpickle.zlib",
-        "results/plots/factors/{name}/{name}_{charge}_{mzml}.cpickle.zlib.factor.pdf",
-        "results/plots/ics/{name}/{name}_{charge}_{mzml}.cpickle.zlib.ics.pdf"
+        "resources/subtensor_ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib",
+        "results/plots/factors/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.factor.pdf",
+        "results/plots/ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.ics.pdf"
     conda:
-        "envs/hdx_test_2.yml"
+        "envs/full_hdx_env.yml"
     benchmark:
-        "results/benchmarks/generate_subtensor_ics.{name}/{name}_{charge}_{mzml}.benchmark.txt"
+        "results/benchmarks/generate_subtensor_ics.{name}/{name}_charge{charge}_{mzml}.benchmark.txt"
     shell:
         "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
 
@@ -241,7 +243,7 @@ rule optimize_paths:
     benchmark:
         "results/benchmarks/optimize_paths.{name}.benchmark.txt"
     conda:
-        "envs/hdx_test_2.yml"
+        "envs/full_hdx_env.yml"
     script:
         "scripts/HDX_LIMIT/pipeline/optimize_paths.py"
 

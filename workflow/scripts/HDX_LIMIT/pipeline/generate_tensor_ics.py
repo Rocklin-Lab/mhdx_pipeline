@@ -131,7 +131,7 @@ def plot_ics(list_of_ics_from_a_factor):
     n_rows = 0
     n_cols = 0
 
-    # Plot Factor m/Z.
+    # Plots Factor m/Z.
     plot_mz_data(fig=fig,
                  gs=gs,
                  row_num=n_rows,
@@ -141,7 +141,7 @@ def plot_ics(list_of_ics_from_a_factor):
                  plot_label='factor_mz')
 
 
-    # Plot m/Z for all ICs from Factor.
+    # Plots m/Z for all ICs from Factor.
     n_cols = 1
 
     for num, ic in enumerate(list_of_ics_from_a_factor):
@@ -238,13 +238,13 @@ def main(library_info_path,
     """
     out_dict = {}
     library_info = pd.read_json(library_info_path)
-    my_name = tensor_input_path.split("/")[-2]
-    my_charge = int(tensor_input_path.split("/")[-1].split("_")[-6])
+    my_name = tensor_input_path.split("/")[-2] # Name from protein directory.
+    my_charge = int([item[6:] for item in tensor_input_path.split("/")[-1].split("_") if "charge" in item][0]) # Finds by keyword and strip text.
     my_idx = library_info.loc[(library_info["name"]==my_name) & (library_info["charge"]==my_charge)].index
     my_centers = library_info.loc[(library_info["name"]==my_name) & (library_info["charge"]==my_charge)]["mz_centers"].values
     centers = my_centers[0]
 
-    # find timepoint of passed filename by config comparison
+    # Finds timepoint of passed filename by config comparison.
     for tp in timepoints_dict["timepoints"]:
         for fn in timepoints_dict[tp]:
             if fn in tensor_input_path:
@@ -270,7 +270,7 @@ def main(library_info_path,
 
     for factor in data_tensor.DataTensor.factors:
 
-        # generate isotope cluster class
+        # Generate isotope cluster class.
 
         if auto_ic_peak_width:
             factor.find_isotope_clusters(prominence=ic_peak_prominence,
@@ -301,7 +301,7 @@ def main(library_info_path,
 
 if __name__ == "__main__":
 
-    # set expected command line arguments
+    # Set expected command line arguments.
     parser = argparse.ArgumentParser(
         description=
         "Accepts tensor as input, factorizes and saves IsotopeClusters from resulting Factors"
@@ -351,7 +351,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # open timepoints .yaml into dict for main()
+    # Open timepoints .yaml into dict for main().
     config_dict = yaml.load(open(args.timepoints_yaml, 'rb'), Loader=yaml.Loader)
 
     filter_factors = config_dict["filter_factor"]

@@ -75,8 +75,8 @@ def main(library_info_path,
     integrated_mz_width_list = []
 
     for fn in sorted_inputs:
-        prot_name = fn.split("/")[-2]
-        prot_charge = int(fn.split("_")[-3]) # This is bad but works for the naming scheme.
+        prot_name = fn.split("/")[-2] # Name from protein directory.
+        prot_charge = int([item[6:] for item in fn.split("/")[-1].split("_") if "charge" in item][0]) # Finds by keyword and strip text.
         lib_idx = library_info.loc[(library_info["name"]==prot_name) & (library_info["charge"]==prot_charge)].index
         idpc = pd.read_json(fn)
         idotps.append(idpc["idotp"].values[0])

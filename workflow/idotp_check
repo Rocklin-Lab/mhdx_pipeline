@@ -107,13 +107,13 @@ if config['polyfit_calibration']:
             )
         output:
             expand(
-                "resources/tensors/{name}/{name}_{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
             )
-        #conda: 
-            #"envs/hdx_test_1.yml"
+        conda: 
+            "envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
 
@@ -130,13 +130,13 @@ else:
             "config/config.yaml"
         output:
             expand(
-                "resources/tensors/{name}/{name}_{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
             )
-        #conda: 
-            #"envs/hdx_test_1.yml"
+        conda: 
+            "envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         script:
@@ -154,12 +154,12 @@ rule idotp_check:
         lambda wildcards: idotp_check_inputs(wildcards.name, wildcards.charge),
     output:
         "resources/idotp_check/{name}/{name}_{charge}_idotp_check.json",
-        expand("resources/factor_data/{{name}}/{{name}}_{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
-        expand("results/plots/factors/{{name}}/{{name}}_{{charge}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
+        expand("resources/factor_data/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
+        expand("results/plots/factors/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
     conda: 
-        "envs/hdx_test_1.yml"
+        "envs/full_hdx_env.yml"
     benchmark:
-        "results/benchmarks/idotp_check.{name}_{charge}.benchmark.txt"
+        "results/benchmarks/idotp_check.{name}_charge{charge}.benchmark.txt"
     script:
         "scripts/HDX_LIMIT/pipeline/idotp_check.py"
 
@@ -172,7 +172,7 @@ rule idotp_filter:
     input: 
         library_info_fn,
         expand(
-            "resources/idotp_check/{name}/{name}_{charge}_idotp_check.json",
+            "resources/idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
             zip,
             name=zippable_names,
             charge=zippable_charges
@@ -182,7 +182,7 @@ rule idotp_filter:
         "resources/idotp_filter/checked_library_info.json",
         "results/plots/idotp_distribution.png"
     conda: 
-        "envs/hdx_test_1.yml"
+        "envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/idotp_filter.benchmark.txt"
     script:

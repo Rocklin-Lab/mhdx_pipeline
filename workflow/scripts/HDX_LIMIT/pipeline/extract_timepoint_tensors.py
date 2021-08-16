@@ -284,7 +284,7 @@ def main(library_info_path,
                 if len(output_scans[i]) == scans_per_line[i]:
                     my_name = library_info.iloc[i]["name"]
                     my_charge = library_info.iloc[i]["charge"]
-                    my_out_test = "/" + my_name + "/" + my_name + "_" + str(my_charge) + "_" + mzml + ".gz.cpickle.zlib"
+                    my_out_test = "/" + my_name + "/" + my_name + "_" + "charge" + str(my_charge) + "_" + mzml + ".gz.cpickle.zlib"
                     print("name = " + str(my_name), flush=True)
                     print("charge = " + str(my_charge), flush=True)
                     print("my_out search string = " + my_out_test, flush=True)
@@ -313,7 +313,7 @@ def main(library_info_path,
                     if outputs is not None:
                         my_out = [
                             out for out in outputs if "/" + my_name + "/" + my_name 
-                            + "_" + str(my_charge) + "_" + mzml + ".gz.cpickle.zlib" in out
+                            + "_" + "charge" + str(my_charge) + "_" + mzml + ".gz.cpickle.zlib" in out
                         ][0]
                         print("my_out: " + str(my_out), flush=True)
                         with open(my_out, "wb+") as file:

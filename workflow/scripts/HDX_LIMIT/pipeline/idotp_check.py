@@ -310,8 +310,8 @@ def main(library_info_path,
     """
     print(undeut_tensor_path_list)
     library_info = pd.read_json(library_info_path)
-    prot_name = undeut_tensor_path_list[0].split("/")[-2]
-    prot_charge = int(undeut_tensor_path_list[0].split("_")[-6])
+    prot_name = undeut_tensor_path_list[0].split("/")[-2] # Name from protein directory.
+    prot_charge = int([item[6:] for item in undeut_tensor_path_list[0].split("/")[-1].split("_") if "charge" in item][0]) # Finds by keyword and strip text.
     lib_idx = library_info.loc[(library_info["name"]==prot_name) & (library_info["charge"]==prot_charge)].index
     prot_seq = library_info.iloc[lib_idx]["sequence"].values[0]
     print("Protein Sequence: "+prot_seq)

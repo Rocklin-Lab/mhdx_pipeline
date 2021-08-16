@@ -73,6 +73,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path,
                         input_directory_path 
                         + name 
                         + "_" 
+                        + "charge"
                         + str(charge) 
                         + "_" 
                         + file 
@@ -85,6 +86,7 @@ def optimize_paths_inputs(library_info_path, input_directory_path,
                     input_directory_path 
                     + name 
                     + "_" 
+                    + "charge"
                     + str(charge)
                     + "_"
                     + file 
