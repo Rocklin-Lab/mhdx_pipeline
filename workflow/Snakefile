@@ -247,7 +247,6 @@ rule optimize_paths:
     script:
         "scripts/HDX_LIMIT/pipeline/optimize_paths.py"
 
-
 """
 #REVIEW FUNCTIONALITY
 rule make_overview_plot:

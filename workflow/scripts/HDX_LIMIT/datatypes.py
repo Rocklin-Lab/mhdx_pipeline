@@ -678,7 +678,6 @@ class Factor:
 
         ## now generates self.isotope_clusters upon calling the function self.find_isotope_clusters
 
-
     def rel_height_peak_bounds(self, centers, norm_integrated_mz, baseline_threshold=0.15, rel_ht_threshold=0.2):
         """Determines upper and lower bounds of IsotopeClusters within a Factor.
 
@@ -707,7 +706,6 @@ class Factor:
                         break
                 out.append((i, j))
         return out
-
 
     def find_isotope_clusters(self, prominence=0.15, width_val=3, rel_height_filter=True, baseline_threshold=0.15, rel_height_threshold=0.10):
         """Identifies portions of the integrated mz dimension that look 'isotope-cluster-like', saves in isotope_clusters.
