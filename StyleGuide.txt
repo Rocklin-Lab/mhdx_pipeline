@@ -1,0 +1,240 @@
+1. Always refer to the Google StyleGuide for Python: https://google.github.io/styleguide/pyguide.html
+	
+	A. Naming (Google Section 3.16):
+		lower_with_under: 
+				module_name,
+				method_name,
+				package_name,
+				function_name,
+				local_var_name,
+				global_var_name,
+				instance_var_name,
+				function_parameter_name
+		
+		CamelCase: 
+			ClassName,
+			ExceptionName
+		
+		CAPS_WITH_UNDER:
+			GLOBAL_CONSTANT_NAME
+
+	B. Comments:
+		- Descriptive-style, not imperative style ("# Fetches data from source." instead of "# Fetch data from source.")
+		- Start above the code they refer to.
+		- Format with leading # followed by a space.
+		- Comments are complete sentences with capitalization and punctuation.
+		
+		# This is an example of an appropriate comment.
+		code_referred_to = "this line"
+
+		Type-annotated comments should have the same form as docstring type annotations:
+			# variable_in_question (str): A note on the variable in question.
+			variable_in_question = "value that needs additional clarification"
+
+		Docstrings should always include type annotation, so instances where the above is needed should be rare.
+
+	C. Formatting guidelines:
+
+		Acceptable Indentations (Google Section 3.4):
+		    - Aligned with opening delimiter:
+		        foo = long_function_name(var_one, var_two,
+		                                 var_three, var_four)
+		        meal = (spam,
+		                beans)
+
+	        - Aligned with opening delimiter in a dictionary:
+		        foo = {
+		            'long_dictionary_key': value1 +
+		                                   value2,
+		            ...
+		        }
+
+	        - 4-space hanging indent; nothing on first line:
+		        foo = long_function_name(
+		            var_one, var_two, var_three,
+		            var_four)
+		        meal = (
+		            spam,
+		            beans)
+
+	        - 4-space hanging indent in a dictionary:
+		        foo = {
+		            'long_dictionary_key':
+		                long_dictionary_value,
+		            ...
+		        }
+
+		I generally prefer:
+			that the first line be empty (where there are no mathematical operators), 
+			that each item gets its own line,
+			and that the closing delimiter gets its own line:
+			(For short function names like main(), I prefer "aligned with opening delimiter")
+
+				# PEP 8 recommends that the final item be given a comma if the closing delimiter is on a separate line.
+				# This is a helpful signal to any auto-formatter.
+				even_for_list_definitions = [
+					"because",
+					"it's",
+					"easier",
+					"to",
+					"read", 
+				]
+
+				foo = long_function_name(
+					var_one, 
+					var_two,
+					var_three, 
+					var_four,
+				)
+
+				meal = (
+					spam,
+		            beans,
+		        )
+
+		Blank Lines (From PEP 8): 
+			Surround top-level function and class definitions with two blank lines.
+
+			Method definitions inside a class are surrounded by a single blank line.
+
+			Extra blank lines may be used (sparingly) to separate groups of related functions. Blank lines may be omitted between a bunch of related one-liners (e.g. a set of dummy implementations).
+
+			Use blank lines in functions, sparingly, to indicate logical sections.
+
+		Inline Whitespace:
+
+			I recommend spaces around mathematical operators, and tight parentheses when on a single line:
+				# These are all good.
+				var = (var_1 + var_2) / (var_3 - var_4)
+
+				# Line breaks should be before the operator.
+				var = ((var_1 + var_2) 
+					/ (var_3 - var_4)
+					)
+
+				# PEP 8 recommends this style for implicit line-continuation. 
+					(Operators align with opening delimiter, I move the closing parenthesis on personal preference)
+				sum_1 = (var_1
+						+ var_2
+						+ var_3
+						+ var_4
+				)
+
+
+2. Docstrings according to Google style. (Google Section 3.8)
+
+	A. Module Docstrings:
+
+		"""Example Google style docstrings.
+
+		This module demonstrates documentation as specified by the `Google Python
+		Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+		with a section header and a colon followed by a block of indented text.
+
+		Example:
+		    Examples can be given using either the ``Example`` or ``Examples``
+		    sections. Sections support any reStructuredText formatting, including
+		    literal blocks::
+
+		        $ python example_google.py
+
+		Section breaks are created by resuming unindented text. Section breaks
+		are also implicitly created anytime a new section starts.
+
+		Attributes:
+		    module_level_variable1 (int): Module level variables may be documented in
+		        either the ``Attributes`` section of the module docstring, or in an
+		        inline docstring immediately following the variable.
+
+		        Either form is acceptable, but the two should not be mixed. Choose
+		        one convention to document module level variables and be consistent
+		        with it.
+
+		Todo:
+		    * For module TODOs
+		    * You have to also use ``sphinx.ext.todo`` extension
+
+		.. _Google Python Style Guide:
+		   http://google.github.io/styleguide/pyguide.html
+
+		"""
+		# Text starts immediately after closing quotes.
+
+	B. Function Docstrings:
+
+		def function_to_document(param1, param2):
+		"""Example function with types documented in the docstring.
+
+	    `PEP 484`_ type annotations are supported. If attribute, parameter, and
+	    return types are annotated according to `PEP 484`_, they do not need to be
+	    included in the docstring:
+
+	    Args:
+	        param1 (int): The first parameter.
+	        param2 (str): The second parameter.
+
+	    Returns:
+	        bool: The return value. True for success, False otherwise.
+
+	    .. _PEP 484:
+	        https://www.python.org/dev/peps/pep-0484/
+
+	    """
+	    # Text starts immediately after closing quotes.
+
+	C. Class and __init__() Docstrings:
+
+		class ExampleClass(object):
+	    """The summary line for a class docstring should fit on one line.
+
+	    If the class has public attributes, they may be documented here
+	    in an ``Attributes`` section and follow the same formatting as a
+	    function's ``Args`` section. Alternatively, attributes may be documented
+	    inline with the attribute's declaration (see __init__ method below).
+
+	    Properties created with the ``@property`` decorator should be documented
+	    in the property's getter method.
+
+	    Attributes:
+	        attr1 (str): Description of `attr1`.
+	        attr2 (:obj:`int`, optional): Description of `attr2`.
+
+	    """
+	    # Text starts immediately after closing quotes.
+
+	    def __init__(self, param1, param2, param3):
+	        """Example of docstring on the __init__ method.
+
+	        The __init__ method may be documented in either the class level
+	        docstring, or as a docstring on the __init__ method itself.
+
+	        Either form is acceptable, but the two should not be mixed. Choose one
+	        convention to document the __init__ method and be consistent with it.
+
+	        Note:
+	            Do not include the `self` parameter in the ``Args`` section.
+
+	        Args:
+	            param1 (str): Description of `param1`.
+	            param2 (:obj:`int`, optional): Description of `param2`. Multiple
+	                lines are supported.
+	            param3 (:obj:`list` of :obj:`str`): Description of `param3`.
+
+	        """
+	        # Text starts immediately after closing quotes.
+
+
+3. Snakefile Formatting and Documentation:
+	A.
+
+	B.
+
+	C. 
+
+
+4. Rules for Organization of Python Jobscripts:
+	A.
+
+	B.
+
+	C.

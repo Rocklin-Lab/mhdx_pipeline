@@ -1,37 +1,93 @@
-# Define config file and import libraries
-configfile: "config/config.yaml"
-import glob
+"""Example Google style docstrings.
 
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
+
+"""
+The second Snakefile of the HDX_LIMIT-Pipeline. 
+Checks quality of identified signals in undeuterated data 
+and removes signals below user-defined quality thresholds from consideration. 
+"""
+
+configfile: "config/config.yaml" # Sets 'config' global object.
+import glob
 import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
 library_info_fn = "resources/library_info/library_info.json"
 library_info = pd.read_json(library_info_fn)
-names = list(set(library_info["name"].values))
+names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
 
-# mzml list
+# Makes two zippable lists: repeated rt_group_names and their corresponding charges in order, 
+# used for extract_tensors and idotp_filter rules.
+zippable_names = list(library_info["name"].values)
+zippable_charges = list(library_info["charge"].values)
+
+# Make flat list of replicate .mzML files in timepoint order.
 mzml_list = []
-for tp in config["timepoints"]:
-    for fn in config[tp]:
+for timepoint in config["timepoints"]:
+    for fn in config[timepoint]:
         mzml_list.append(fn)
 
-def idotp_check_inputs(i):
-    # Writes inputs for idotp_check rule based on library_info index
-    idx_inputs = []
+def idotp_check_inputs(rt_group_name, charge):
+    """Wildcard-based input-file-path generator for idotp_check rule, writes based on rt_group and charge.
+
+    Args:
+        rt_group_name (str): Value in 'name' field of library_info.json, shared by groups of mass-agreeing signals close in rt.
+        charge (int): Net charge of signal, unique for each member of an rt-group.  
+
+    Returns:
+        inputs (list of strs): List of paths to extracted tensors from undeuterated timepoints for a given rt-group charge state.
+
+    """
+    inputs = []
     if len(config[0]) > 1:
-        for file in config[0]:
-            idx_inputs.append(
-                "resources/tensors/" + str(i) + "/" + str(i) + "_" + file + ".gz.cpickle.zlib"
+        for undeut_fn in config[0]:
+            inputs.append(
+                "resources/tensors/" + rt_group_name + "/" + rt_group_name + "_" + str(charge) + "_" + undeut_fn + ".gz.cpickle.zlib"
             )
-    else:
-        file = config[0][0]
-        idx_inputs.append(
-            "resources/tensors/" + str(i) + "/" + str(i) + "_" + file + ".gz.cpickle.zlib"
+    else: # Handle 0th timepoint with no replicates.
+        undeut_fn = config[0][0]
+        inputs.append(
+            "resources/tensors/" + rt_group_name + "/" + rt_group_name + "_" + str(charge) + "_" + undeut_fn + ".gz.cpickle.zlib"
         )
-    return idx_inputs
+    return inputs
+    
 
 rule all:
+    """
+    Defines final outputs desired by pipeline run.
+    """
     input:
         "resources/idotp_filter/filter_passing_indices.csv",
         "resources/idotp_filter/checked_library_info.json"
@@ -39,6 +95,9 @@ rule all:
 
 if config['polyfit_calibration']:
     rule extract_tensors:
+        """
+        Extract all identified tensors from each .mzML.gz. 
+        """
         input:
             library_info_fn,
             "resources/mzml/{mzml}.gz",
@@ -48,60 +107,84 @@ if config['polyfit_calibration']:
             )
         output:
             expand(
-                "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=range(len(library_info))
+                "resources/tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
             )
+        conda: 
+            "envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
 
         script:
             "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
-
 else:
     rule extract_tensors:
+        """
+        Extract all identified tensors from each .mzML.gz. 
+        """
         input:
             library_info_fn,
             "resources/mzml/{mzml}.gz",
             "config/config.yaml"
         output:
             expand(
-                "resources/tensors/{idx}/{idx}_{{mzml}}.gz.cpickle.zlib",
-                idx=range(len(library_info))
+                "resources/tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
             )
+        conda: 
+            "envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
         script:
             "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
 
+
 rule idotp_check:
-    # TODO: docstring
+    """
+    Test processed signal from each extracted tensor from undeuterated timepoints against the theoretical signal. 
+    """
     input:
         library_info_fn,
         "config/config.yaml",
         "resources/library_info/normalization_factors.csv",
-        lambda wildcards: idotp_check_inputs(wildcards.i),
+        lambda wildcards: idotp_check_inputs(wildcards.name, wildcards.charge),
     output:
-        "resources/idotp_check/{i}_idotp_check.json",
-        #expand("resources/factor_data/{{i}}_{file}.cpickle.zlib.factor", file=config[0]),
-        expand("results/plots/factors/{{i}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
+        "resources/idotp_check/{name}/{name}_{charge}_idotp_check.json",
+        expand("resources/factor_data/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
+        expand("results/plots/factors/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
+    conda: 
+        "envs/full_hdx_env.yml"
     benchmark:
-        "results/benchmarks/idotp_check.{i}.benchmark.txt"
-    run:
-        inputs = [input[i] for i in range(3, len(input))]
-        #outputs_factor_dict = [output[i] for i in range(1, len(output)) if output[i].endswith(".factor")]
-        outputs_factor_plot = [output[i] for i in range(1, len(output)) if output[i].endswith(".factor.pdf")]
-        shell('''
-            python workflow/scripts/HDX_LIMIT/pipeline/idotp_check.py {input[0]} {input[1]} {input[2]} --undeut_tensor_path_list {inputs} --output_path {output[0]} --factor_plot_output_path {outputs_factor_plot}
-        ''')
+        "results/benchmarks/idotp_check.{name}_charge{charge}.benchmark.txt"
+    script:
+        "scripts/HDX_LIMIT/pipeline/idotp_check.py"
+
 
 rule idotp_filter:
+    """
+    Read results of idotp_check for all undeuterated tensors and apply a high-pass filter. 
+    Produces a list of passing indices and and edited version of library_info. 
+    """
     input: 
         library_info_fn,
-        expand("resources/idotp_check/{i}_idotp_check.json", i=range(len(library_info)))
+        expand(
+            "resources/idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
+            zip,
+            name=zippable_names,
+            charge=zippable_charges
+        )
     output:
         "resources/idotp_filter/filter_passing_indices.csv",
         "resources/idotp_filter/checked_library_info.json",
         "results/plots/idotp_distribution.png"
+    conda: 
+        "envs/full_hdx_env.yml"
+    benchmark:
+        "results/benchmarks/idotp_filter.benchmark.txt"
     script:
         "scripts/HDX_LIMIT/pipeline/idotp_filter.py"
 

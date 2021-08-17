@@ -24,6 +24,7 @@ notebooks/*
 !.test
 !LICENSE
 !README.md
+!StyleGuide.txt
 **/__pycache__/
 **/__pycache__/*
 **/__pycache__/**

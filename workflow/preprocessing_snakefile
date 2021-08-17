@@ -1,32 +1,79 @@
+"""Example Google style docstrings.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
+
+"""
+The first snakefile of the HDX_LIMIT pipeline. 
+Determines signals to analyze by similarity to library protein expected values.
+"""
+
 configfile: "config/config.yaml"
 
 """ Eventual implementation of wine/docker use of convert.exe
 rule raw_to_mzml:
-	input:
-		"data/raw/{timepoint}.RAW"
-	output:
-		"data/mzml/{timepoint}.mzML"
-	script:
-		script to run docker/wine env for msconvert.exe
+    input:
+        "data/raw/{timepoint}.RAW"
+    output:
+        "data/mzml/{timepoint}.mzML"
+    shell:
+        # This command only displays help, needs in/out args.
+        [sbc538@quser24 973060]$ WINEPREFIX=/projects/b1095/sbc538/NUIT/973060/.wine singularity exec pwiz-skyline-i-agree-to-the-vendor-licenses_latest.sif wine /wineprefix64/drive_c/pwiz/msconvert --help
 """
 
-# make flat list of all MS datafiles
+# Make flat list of all MS datafiles.
 all_timepoint_files = []
 for key in config["timepoints"]:
     for file in config[key]:
         all_timepoint_files.append(file)
+        
 
-# snakefile targets creation of library_info.csv and gzipping all .mzMLs
 rule all:
+    """
+    Defines final outputs desired by pipeline run.
+    """
     input:
-        "resources/library_info/library_info.json",
-        expand("resources/mzml/{mzml}.gz", mzml=all_timepoint_files),
+        "resources/library_info/library_info.json"
 
 
 if config['polyfit_calibration']:
     rule read_imtbx:
+        """
+        Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
+        Determines associations between identified peaks and expected masses of library proteins. 
+        Feeds forward identified peaks with mass suffuciently similar to some library protein for further consideration. 
+        """
         input:
-            # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
+            # The .peaks.isotopes files must be made in windows, but only for undeuterated MS runs.
             "resources/isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
         output:
@@ -38,11 +85,15 @@ if config['polyfit_calibration']:
             "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
             "python workflow/scripts/HDX_LIMIT/preprocessing/imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
-
 else: 
     rule read_imtbx:
+        """
+        Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
+        Determines associations between identified peaks and expected masses of library proteins. 
+        Feeds forward identified peaks with mass suffuciently similar to some library protein for further consideration. 
+        """
         input:
-            # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
+            # The .peaks.isotopes files must be made in windows, but only for undeuterated MS runs.
             "resources/isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
         output:
@@ -56,6 +107,9 @@ else:
 
 
 rule gzip_mzmls:
+    """
+    Uses the pymzml module to make all .mzML files into randomly accessible .mzML.gz file, removes .mzMLs after conversion to save space.
+    """
     input:
         "resources/mzml/{mzml}",
     output:
@@ -67,12 +121,15 @@ rule gzip_mzmls:
 
 
 rule make_ims_mz_tics:
-    # calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
+    """
+    Calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
+    """
     input:
-        "resources/mzml/{mzml}.gz",
+        "resources/mzml/{mzml}",
     output:
         "resources/tics/{mzml}.ims.mz.tic.cpickle.zlib",
         "resources/tics/{mzml}_sum.txt"
+    priority: 1
     benchmark:
         "results/benchmarks/make_ims_mz_tics.{mzml}.benchmark.txt"
     shell:
@@ -80,6 +137,11 @@ rule make_ims_mz_tics:
 
 
 rule make_library_master_list:
+    """
+    Reads all candidate peaks from imtbx_reader output, 
+    combines redundant references, clusters by retention-time,
+    and generates final list of signals to consider for analysis.
+    """
     input:
         config["names_and_seqs"],
         "config/config.yaml",
@@ -90,19 +152,13 @@ rule make_library_master_list:
         expand("resources/tics/{mzml}.ims.mz.tic.cpickle.zlib", mzml=all_timepoint_files),
         expand("resources/tics/{mzml}_sum.txt", mzml=all_timepoint_files)
     output:
-        "results/plots/preprocessing/stretched_times_plots.png",
         "resources/library_info/library_info.json",
+        "results/plots/preprocessing/stretched_times_plots.png",
         "resources/library_info/normalization_factors.csv",
         "results/plots/normalization_factors_plot.png"
-        ""
+    conda: 
+        "envs/hdx_test_1.yml"
     benchmark:
         "results/benchmarks/make_library_master_list.benchmark.txt"
-
-    run:
-        tics = " ".join([fn for fn in input if '.tic' in fn])
-        intermediates = " ".join([fn for fn in input if '_intermediate.csv' in fn])
-        sums = " ".join([fn for fn in input if '_sum.txt' in fn])
-        
-        shell('''
-            python workflow/scripts/HDX_LIMIT/preprocessing/make_library_master_list.py {input[0]} --timepoints {input[1]} --undeut_mzml {input[2]} --intermediates {intermediates} --tics {tics} --mzml_sum_paths {sums}  --stretched_times_plot_outpath {output[0]} --out_path {output[1]} --normalization_factors_outpath {output[2]} --normalization_factors_plot_outpath {output[3]}
-        ''')
+    script:
+        "scripts/HDX_LIMIT/preprocessing/make_library_master_list.py"

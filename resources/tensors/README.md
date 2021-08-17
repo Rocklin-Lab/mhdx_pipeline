@@ -1,1 +1,0 @@
-Subtensors extracted by isotlate_tensors.py, containing small area around expected position of a protein in RT DT and M/z dimensions. One for each duplicate of each HDX timepoint, for every protein in library_info.csv. Input to the HDX_LIMIT TensorGenerator for factorization.

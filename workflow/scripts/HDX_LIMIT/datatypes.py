@@ -1,3 +1,36 @@
+"""Example Google style docstrings.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
 import os
 import time
 import sys
@@ -18,13 +51,62 @@ from scipy.stats import linregress
 
 
 class DataTensor:
+    """A container for LC-IMS-MS data that includes smoothing and factorization methods.
+
+    Attributes:
+        source_file (str): Path of DataTensor's parent resources/tensors/.cpickle.zlib file.
+        tensor_idx (int): Index of the DataTensor in a concatenated DataTensor (concatenation of tensors is deprecated, this value always 0).
+        timepoint_idx (int): Index of the DataTensors HDX timepoint in config["timepoints"].
+        name (str): Name of DataTensor's rt-group.
+        total_mass_window (int): Magnitude of DataTensor's m/Z dimension in bins.
+        n_concatenated (int): Number of DataTensors combined to make the instance DataTensor. Deprecated, value always 1.
+        charge_states (list with one int): Net positive charge on protein represented in DataTensor, format left over from concatenation.
+        integrated_mz_limits (numpy 2D array): Values for low and high m/Z limits of integration around expected peak centers.
+        bins_per_isotope_peak (int): Number of integrated m/Z bins for a signal to be considered as an IsotopeCluster.
+        normalization_factor (float): Divisor for the integrated m/Z intensity of any IsotopeCluster from a parent DataTensor instance. 
+        rts (numpy array): Intensity summed over each rt bin.
+        dts (numpy array): Intensity summed over each dt bin.
+        seq_out (numpy array): Intensity summed over each m/Z bin in a flat array.
+        int_seq_out (numpy array): Intensities integrated over all dimensions in a flat array. (TODO: Review, not sure about this)
+        int_seq_out_float (numpy array of float64):  Intensities integrated over all dimensions in a flat array, cast as float64.
+        int_grid_out (numpy array): int_seq_out reshaped to a 3D array by rt, dt, and m/Z dimension magnitudes.
+        int_gauss_grids (numpy array): int_grid_out after applying gaussian smoothing.
+        concat_dt_idxs (list of ints): Deprecated - Indices marking the boundaries between different DataTensors' concatenated DT dimensions.
+        concatenated_grid (numpy array): Deprecated - int_grid_out from multiple DataTensors concatenated along the dt axis.
+        retention_labels (list of floats): Mapping of DataTensor's RT bins to corresponding absolute retention time in minutes.
+        drift_labels (list of floats): Mapping of DataTensor's DT bins to corresponding absolute drift time in miliseconds.
+        mz_labels (list of floats): Mapping of DataTensor's m/Z bins to corresponding m/Z.
+        full_grid_out (numpy array): Reprofiled tensor with intensities integrated within bounds defined in integrated_mz_limits.
+        full_gauss_grids (numpy array): full_grid_out after the application of gaussian smoothing to the RT and DT dimensions.
+        factors (list of Factor objects): List of Factor objects resulting from the factorize method.
+
+    """
 
     def __init__(self, source_file, tensor_idx, timepoint_idx, name,
                  total_mass_window, n_concatenated, charge_states, integrated_mz_limits, bins_per_isotope_peak, normalization_factor, **kwargs):
+        """Initializes an instance of the DataTensor class from 
 
-        ###Set Common Attributes###
+        Args:
+            source_file (str): Path of DataTensor's parent resources/tensors/.cpickle.zlib file.
+            tensor_idx (int): Deprecated - Index of this tensor in a concatenated tensor, now always 0.
+            timepoint_idx (int): Index of tensor's source timepoint in config["timepoints"].
+            name (str): Name of rt-group DataTensor is a member of.
+            total_mass_window (int): Magnitude of DataTensor's m/Z dimension in bins.
+            n_concatenated (int): Number of DataTensors combined to make the instance DataTensor. Deprecated value always 1. 
+            charge_states (list with one int): Net positive charge on protein represented in DataTensor, format left over from concatenation.
+            integrated_mz_limits (numpy 2D array): Values for low and high m/Z limits of integration around expected peak centers.
+            bins_per_isotope_peak (int):  Number of integrated m/Z bins for a signal to be considered as an IsotopeCluster.
+            normalization_factor (float): Divisor for the integrated m/Z intensity of any IsotopeCluster from a parent DataTensor instance. 
 
-        # Positional args
+        Keyword Arguments: 
+            rts (numpy array): Intensity summed over each rt bin, from source tensor file.
+            dts (numpy array): Intensity summer over each dt bin, from source tensor file.
+            seq_out (numpy array): Intensity summed over each m/Z bin in a flat array, from source tensor file.
+            int_seq_out (numpy array): Intensities integrated over all dimensions in a flat array. (TODO: Review, not sure about this)
+            concat_dt_idxs (list of ints): Deprecated - Indices marking the boundaries between different DataTensors' concatenated DT dimensions.
+            concatenated_grid (numpy array): Deprecated - int_grid_out from multiple DataTensors concatenated along the dt axis.
+
+        """
         self.source_file = source_file
         self.tensor_idx = tensor_idx
         self.timepoint_idx = timepoint_idx
@@ -36,7 +118,6 @@ class DataTensor:
         self.bins_per_isotope_peak = bins_per_isotope_peak
         self.normalization_factor = normalization_factor
 
-        # Keyword Args
         if kwargs is not None:
             kws = list(kwargs.keys())
             if "rts" in kws:
@@ -56,10 +137,7 @@ class DataTensor:
             if "concatenated_grid" in kws:
                 self.concatenated_grid = kwargs["concatenated_grid"]
 
-
-        ###Compute Instance Values###
-
-        # Handle normal case: new DataTensor from output of isolate_tensors.py
+        # Normal case, single tensor.
         if self.n_concatenated == 1:
 
             (
@@ -73,7 +151,7 @@ class DataTensor:
                                                      self.bins_per_isotope_peak )
             self.full_gauss_grids = self.gauss(self.full_grid_out)
 
-        # Handle concatenated tensor case, check for required inputs
+        # Handle concatenated tensor case, check for required inputs TODO: Remove? Deprecated, but Gabe has said to keep this before, ask again.
         else:
             if not all("dts" in kwargs and "rts" in kwargs and
                        "lows" in kwargs and "highs" in kwargs and
@@ -83,7 +161,25 @@ class DataTensor:
                 print("Concatenated Tensor Missing Required Values")
                 sys.exit()
 
+
     def sparse_to_full_tensor_reprofile(self, data, integrated_mz_limits, bins_per_isotope_peak = 7, ms_resolution=25000):
+        """Takes a tuple of three vectors and performs the 3-vector outer-product and applies resolution scaling.
+
+        Args:
+            data (tuple of 3 list-likes): Tuple of 3 vectors whose outer product recreates the extracted signal.
+            integrated_mz_limits (list of list-likes of floats): The upper and lower bounds on integration surrounding each
+                m/Z-peak center, a list of list-likes of length 2.
+            bins_per_isotope_peak (int): Minimum number of bins a signal must span to be considered as an IsotopeCluster.
+            ms_resolution (int): Number of bins in the m/Z dimension of the reprofiled tensor.
+
+        Returns:
+            retention_labels (list of floats): List of the absolute LC-RT values associated with each RT bin.
+            drift_labels (list of floats):  List of the absolute IMS-DT values associated with each DT bin.
+            mz_bin_centers (list of floats):  List of the absolute m/Z values associated with each m/Z bin.
+            bins_per_isotope_peak (int): Minimum number of bins a signal must span to be considered as an IsotopeCluster.
+            tensor3_out (numpy array): Full and reprofiled 3D tensor of LC-IMS-MS data.
+
+        """
         retention_labels, drift_labels, sparse_data = data
         
         FWHM = np.average(integrated_mz_limits) / ms_resolution
@@ -107,8 +203,18 @@ class DataTensor:
         return retention_labels, drift_labels, mz_bin_centers, bins_per_isotope_peak, tensor3_out
 
 
-    # Takes tensor input and gaussian filter parameters, outputs filtered data
     def gauss(self, grid, rt_sig=3, dt_sig=1):
+        """Applies a gaussian filter to the first two dimensions of a 3D tensor.
+
+        Args:
+            grid (numpy array): 3D tensor of LC-IMS-MS data, self.full_grid_out.
+            rt_sig (int or float): Gaussian sigma for smoothing function on LC-RT dimension, default 3.
+            dt_sig (int or float): Gaussian sigma for smoothing function on IMS-DT dimension, defualt 1.
+
+        Returns:
+            gauss_grid (type): Input tensor after applying gaussian smoothing.
+
+        """
 
         gauss_grid = np.zeros(np.shape(grid))
         for i in range(np.shape(grid)[2]):
@@ -116,10 +222,31 @@ class DataTensor:
                                                   (rt_sig, dt_sig))
         return gauss_grid
 
+
+    # TODO: This isn't great style, make this take the tensor as input and return the factors.
     def factorize(self, n_factors=4, new_mz_len=None, gauss_params=None): 
+        """Performs the non-negative PARAFAC on tensor, implemented by nn-fac python library, saves to self.Factors.
+
+        Args:
+            n_factors (int): The number of factors used to decompose the input tensor.
+            new_mz_len (int): Number of bins desired in output tensor m/Z dimension, performs interpolation.
+            gauss_params (tuple of 2 ints): Two values indicating the width of smoothing in LC-RT and IMS-DT dimensions respectively.
+
+        Returns:
+            None
+        """
         # Test factorization starting at n_factors = 15 and counting down, keep factorization that has no factors with correlation greater than 0.2 in any dimension.
 
         def corr_check(factors):
+            """Checks the maximum correlation between Factors in each dimension, used to determine if n_factors should be reduced.
+
+            Args:
+                factors (list of Factor objects): Factors resulting from PARAFAC being checked for inter-correlation.
+
+            Returns:
+                maximum_correlation (float): Maximum correlation between any two factors in any dimension.
+
+            """
             # Checks scipy non_negatve_parafac output factors for inter-factor (off-diagonal) correlations > cutoff, returns True if all values are < cutoff
 
             a = np.minimum(
@@ -130,7 +257,17 @@ class DataTensor:
 
             return np.max(a[np.where(~np.eye(a.shape[0], dtype=bool))])
 
+
         def pmem(id_str):
+            """Prints memory in use by process with a passed debug label.
+
+            Args:
+                id_str (str): String to prepend to memory output, for identifying origin of pmem call.
+
+            Returns:
+                None
+
+            """
             process = psutil.Process(os.getpid())
             print(id_str + " Process Memory (GB): " +
                   str(process.memory_info().rss / 1024 / 1024 / 1024))
@@ -213,70 +350,129 @@ class DataTensor:
         # print('Done: T+'+str(t-t0))
 
 
-
 def cal_area_under_curve_from_normal_distribution(low_bound, upper_bound, center, width):
-    """
-    calculate area under the curve given the lower and upper bound
-    :param low_bound: low bound
-    :param upper_bound: upper bound
-    :param center: center of distribution
-    :param width: width of distribution
-    :return: area under curve
-    """
+    """Computes the cumulative distribution function for a gaussian with given center, bounds, and width.
 
+    Args:
+        low_bound (float): Lower or left bound on gaussian, unitless. 
+        upper_bound (float):  Upper or right bound on gaussian, unitless.
+        center (float): Center of gaussian, unitless. 
+        width (float): Width of gaussian, unitless.
+
+    Returns:
+        auc (float): Area Under the Curve, computed cumulative distribution of specified gaussian.
+
+    """
     lb_cdf = norm.cdf(low_bound, loc=center, scale=width)
     ub_cdf = norm.cdf(upper_bound, loc=center, scale=width)
     auc = ub_cdf - lb_cdf
     return auc
 
 
-def estimate_gauss_param(ydata, xdata):
-    ymax = np.max(ydata)
-    maxindex = np.nonzero(ydata == ymax)[0]
-    peakmax_x = xdata[maxindex][0]
-    norm_arr = ydata/max(ydata)
+def estimate_gauss_param(y_data, x_data):
+    """Estimates the parameters of a gaussian fit to a set of datapoints with x,y coordinates in x_data and y_data.
+
+    Args:
+        y_data (iterable of floats): Y values of data to fit.
+        x_data (iterable of floats): X values of data to fit.
+
+    Returns:
+        init_guess (list of floats): baseline offset, amplitude, center, width.
+
+    """
+    ymax = np.max(y_data)
+    maxindex = np.nonzero(y_data == ymax)[0]
+    peakmax_x = x_data[maxindex][0]
+    norm_arr = y_data/max(y_data)
     bins_for_width = norm_arr[norm_arr > 0.70]
     width_bin = len(bins_for_width)
     init_guess = [0, ymax, peakmax_x, width_bin]
-    # bounds = ([0, 0, 0, 0], [np.inf, np.inf, len(xdata)-1, len(xdata)-1])
+    # bounds = ([0, 0, 0, 0], [np.inf, np.inf, len(x_data)-1, len(x_data)-1])
     return init_guess
 
 
 def gauss_func(x, y0, A, xc, w):
+    """Model Gaussian function to pass to scipy.optimize.curve_fit.
+
+    Args:
+        x (list of floats): X dimension values.
+        y0 (float): Offset of y-values from 0.
+        A (float): Amplitude of Gaussian.
+        xc (float): Center of Gaussian in x dimension.
+        w (float): Width or sigma of Gaussian. 
+
+    Returns:
+        y (list of floats): Y-values of Gaussian function evaluated over x.
+
+    """
     rxc = ((x - xc) ** 2) / (2 * (w ** 2))
     y = y0 + A * (np.exp(-rxc))
     return y
 
 
 def adjrsquared(r2, param, num):
+    """Calculates the adjusted R^2 for a parametric fit to data.
+
+    Args:
+         r2 (float): R^2 or 'coefficient of determination' of a linear regression between fitted and observed values.
+         param (int): Number of parameters in fitting model.
+         num (int): Number of datapoints in sample.
+
+    Returns:
+        y (float): Adjusted R^2 <= R^2, increases when additional parameters improve fit more than could be expected by chance.
+
+    """
     y = 1 - (((1 - r2) * (num - 1)) / (num - param - 1))
     return y
 
 
-def fit_gaussian(xdata, ydata, data_label='dt'):
+def fit_gaussian(x_data, y_data, data_label="dt"):
+    """Performs fitting of a gaussian function to a provided data sample and computes linear regression on residuals to measure quality of fit.
 
-    init_guess = estimate_gauss_param(ydata, xdata)
+    Args:
+        x_data (list of floats): X dimension values for sample data.
+        y_data (list of floats): Y dimension values for sample data.
+        data_label (str): Label indicating origin of data in multidimensional separation (rt, dt, m/z). 
 
+    Returns:
+        gauss_fit_dict (dict): Contains the following key-value pairs describing the Guassian and linear regression parameters.
+            "gauss_fit_success" (bool): Boolean indicating the success (True) or failure (False) of the fitting operation.
+            "y_baseline" (float): Fitted parameter for the Gaussian function's offset from y=0. 
+            "y_amp" (float): Fitted parameter for the amplitude of the Gaussian function.
+            "xc" (float): Fitted parameter for the center of the Gaussian in the x dimension.
+            "width" (float): Fitted parameter for the x dimensional width of the Gaussian function.
+            "y_fit" (list of floats): Y values of fitted Gaussian function evaluated over x. 
+            "fit_rmse" (float): Root-mean-square error, the standard deviation of the residuals between the fit and sample.
+            "fit_lingress_slope" (float): The slope of the linear regression line over the residuals between fit and sample.
+            "fit_lingress_intercept" (float): The intercept point of the line fit to the residuals.
+            "fit_lingress_pvalue" (float): The p-value for a hypothesis test whose null hypothesis is that the above slope is zero
+            "fit_lingress_stderr" (float): Standard error of the estimated slope under the assumption of residual normality.
+            "fit_lingress_r2" (float): R^2 or 'coeffiecient of determination' of linear regression over residuals.
+            "fit_lingress_adj_r2" (float): Adjusted R^2, always <= R^2, decreases with extraneous parameters.
+            "auc" (float): Area under the curve, cumulative distribution function of fitted gaussian evaluated over the length of x_data.
+
+    """
+    init_guess = estimate_gauss_param(y_data, x_data)
     gauss_fit_dict = dict()
     gauss_fit_dict['data_label'] = data_label
     gauss_fit_dict['gauss_fit_success'] = False
-    gauss_fit_dict['xc'] = center_of_mass(ydata)[0]
+    gauss_fit_dict['xc'] = center_of_mass(y_data)[0]
     gauss_fit_dict['auc'] = 1.0
     gauss_fit_dict['fit_rmse'] = 100.0
     gauss_fit_dict['fit_linregress_r2'] = 0.0
     gauss_fit_dict['fit_lingress_adj_r2'] = 0.0
 
     try:
-        popt, pcov = curve_fit(gauss_func, xdata, ydata, p0=init_guess, maxfev=100000)
+        popt, pcov = curve_fit(gauss_func, x_data, y_data, p0=init_guess, maxfev=100000)
         if popt[2] < 0:
             return gauss_fit_dict
         if popt[3] < 0:
             return gauss_fit_dict
         else:
-            y_fit = gauss_func(xdata, *popt)
-            fit_rmse = mean_squared_error(ydata/max(ydata), y_fit/max(y_fit), squared=False)
-            slope, intercept, rvalue, pvalue, stderr = linregress(ydata, y_fit)
-            adj_r2 = adjrsquared(r2=rvalue**2, param=4, num=len(ydata))
+            y_fit = gauss_func(x_data, *popt)
+            fit_rmse = mean_squared_error(y_data/max(y_data), y_fit/max(y_fit), squared=False)
+            slope, intercept, rvalue, pvalue, stderr = linregress(y_data, y_fit)
+            adj_r2 = adjrsquared(r2=rvalue**2, param=4, num=len(y_data))
             gauss_fit_dict['gauss_fit_success'] = True
             gauss_fit_dict['y_baseline'] = popt[0]
             gauss_fit_dict['y_amp'] = popt[1]
@@ -290,8 +486,8 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
             gauss_fit_dict['fit_lingress_stderr'] = stderr
             gauss_fit_dict['fit_linregress_r2'] = rvalue ** 2
             gauss_fit_dict['fit_lingress_adj_r2'] = adj_r2
-            gauss_fit_dict['auc'] = cal_area_under_curve_from_normal_distribution(low_bound=xdata[0],
-                                                                                  upper_bound=xdata[-1],
+            gauss_fit_dict['auc'] = cal_area_under_curve_from_normal_distribution(low_bound=x_data[0],
+                                                                                  upper_bound=x_data[-1],
                                                                                   center=popt[2],
                                                                                   width=popt[3])
             return gauss_fit_dict
@@ -299,30 +495,67 @@ def fit_gaussian(xdata, ydata, data_label='dt'):
         return gauss_fit_dict
 
 
-def model_data_with_gauss(xdata, gauss_params):
+def model_data_with_gauss(x_data, gauss_params):
+    # TODO: Add docstring.
 
-    data_length = len(xdata)
-    bin_value = (xdata[-1] - xdata[0])/data_length
+    data_length = len(x_data)
+    bin_value = (x_data[-1] - x_data[0])/data_length
     center = gauss_params[2]
     data_length_half = int(data_length/2)
     low_val = center - (data_length_half * bin_value)
-    new_xdata = []
+    new_x_data = []
     for num in range(data_length):
         val = low_val + (num * bin_value)
-        new_xdata.append(val)
-    new_xdata = np.array(new_xdata)
-    new_gauss_data = gauss_func(new_xdata, *gauss_params)
+        new_x_data.append(val)
+    new_x_data = np.array(new_x_data)
+    new_gauss_data = gauss_func(new_x_data, *gauss_params)
     return new_gauss_data
-
-###
-### Class - Factor:
-### Holds data from a single component of a non_negative_parafac factorization
-### constructed as: (nnf1[0].T[i], nnf1[1].T[i], nnf1[2].T[i], i, n, self.lows, self.highs, self.n_concatenated)
-###
 
 
 class Factor:
+    """A container for a factor output from DataTensor.factorize(), may contain the isolated signal from a single charged species.
 
+    If the class has public attributes, they may be documented here
+    in an ``Attributes`` section and follow the same formatting as a
+    function's ``Args`` section. Alternatively, attributes may be documented
+    inline with the attribute's declaration (see __init__ method below).
+
+    Attributes:
+        source_file (str): Path of DataTensor's parent resources/tensors/.cpickle.zlib file.
+        tensor_idx (int): Index of Factor's parent DataTensor in a concatenated DataTensor. Deprecated, this value always 0.
+        timepoint_idx (int): Index of the Factor's HDX timepoint in config["timepoints"].
+        name (str): Name of Factor's rt-group.
+        charge_states (list with one int): Net positive charge on protein represented in parent DataTensor.
+        integrated_mz_limits (numpy 2D array): Values for low and high m/Z limits of integration around expected peak centers.
+        rts (numpy array): Intensity of Factor summed over each rt bin.
+        dts (numpy array): Intensity of Factor summed over each dt bin.
+        mz_data (numpy array): Intensity of Factor summed over each m/Z bin in a flat array.
+        retention_labels (list of floats): Mapping of RT bins to corresponding absolute retention time in minutes.
+        drift_labels (list of floats): Mapping of DT bins to corresponding absolute drift time in miliseconds.
+        mz_labels (list of floats): Mapping of m/Z bins to corresponding m/Z.
+        factor_idx (int): Index of instance Factor in DataTensor.factors list.
+        bins_per_isotope_peak (int): Number of integrated m/Z bins for a signal to be considered as an IsotopeCluster.
+        n_concatenated (int): Number of DataTensors combined to make the instance DataTensor. Deprecated, value always 1.
+        concat_dt_idxs (list of ints): Deprecated - Indices marking the boundaries between different DataTensors' concatenated DT dimensions.
+        normalization_factor (float): Divisor for the integrated m/Z intensity of any IsotopeCluster from a parent DataTensor instance.
+        integrated_mz_data (numpy array): Coarsened version of mz_data. Number of bins to sum per index is determined by bins_per_isotope_peak.
+        max_rtdt (float): Product of maximal values from rts and dts.
+        outer_rtdt (float): Sum of outer product of rts and dts, multiplied by the sum of mz_data to find the magnitude of the Factor.
+        integrated_mz_baseline (numpy array): Baseline signal to subtract from mz_data. Deprecated.
+        baseline_subtracted_integrated_mz (numpy array): Deprecated, copy of integrated_mz_data.
+        rt_gauss_fit_success (bool): Boolean indicating success of Gaussian fit operation on rts. True => success, False => failure.
+        rt_auc (float): Cumulative distribution function of Gaussian fit to rts evaluated between estimated bounds.
+        rt_com (float): Computed center-of-mass of the Gaussian fit to rts. 
+        rt_gaussian_rmse (float): Root-mean-square error, the standard deviation of the residuals between fitted values and rts.
+        rt_gauss_fit_r2 (float): R^2 or 'coeffiecient of determination' of linear regression over residuals between fitted values and rts.
+        dt_gauss_fit_success (bool): Boolean indicating success of Gaussian fit operation on dts. True => success, False => failure.
+        dt_auc (float): Cumulative distribution function of Gaussian fit to dts evaluated between estimated bounds.
+        dt_com (float): Computed center-of-mass of the Gaussian fit to dts. 
+        dt_gaussian_rmse (float): Root-mean-square error, the standard deviation of the residuals between fitted values and dts.
+        dt_gauss_fit_r2 (float): R^2 or 'coeffiecient of determination' of linear regression over residuals between fitted values and dts.
+        isotope_clusters (list of IsotopeCluster objects): Contains IsotopeCluster objects made from candidate signals in integrated_mz_data
+
+    """
     def __init__(
         self,
         source_file,
@@ -343,9 +576,28 @@ class Factor:
         concat_dt_idxs,
         normalization_factor
     ):
+        """Creates an instance of the Factor class from one factor of a PARAFAC run.
 
-        ###Set Attributes###
+        Args:
+            source_file (str): Path of DataTensor's parent resources/tensors/.cpickle.zlib file.
+            tensor_idx (int): Index of Factor's parent DataTensor in a concatenated DataTensor. Deprecated, this value always 0.
+            timepoint_idx (int): Index of the Factor's HDX timepoint in config["timepoints"].
+            name (str): Name of Factor's rt-group.
+            charge_states (list with one int): Net positive charge on protein represented in parent DataTensor.
+            integrated_mz_limits (numpy 2D array): Values for low and high m/Z limits of integration around expected peak centers.
+            rts (numpy array): Intensity of Factor summed over each rt bin.
+            dts (numpy array): Intensity of Factor summed over each dt bin.
+            mz_data (numpy array): Intensity of Factor summed over each m/Z bin in a flat array.
+            retention_labels (list of floats): Mapping of RT bins to corresponding absolute retention time in minutes.
+            drift_labels (list of floats): Mapping of DT bins to corresponding absolute drift time in miliseconds.
+            mz_labels (list of floats): Mapping of m/Z bins to corresponding m/Z.
+            factor_idx (int): Index of instance Factor in DataTensor.factors list.
+            bins_per_isotope_peak (int): Number of integrated m/Z bins for a signal to be considered as an IsotopeCluster.
+            n_concatenated (int): Number of DataTensors combined to make the instance DataTensor. Deprecated, value always 1.
+            concat_dt_idxs (list of ints): Deprecated - Indices marking the boundaries between different DataTensors' concatenated DT dimensions.
+            normalization_factor (float): Divisor for the integrated m/Z intensity of any IsotopeCluster from a parent DataTensor instance.
 
+        """
         self.source_file = source_file
         self.tensor_idx = tensor_idx
         self.timepoint_idx = timepoint_idx
@@ -367,7 +619,7 @@ class Factor:
 
         ###Compute Instance Values###
 
-        # integrate within expected peak bounds and create boolean mask of expected peak bounds called grate
+        # Integrate within expected peak bounds.
         self.integrated_mz_data = np.sum(np.reshape(mz_data, (-1, self.bins_per_isotope_peak)), axis=1)
 
         # This can be a shared function
@@ -377,8 +629,7 @@ class Factor:
         #       
         #self.baseline_subtracted_integrated_mz = (self.integrated_mz_data -
         #                                          self.integrated_mz_baseline)
-        self.baseline_subtracted_integrated_mz = self.integrated_mz_data
-
+ 
         # fit factor rts and dts to gaussian
         rt_gauss_fit = fit_gaussian(np.arange(len(self.rts)), self.rts, data_label='rt')
         dt_gauss_fit = fit_gaussian(np.arange(len(self.dts)), self.dts, data_label='dt')
@@ -394,7 +645,6 @@ class Factor:
         self.dt_com = dt_gauss_fit['xc']
         self.dt_gaussian_rmse = dt_gauss_fit['fit_rmse']
         self.dt_gauss_fit_r2 = dt_gauss_fit['fit_linregress_r2']
-
 
         # calculate max rtdt and outer rtdt based on gauss fits
         if rt_gauss_fit['gauss_fit_success']:
@@ -422,17 +672,27 @@ class Factor:
         self.rt_mean = np.mean(np.arange(len(self.rts)))
         self.dt_mean = np.mean(np.arange(len(self.dts)))
 
-
         ## old protocol.
         # Writes to self.isotope_clusters
         # self.find_isotope_clusters()  # heuristic height value, should be high-level param TODO - Will require passage through DataTensor class
 
         ## now generates self.isotope_clusters upon calling the function self.find_isotope_clusters
 
-
     def rel_height_peak_bounds(self, centers, norm_integrated_mz, baseline_threshold=0.15, rel_ht_threshold=0.2):
+        """Determines upper and lower bounds of IsotopeClusters within a Factor.
+
+        Args:
+            centers (type): List of peak positions in integrated m/Z from scipy.signal.find_peaks().
+            norm_integrated_mz (numpy array): Integrated m/Z of Factor normalized for signal centeredness and timepoint variations.
+            baseline_threshold (float): Minimum ratio of peak height to maximum height for a peak to be considered as an IC. 
+            rel_ht_threshold (float): Ratio of point height to peak height that a point must exceed to be part of an IC.
+
+        Returns:
+            out (list of tuple pairs of ints): List of tuples with low and high bounding indices for ICs in the centers list.
+        """
         out = []
         for center in centers:
+            #REVIEW: Is this what this is supposed to be doing? Should be > max(norm_integrated_mz) * baseline_threshold? 
             if norm_integrated_mz[center] > baseline_threshold:
                 i, j = center, center
                 cutoff = norm_integrated_mz[center] * rel_ht_threshold
@@ -447,34 +707,32 @@ class Factor:
                 out.append((i, j))
         return out
 
-
-    # Uses find_window function to identify portions of the integrated mz dimension that look 'isotope-cluster-like', saves as Factor attribute
     def find_isotope_clusters(self, prominence=0.15, width_val=3, rel_height_filter=True, baseline_threshold=0.15, rel_height_threshold=0.10):
-        """
-        find isotope clusters by finding peaks in integrated mz distribution and choosing indices to include in mz data for ic clusters
-        :param prominence: prominence value for choosing peaks.
-        :param width_val: minimum width for choosing peaks
-        :param rel_height_filter: within peaks, whether or not
-        :param baseline_threshold: baseline for rel height filtering
-        :param rel_height_threshold: rel height threhold for rel height filtering
-        :return:
-        """
+        """Identifies portions of the integrated mz dimension that look 'isotope-cluster-like', saves in isotope_clusters.
 
+        Args:
+            prominence (float): Ratio of array's maximum intesity that a peak must surpass to be considered.
+            width_val (int): Minimum width to consider a peak to be an isotope cluster.
+            rel_height_filter (bool): Switch to apply relative height filtering, True applies filter. 
+            baseline_threshold (float): Minimum height of peak to consider it to be an isotope cluster.
+            rel_height_threshold (float): Proportion determining the minimum intensity for bins near a peak to be part of an isotope cluster.
+
+        Returns:
+            None
+
+        """
         self.isotope_clusters = []
-
-        norm_integrated_mz = self.baseline_subtracted_integrated_mz/max(self.baseline_subtracted_integrated_mz)
-
+        norm_integrated_mz = self.integrated_mz_data/max(self.integrated_mz_data)
         peaks, feature_dict = find_peaks(norm_integrated_mz,
                                          prominence=prominence,
                                          width=width_val)
-
         if len(peaks) == 0:
-            ic_idxs = [(0, len(self.baseline_subtracted_integrated_mz)-1)]
+            ic_idxs = [(0, len(self.integrated_mz_data)-1)]
             int_mz_width = [2]
-            # return
+            #return
         else:
             int_mz_width = [
-                feature_dict['widths'][i]
+                feature_dict["widths"][i]
                 for i in range(len(peaks))
                 if
                 feature_dict["left_bases"][i] < feature_dict["right_bases"][i]
@@ -489,35 +747,21 @@ class Factor:
                 if feature_dict["right_bases"][i] -
                 feature_dict["left_bases"][i] > 4
             ]
-
             if rel_height_filter:
                 height_filtered = self.rel_height_peak_bounds(centers=peaks,
                                                               norm_integrated_mz=norm_integrated_mz,
                                                               baseline_threshold=baseline_threshold,
                                                               rel_ht_threshold=rel_height_threshold)
-
                 ic_idxs = height_filtered
-
-            # ic_idxs = [(feature_dict['left_bases'][i], feature_dict['left_bases'][i+1]) if feature_dict['left_bases'][i] < feature_dict['left_bases'][i+1] else (feature_dict['left_bases'][i], feature_dict['left_bases'][i]+6) for i in range(len(out[0])-1)]
-            ## previous protocol to create ic indexes to include the entire factor mz data. Not including this in ic generation.
-            # if len(peaks) > 1:
-            #     ic_idxs.append(
-            #         (feature_dict["left_bases"][0],
-            #          feature_dict["right_bases"][-1])
-            #     )  # Create default ic from first left base to last right base
-            # height_filtered = rel_height_peak_bounds(
-            #     peaks, self.baseline_subtracted_integrated_mz)
-            # [ic_idxs.append(tup) for tup in height_filtered]
 
         cluster_idx = 0
         for integrated_indices, integrated_mz_width in zip(ic_idxs, int_mz_width):
             if integrated_indices != None:
-                #try:
-
                 newIC = IsotopeCluster(
                     integrated_mz_peak_width=integrated_mz_width,
                     charge_states=self.charge_states,
                     factor_mz_data=copy.deepcopy(self.mz_data),
+                    name=self.name,
                     source_file=self.source_file,
                     tensor_idx=self.tensor_idx,
                     timepoint_idx=self.timepoint_idx,
@@ -554,133 +798,69 @@ class Factor:
                         0.2):  # TODO: HARDCODE
                     self.isotope_clusters.append(newIC)
                     cluster_idx += 1
-                #except:
-                #print("ic index out of bounds: " + str(integrated_indices))
         return
-
-    # heuristically identifies 'things that look like acceptable isotope clusters' in integrated mz dimension, roughly gaussian allowing some inflection points from noise
-    def find_window(self, array, peak_idx, width):
-        rflag = True
-        lflag = True
-        if peak_idx == 0:
-            win_low = 0
-            lflag = False
-        if peak_idx == len(array) - 1:
-            win_high = len(array) - 1
-            rflag = False
-
-        idx = peak_idx + 1
-        if idx < len(array) - 1:  # Check if idx is last idx
-            if (array[idx] < array[peak_idx] /
-                    5):  # Peak is likely not an IC if peak > 5 x neighbors
-                win_high = idx
-                rflag = False
-
-        while rflag:
-            # make sure looking ahead won't throw error
-            if idx + 1 < len(array):
-                # if idx+1 goes down, and its height is greater than 20% of the max peak
-                if array[idx + 1] < array[idx] and array[
-                        idx + 1] > array[peak_idx] / 5:
-                    idx += 1
-                # if above check fails, test conditions separately
-                else:
-                    if array[idx + 1] < array[peak_idx] / 5:
-                        win_high = idx
-                        rflag = False
-                    else:
-                        # first check if upward point is more than 5x the height of the base peak
-                        if array[idx + 1] < array[peak_idx] * 5:
-                            # look one point past upward point, if its below the last point and the next point continues down, continue
-                            if idx + 2 < len(array):
-                                if array[idx + 2] < array[idx + 1]:
-                                    if idx + 3 < len(array):
-                                        if array[idx + 3] < array[idx + 2]:
-                                            idx += 3
-                                        else:  # point 3 ahead goes up, do not keep sawtooth tail
-                                            win_high = idx
-                                            rflag = False
-                                    else:  # point 2 past idx is end of array, set as high limit
-                                        win_high = idx + 2
-                                        rflag = False
-                                else:  # points continue increasing two ahead of idx, stop at idx
-                                    win_high = idx
-                                    rflag = False
-                            else:  # upward point is end of array, do not keep
-                                win_high = idx
-                                rflag = False
-                        else:  # upward point is major spike / base peak is minor, end search
-                            win_high = idx
-                            rflag = False
-            else:  # idx is downward and end of array
-                win_high = idx
-                rflag = False
-
-        idx = peak_idx - 1
-        if idx >= 0:
-            if array[idx] < array[peak_idx] / 5:
-                win_low = idx
-                lflag = False
-
-        while lflag:
-            if idx - 1 >= 0:  # make sure looking ahead won't throw error
-                if (
-                        array[idx - 1] < array[idx] and
-                        array[idx - 1] > array[peak_idx] / 5
-                ):  # if idx-1 goes down, and its height is greater than 20% of the max peak
-                    idx -= 1
-                # if above check fails, test conditions separately
-                else:
-                    if array[idx - 1] < array[peak_idx] / 5:
-                        win_low = idx
-                        lflag = False
-                    else:
-                        # first check if upward point is more than 5x the height of the base peak
-                        if array[idx - 1] < array[peak_idx] * 5:
-                            # look one point past upward point, if its below the last point and the next point continues down, continue
-                            if idx - 2 >= 0:
-                                if array[idx - 2] < array[idx]:
-                                    if idx - 3 >= 0:
-                                        if array[idx - 3] < array[idx - 2]:
-                                            idx -= 3
-                                        else:  # point 3 ahead goes up, do not keep sawtooth tail
-                                            win_low = idx
-                                            lflag = False
-                                    else:  # point 2 past idx is end of array, set as high limit
-                                        win_low = idx - 2
-                                        lflag = False
-                                else:  # points continue increasing two ahead of idx, stop at idx
-                                    win_low = idx
-                                    lflag = False
-                            else:  # upward point is start of array, do not keep
-                                win_low = idx
-                                lflag = False
-                        else:  # upward point is major spike / base peak is minor, end search
-                            win_low = idx
-                            lflag = False
-            else:  # idx is start of array
-                win_low = idx
-                lflag = False
-
-        if win_high - win_low < width:
-            return None
-        else:
-            return [win_low, win_high]
-
-
-###
-### Class - IsotopeCluster:
-### Contains mz data of mz region identified to have isotope-cluster-like characteristics, stores full data of parent factor
-###
 
 
 class IsotopeCluster:
+    """Contains a portion of Factor.integrated_mz_data identified to have isotope-cluster-like characteristics, stores data of parent factor.
 
+    Attributes:
+        integrated_mz_peak_width (int): Number of isotope peaks estimated to be included in the isotope cluster. 
+        charge_states (list with one int): Net positive charge on protein represented in parent DataTensor.
+        factor_mz_data (numpy array): The full mz_data of the parent Factor.
+        name (str): Name of IC's rt-group.
+        source_file (str): Path of DataTensor's parent resources/tensors/.cpickle.zlib file.
+        tensor_idx (int): Index of the IC's parent DataTensor in a concatenated DataTensor. Deprecated, this value always 0.
+        timepoint_idx (int): Index of the IC's HDX timepoint in config["timepoints"].
+        n_factors (int): Number of factors used in decomposition of IC's parent DataTensor.
+        factor_idx (int): Index of IC's parent Factor in its parent DataTensor.factors.
+        cluster_idx (int): Index of IC in parent Factor's Factor.isotope_clusters.
+        low_idx (int): Lower bound index of IC in integrated m/Z dimension.
+        high_idx (int): Upper bound index of IC in integrated m/Z dimension.
+        rts (numpy array): Intensity of IC's parent Factor summed over each rt bin.
+        dts (numpy array): Intensity of IC's parent Factor summed over each dt bin.
+        rt_mean (float):
+        dt_mean (float):
+        rt_gauss_fit_success (bool): Boolean indicating success of Gaussian fit operation on rts. True => success, False => failure.
+        rt_auc (float): Cumulative distribution function of Gaussian fit to rts evaluated between estimated bounds.
+        rt_com (float): Computed center-of-mass of the Gaussian fit to rts. 
+        rt_gaussian_rmse (float): Root-mean-square error, the standard deviation of the residuals between fitted values and rts.
+        rt_gauss_fit_r2 (float): R^2 or 'coeffiecient of determination' of linear regression over residuals between fitted values and rts.
+        dt_gauss_fit_success (bool): Boolean indicating success of Gaussian fit operation on dts. True => success, False => failure.
+        dt_auc (float): Cumulative distribution function of Gaussian fit to dts evaluated between estimated bounds.
+        dt_com (float): Computed center-of-mass of the Gaussian fit to dts. 
+        dt_gaussian_rmse (float): Root-mean-square error, the standard deviation of the residuals between fitted values and dts.
+        dt_gauss_fit_r2 (float): R^2 or 'coeffiecient of determination' of linear regression over residuals between fitted values and dts.
+        retention_labels (list of floats): Mapping of RT bins to corresponding absolute retention time in minutes.
+        drift_labels (list of floats): Mapping of DT bins to corresponding absolute drift time in miliseconds.
+        mz_labels (list of floats): Mapping of m/Z bins to corresponding m/Z.
+        bins_per_isotope_peak (int): Number of integrated m/Z bins for a signal to be considered as an IsotopeCluster.
+        max_rtdt (float):
+        outer_rt_dt (float):
+        max_rtdt_old(float):
+        outer_rtdt_old (float):
+        n_concatenated (int): Number of DataTensors combined to make the instance DataTensor. Deprecated, value always 1.
+        concat_dt_idxs (list of ints): Deprecated - Indices marking the boundaries between different DataTensors' concatenated DT dimensions.
+        normalization_factor (float): Divisor for the integrated m/Z intensity of any IsotopeCluster from a parent DataTensor instance.
+        cluster_mz_data (numpy array): 
+        auc (float): 
+        baseline (float): Deprecated, always 0
+        baseline_subtracted_mz (numpy array): Deprecated, always a copy of self.cluster_mz_data.
+        baseline_auc (float): Deprecated, always a copy of auc.
+        log_baseline_auc (float): Base 10 log of baseline_auc.
+        baseline_max_peak_height (float): Deprecated, max value of baseline_subtracted_mz
+
+        # TODO: Document this line.
+        peak_error (float): Average of the absolute distances of peak centers from expected centers of integration bounds.
+        baseline_peak_error (float): Deprecated, copy of peak_error.
+
+    """
     def __init__(
         self,
         integrated_mz_peak_width,
         charge_states,
         factor_mz_data,
+        name,
         source_file,
         tensor_idx,
         timepoint_idx,
@@ -713,11 +893,51 @@ class IsotopeCluster:
         concat_dt_idxs,
         normalization_factor
     ):
+        """Creates an instance of the IsotopeCluster class from a portion of Factor.mz_data.
 
-        ###Set Attributes###
+        Args:
+            integrated_mz_peak_width (int): Number of isotope peaks estimated to be included in the isotope cluster. 
+            charge_states (list with one int): Net positive charge on protein represented in parent DataTensor.
+            factor_mz_data (numpy array): The full mz_data of the parent Factor.
+            name (str): Name of IC's rt-group.
+            source_file (str): Path of DataTensor's parent resources/tensors/.cpickle.zlib file.
+            tensor_idx (int): Index of the IC's parent DataTensor in a concatenated DataTensor. Deprecated, this value always 0.
+            timepoint_idx (int): Index of the IC's HDX timepoint in config["timepoints"].
+            n_factors (int): Number of factors used in decomposition of IC's parent DataTensor.
+            factor_idx (int): Index of IC's parent Factor in its parent DataTensor.factors.
+            cluster_idx (int): Index of IC in parent Factor's Factor.isotope_clusters.
+            low_idx (int): Lower bound index of IC in integrated m/Z dimension.
+            high_idx (int): Upper bound index of IC in integrated m/Z dimension.
+            rts (numpy array): Intensity of IC's parent Factor summed over each rt bin.
+            dts (numpy array): Intensity of IC's parent Factor summed over each dt bin.
+            rt_mean (float):
+            dt_mean (float):
+            rt_gauss_fit_success (bool): Boolean indicating success of Gaussian fit operation on rts. True => success, False => failure.
+            rt_auc (float): Cumulative distribution function of Gaussian fit to rts evaluated between estimated bounds.
+            rt_com (float): Computed center-of-mass of the Gaussian fit to rts. 
+            rt_gaussian_rmse (float): Root-mean-square error, the standard deviation of the residuals between fitted values and rts.
+            rt_gauss_fit_r2 (float): R^2 or 'coeffiecient of determination' of linear regression over residuals between fitted values and rts.
+            dt_gauss_fit_success (bool): Boolean indicating success of Gaussian fit operation on dts. True => success, False => failure.
+            dt_auc (float): Cumulative distribution function of Gaussian fit to dts evaluated between estimated bounds.
+            dt_com (float): Computed center-of-mass of the Gaussian fit to dts. 
+            dt_gaussian_rmse (float): Root-mean-square error, the standard deviation of the residuals between fitted values and dts.
+            dt_gauss_fit_r2 (float): R^2 or 'coeffiecient of determination' of linear regression over residuals between fitted values and dts.
+            retention_labels (list of floats): Mapping of RT bins to corresponding absolute retention time in minutes.
+            drift_labels (list of floats): Mapping of DT bins to corresponding absolute drift time in miliseconds.
+            mz_labels (list of floats): Mapping of m/Z bins to corresponding m/Z.
+            bins_per_isotope_peak (int): Number of integrated m/Z bins for a signal to be considered as an IsotopeCluster.
+            max_rtdt (float):
+            outer_rt_dt (float):
+            max_rtdt_old(float):
+            outer_rtdt_old (float):
+            n_concatenated (int): Number of DataTensors combined to make the instance DataTensor. Deprecated, value always 1.
+            concat_dt_idxs (list of ints): Deprecated - Indices marking the boundaries between different DataTensors' concatenated DT dimensions.
+            normalization_factor (float): Divisor for the integrated m/Z intensity of any IsotopeCluster from a parent DataTensor instance.
+        """
         self.integrated_mz_peak_width = integrated_mz_peak_width
         self.charge_states = charge_states
         self.factor_mz_data = factor_mz_data
+        self.name = name
         self.source_file = source_file
         self.tensor_idx = tensor_idx
         self.timepoint_idx = timepoint_idx
@@ -742,52 +962,24 @@ class IsotopeCluster:
         self.drift_labels = drift_labels
         self.mz_labels = mz_labels
         self.bins_per_isotope_peak = bins_per_isotope_peak
-        self.max_rtdt = max_rtdt
-        self.outer_rtdt = outer_rtdt
         self.max_rtdt_old = max_rtdt_old
         self.outer_rtdt_old = outer_rtdt_old
+        self.max_rtdt = max_rtdt
+        self.outer_rtdt = outer_rtdt
         self.n_concatenated = n_concatenated
         self.concat_dt_idxs = concat_dt_idxs
         self.normalization_factor = normalization_factor
 
-        ###Calculate Scoring Requirements###
-
-        # prune factor_mz to get window around cluster that is consistent between charge-states
+        # Prune factor_mz to get window around cluster that is consistent between charge-states.
         self.cluster_mz_data = copy.deepcopy(self.factor_mz_data)
         self.cluster_mz_data[0:self.low_idx] = 0
         self.cluster_mz_data[self.high_idx:] = 0
 
-        #####################################################################################################
-        #########################################################################################################
-        ### the following block of code is just for comparison with self.auc
-        # integrate area of IC and normalize according the TIC counts
-        # self.auc_no_rt_dt_norm = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
-        #
-        # self.auc_old = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
-        # # normalize auc with rt and dt auc
-        # if self.rt_auc > 0:
-        #     auc_after_rt = self.auc_old * (1/self.rt_auc)
-        # else:
-        #     auc_after_rt = self.auc_old
-        #
-        # if self.dt_auc > 0:
-        #     auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
-        # else:
-        #     auc_after_rt_dt = auc_after_rt
-        #
-        # self.auc_old = auc_after_rt_dt
-        #########################################################################################################
-        #########################################################################################################
-
-        # integrate area of IC and normalize according the TIC counts
+        # Integrate area of IC and normalize according the TIC counts.
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt / self.normalization_factor
 
-        # identify peaks and find error from expected peak positions using raw mz
-        
-        #CONTINUE HERE TO DEFINE PEAK ERROR USING bins_per_isotope_peak
-
+        # Reshape cluster m/Z data by expected number of bins per isotope.
         isotope_peak_array = np.reshape(self.cluster_mz_data, (-1, self.bins_per_isotope_peak))
-
         self.baseline = 0
         self.baseline_subtracted_mz = self.cluster_mz_data 
         self.baseline_auc = self.auc
@@ -795,30 +987,60 @@ class IsotopeCluster:
         self.baseline_max_peak_height = max(self.baseline_subtracted_mz)
         self.baseline_integrated_mz = np.sum(isotope_peak_array, axis=1)
 
-        self.peak_error = np.average( np.abs( np.argmax(isotope_peak_array,axis=1) - ((self.bins_per_isotope_peak - 1)/2) ) / ((self.bins_per_isotope_peak - 1)/2), weights=self.baseline_integrated_mz)
+        # Takes the average of the absolute distances of peak centers from expected centers of integration bounds.
+        self.peak_error = np.average(np.abs(np.argmax(isotope_peak_array,axis=1) - ((self.bins_per_isotope_peak - 1)/2)) 
+                            / ((self.bins_per_isotope_peak - 1)/2), weights=self.baseline_integrated_mz)
         self.baseline_peak_error = self.peak_error
 
-
-        # Cache int_mz and rt scoring values
-        # Compute baseline_integrated_mz_com, baseline_integrated_mz_std, baseline_integrated_mz_FWHM and baseline_integrated_mz_rmse from Gaussian Fit
-        # Define functions for Gaussian fit BEGIN
+        # Cache int_mz and rt scoring values.
+        # Compute baseline_integrated_mz_com, baseline_integrated_mz_std, baseline_integrated_mz_FWHM, and baseline_integrated_mz_rmse from gaussian fit.
+        # Define functions for Gaussian fit.
         def gaussian_function(x, H, A, x0, sigma):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             return H + A * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
 
+
         def gauss_fit(x, y):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             mean = sum(x * y) / sum(y)
             sigma = np.sqrt(sum(y * (x - mean) ** 2) / sum(y))
             nonzeros = [index for index, value in enumerate(list(y)) if value!=0]
             popt, pcov = curve_fit(gaussian_function, x, y, p0=[0, max(y), mean, sigma], bounds=([0, 0, nonzeros[0], 0], [np.inf, np.inf, nonzeros[-1], np.inf]))
             return popt
 
+
         def params_from_gaussian_fit(self):
+            """Description of function.
+
+            Args:
+                arg_name (type): Description of input variable.
+
+            Returns:
+                out_name (type): Description of any returned objects.
+
+            """
             try:
-                xdata = [i for i in range(len(self.baseline_integrated_mz))]
-                ydata = self.baseline_integrated_mz
-                H, A, x0, sigma = gauss_fit(xdata, ydata)
-                y_gaussian_fit = gaussian_function(xdata, *gauss_fit(xdata, ydata))
-                rmse = mean_squared_error(ydata/max(ydata), y_gaussian_fit/max(y_gaussian_fit), squared=False)
+                x_data = [i for i in range(len(self.baseline_integrated_mz))]
+                y_data = self.baseline_integrated_mz
+                H, A, x0, sigma = gauss_fit(x_data, y_data)
+                y_gaussian_fit = gaussian_function(x_data, *gauss_fit(x_data, y_data))
+                rmse = mean_squared_error(y_data/max(y_data), y_gaussian_fit/max(y_gaussian_fit), squared=False)
                 com = x0
                 std = sigma
                 FWHM = 2*np.sqrt(2*np.log(2))*std

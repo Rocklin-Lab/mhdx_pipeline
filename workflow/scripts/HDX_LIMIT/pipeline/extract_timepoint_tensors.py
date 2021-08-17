@@ -1,3 +1,36 @@
+"""Example Google style docstrings.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
 import os
 import sys
 import gzip
@@ -15,9 +48,10 @@ import pandas as pd
 import _pickle as cpickle
 import pickle as pk
 from collections import Counter
+from collections import OrderedDict
 
-def load_pickle_file(pickle_fpath):
-    """Loads a pickle file (without any dependence on other classes or objects or functions).
+def load_pickle_file(pickle_fpath):    
+    """Loads a pickle file.
 
     Args:
         pickle_fpath (str): path/to/file.pickle
@@ -79,9 +113,17 @@ def main(library_info_path,
     """
     out_dict = {}
     library_info = pd.read_json(library_info_path)
-    mzml = mzml_gz_path.split("/")[-1][:-3]
 
-    # find number of mzml-source timepoint for extracting RT #TODO THIS WILL HAVE TO BE HANDLED WHEN MOVING FROM MZML TO RAW - files in config[int] will not have same extension
+    # Makes nested dictionary where rt-group-name is the outermost key and returns a dictionary 
+    # mapping charge states of that rt-group to their library_info indices.
+    names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+    name_charge_idx = {name: {charge: library_info.loc[(library_info["name"]==name) & (library_info["charge"]==charge)].index 
+                            for charge in library_info.loc[library_info["name"]==name]["charge"].values} 
+                            for name in names}
+
+    mzml = mzml_gz_path.split("/")[-1][:-3] # Strip '.gz' from input filename to match config timepoint values.
+
+    # Find number of mzml-source timepoint for extracting RT #TODO THIS WILL HAVE TO BE HANDLED WHEN MOVING FROM MZML TO RAW - files in config[int] will not have same extension.
     mask = [False for i in timepoints_dict["timepoints"]]
     for i in range(len(timepoints_dict["timepoints"])):
         if mzml in timepoints_dict[timepoints_dict["timepoints"][i]]:
@@ -118,17 +160,7 @@ def main(library_info_path,
             drift_times.append(float(dt))
     drift_times = np.array(drift_times)
 
-    #TODO review for deletion
-    #for line in lines:
-    #    if (
-    #        '<cvParam cvRef="MS" accession="MS:1000016" name="scan start time" value='
-    #        in line
-    #    ):
-    #        st = line.split('value="')[1].split('"')[0]  # replace('"/>',''))
-    #        scan_times.append(float(st))
-    #scan_times = np.array(scan_times)
-    #scan_numbers = np.arange(0, len(scan_times))
-
+    # Display memory use before beginning iteration.
     process = psutil.Process(os.getpid())
     print(process.memory_info().rss)
     msrun = pymzml.run.Reader(mzml_gz_path)
@@ -139,7 +171,7 @@ def main(library_info_path,
     scan_functions = []
     scan_times = []
 
-    # Read scan info from msrun
+    # Read scan info from msrun.
     for k in range(msrun.get_spectrum_count()):
         nextscan = msrun.next()
         scan_functions.append(nextscan.id_dict["function"])
@@ -148,17 +180,17 @@ def main(library_info_path,
     scan_numbers = np.arange(0, len(scan_times))
     scan_functions = np.array(scan_functions)
 
-    # set upper m/Z bounds for each sequence
+    # Set upper m/Z bounds for each sequence
     isotope_totals = [
         len(seq) + high_mass_margin for seq in library_info["sequence"].values
     ]
 
-    # instantiate mapping lists
+    # Map scans to lines needing those scans, scan numbers needed by each line, and data for each line. 
     scan_to_lines = [[] for i in scan_times]
     scans_per_line = []
     output_scans = [[] for i in range(len(library_info))]
 
-    # use mapping lists to get scan numbers for each POI
+    # Use mapping lists to get scan numbers for each POI
     for i in range(len(library_info)):
         # check for subset indices
         if indices is not None:
@@ -189,11 +221,11 @@ def main(library_info_path,
         if i % 100 == 0:
             print(str(i) + " lines, time: " + str(time.time() - starttime))
 
-    # filter scans that don't need to be read
+    # Filter scans that don't need to be read.
     relevant_scans = [i for i in scan_numbers if len(scan_to_lines[i]) > 0]
     print("N Scans: " + str(len(relevant_scans)))
 
-    # implement polyfit calibration if given adjustment dict
+    # Perform polyfit calibration if adjustment dict passed.
     if polyfit_calibration_dict is not None:
         calib_dict = load_pickle_file(polyfit_calibration_dict)
 
@@ -202,13 +234,14 @@ def main(library_info_path,
     print(process.memory_info().rss)
     print(time.time() - starttime, mzml_gz_path)
 
+    # Iterate over each scan, check if any line needs it, extract data within bounds for all lines needing data from the scan. 
     for scan_number in range(
-            msrun.get_spectrum_count()):  # iterate over each scan
+            msrun.get_spectrum_count()):  
         scan = msrun.next()
 
         if scan_number in relevant_scans:
 
-            # print progress at interval
+            # Print progress at interval.
             if scan_number % 1 == 0:
                 print(
                     scan_number,
@@ -216,20 +249,15 @@ def main(library_info_path,
                     (len(library_info) - output_scans.count([])) /
                     len(library_info),
                 )
-
-            #try:
             spectrum = np.array(scan.peaks("raw")).astype(np.float32)
             if len(spectrum) == 0:
                 spectrum = scan.peaks("raw").astype(np.float32)
             spectrum = spectrum[spectrum[:, 1] > 10]
-            # apply calibration to mz values
+            # Apply calibration to mz values if calibration dict passed.
             if polyfit_calibration_dict is not None:
                 spectrum[:, 0] = apply_polyfit_cal_mz(
                     polyfit_coeffs=calib_dict["polyfit_coeffs"],
                     mz=spectrum[:, 0])
-            #except:
-            #print("scan read error: "+str(scan_number))
-            #spectrum = np.array([[0, 0]])
 
             # Iterate over each library_info index that needs to read the scan.
             for i in scan_to_lines[scan_number]:  
@@ -251,75 +279,74 @@ def main(library_info_path,
                     print(spectrum[(mz_low < spectrum[:, 0]) &
                                    (spectrum[:, 0] < mz_high)])
                     sys.exit(0)
-                try:
-                    # check if this is the last scan the line needed
-                    if len(output_scans[i]) == scans_per_line[i]:
-                        keep_drift_times = drift_times[
-                            (drift_times >= dt_lbounds[i]) &
-                            (drift_times <= dt_ubounds[i]) &
-                            (scan_times <= ret_ubounds[i]) &
-                            (scan_times >= ret_lbounds[i]) &
-                            (scan_functions == 1)]
-                        keep_scan_times = scan_times[
-                            (drift_times >= dt_lbounds[i]) &
-                            (drift_times <= dt_ubounds[i]) &
-                            (scan_times <= ret_ubounds[i]) &
-                            (scan_times >= ret_lbounds[i]) &
-                            (scan_functions == 1)]
-                        output = [
-                            sorted(set(keep_scan_times)),
-                            sorted(set(keep_drift_times)),
-                            output_scans[i],
-                        ]
+                #try:
+                # Is this the last scan the line needed? If so, save to disk.
+                if len(output_scans[i]) == scans_per_line[i]:
+                    my_name = library_info.iloc[i]["name"]
+                    my_charge = library_info.iloc[i]["charge"]
+                    my_out_test = "/" + my_name + "/" + my_name + "_" + "charge" + str(my_charge) + "_" + mzml + ".gz.cpickle.zlib"
+                    print("name = " + str(my_name), flush=True)
+                    print("charge = " + str(my_charge), flush=True)
+                    print("my_out search string = " + my_out_test, flush=True)
+                    keep_drift_times = drift_times[
+                        (drift_times >= dt_lbounds[i]) &
+                        (drift_times <= dt_ubounds[i]) &
+                        (scan_times <= ret_ubounds[i]) &
+                        (scan_times >= ret_lbounds[i]) &
+                        (scan_functions == 1)]
+                    keep_scan_times = scan_times[
+                        (drift_times >= dt_lbounds[i]) &
+                        (drift_times <= dt_ubounds[i]) &
+                        (scan_times <= ret_ubounds[i]) &
+                        (scan_times >= ret_lbounds[i]) &
+                        (scan_functions == 1)]
+                    output = [
+                        sorted(set(keep_scan_times)),
+                        sorted(set(keep_drift_times)),
+                        output_scans[i],
+                    ]
 
-                        # only build out_dict if returning
-                        if return_flag:
-                            out_dict[i] = output
+                    if return_flag:
+                        out_dict[i] = output
 
-                        # save to file if outputs provided
-                        if outputs is not None:
-                            my_out = [
-                                out for out in outputs if "/" + str(i) + "/" + str(i) + "_" +
-                                mzml + ".gz.cpickle.zlib" in out
-                            ][0]
-                            print("My_out: " + str(my_out))
-                            with open(my_out, "wb") as file:
-                                file.write(zlib.compress(cpickle.dumps(output)))
-                            print(
-                                scan_number,
-                                process.memory_info().rss /
-                                (1024 * 1024 * 1024),
-                                "presave",
-                            )
-                            output_scans[i] = []
-                            print(
-                                scan_number,
-                                process.memory_info().rss /
-                                (1024 * 1024 * 1024),
-                                "savedisk",
-                            )
-                        else:
-                            output_scans[i] = [
-                            ]  # to avoid duplication of tensors in return-only state
+                    # Save to file if outputs provided, match name and charge to index. 
+                    if outputs is not None:
+                        my_out = [
+                            out for out in outputs if "/" + my_name + "/" + my_name 
+                            + "_" + "charge" + str(my_charge) + "_" + mzml + ".gz.cpickle.zlib" in out
+                        ][0]
+                        print("my_out: " + str(my_out), flush=True)
+                        with open(my_out, "wb+") as file:
+                            file.write(zlib.compress(cpickle.dumps(output)))
+                        print(
+                            scan_number,
+                            process.memory_info().rss /
+                            (1024 * 1024 * 1024),
+                            "presave",
+                        )
+                        output_scans[i] = []
+                        print(
+                            scan_number,
+                            process.memory_info().rss /
+                            (1024 * 1024 * 1024),
+                            "savedisk",
+                        )
+                    else:
+                        output_scans[i] = []  # Avoid duplication of tensors in return-only state.
+                """
                 except:
                     print("error in output block on scan: " + str(scan_number) +
                           " , for line: " + str(i))
+                    sys.stdout.flush()
                     sys.exit(0)
-            """ TODO: Review Deletion
-            if len(scan_to_lines[scan_number]) > 0:
-                cur_lengths = np.array(
-                    [len(output_scans[i]) for i in scan_to_lines[scan_number]]
-                )
-                target_lengths = np.array(
-                    [i for i in scan_to_lines[scan_number]]
-                )  # np.array([scans_per_line[i] for i in scan_to_lines[scan_number]])
-            """
+                """
     if return_flag:
         return out_dict
 
 
 if __name__ == "__main__":
 
+    # If the snakemake global object is present, save expected arguments from snakemake to be passed to main().
     if "snakemake" in globals():
         polyfit_calibration_dict = None
         indices = None
@@ -333,16 +360,21 @@ if __name__ == "__main__":
             else:
                 indices = pd.read_csv(snakemake.input[3])['index'].values
 
+        # Obtain dt and rt radius from config file.
+        config_rt_radius = open_timepoints["rt_radius"]
+        config_dt_radius_scale = open_timepoints["dt_radius_scale"]
+
         main(library_info_path=snakemake.input[0],
              mzml_gz_path=snakemake.input[1],
              timepoints_dict=open_timepoints,
              outputs=snakemake.output,
+             rt_radius = config_rt_radius,
+             dt_radius_scale = config_dt_radius_scale,
              polyfit_calibration_dict=polyfit_calibration_dict,
              indices=indices)
     else:
-        # set expected command line arguments
+        # CLI context, set expected arguments with argparse module.
         parser = argparse.ArgumentParser()
-        # inputs
         parser.add_argument("library_info_path", help="path/to/library_info.json")
         parser.add_argument("mzml_gz_path", help="path/to/file.mzML.gz")
         parser.add_argument(
@@ -383,7 +415,6 @@ if __name__ == "__main__":
             help=
             "path/to/file_mz_calib_dict.pk, provide if using polyfit mz recalibration"
         )
-        # outputs
         parser.add_argument("-o",
                             "--outputs",
                             nargs="*",
@@ -398,10 +429,9 @@ if __name__ == "__main__":
             help=
             "path/to/output_dir/ to generate outputs automatically, using without -i will extract all charged species from library_info, overridden by -o"
         )
-        # parse given arguments
         args = parser.parse_args()
-
-        # generate explicit output paths and open timepoints .yaml
+        
+        # Handle implicit arguments.
         if args.outputs is None:
             if args.output_directory is None:
                 parser.print_help()
@@ -415,17 +445,17 @@ if __name__ == "__main__":
                     for i in indices:
                         if not os.path.isdir(args.output_directory+str(i)+"/"):
                             os.mkdir(args.output_directory+str(i)+"/")
-                    # Make subset outputs
+                    # Make subset outputs.
                     args.outputs = [
                         args.output_directory + str(i) + "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
                         for i in args.indices
                     ]
                 else:
-                    # Make all subdirs
+                    # Make all subdirs if needed.
                     for i in range(len(library_info)):
                         if not os.path.isdir(args.output_directory+str(i)+"/"):
                             os.mkdir(args.output_directory+str(i)+"/")
-                    # Make an output for each line in library_info
+                    # Make an output for each line in library_info. TODO: Add an indices check.
                     args.outputs = [
                         args.output_directory + str(i) + "/" + str(i) + "_" + mzml + ".gz.cpickle.zlib"
                         for i in range(len(library_info))
@@ -433,9 +463,11 @@ if __name__ == "__main__":
 
         open_timepoints = yaml.load(open(args.timepoints_yaml, "rb").read(), Loader=yaml.Loader)
 
-        # obtain dt and rt radius from config file
-        rt_radius = open_timepoints["rt_radius"]
-        dt_radius_scale = open_timepoints["dt_radius_scale"]
+        # Obtain dt and rt radius from config file if not passed to argparse.
+        if args.rt_radius is None:
+            args.rt_radius = open_timepoints["rt_radius"]
+        if args.dt_radius_scale is None:
+            args.dt_radius_scale = open_timepoints["dt_radius_scale"]
 
         main(library_info_path=args.library_info_path,
              mzml_gz_path=args.mzml_gz_path,
@@ -443,7 +475,7 @@ if __name__ == "__main__":
              outputs=args.outputs,
              low_mass_margin=args.low_mass_margin,
              high_mass_margin=args.high_mass_margin,
-             rt_radius=rt_radius,
-             dt_radius_scale=dt_radius_scale,
+             rt_radius=args.rt_radius,
+             dt_radius_scale=args.dt_radius_scale,
              polyfit_calibration_dict=args.polyfit_calibration_dict,
              indices=args.indices)

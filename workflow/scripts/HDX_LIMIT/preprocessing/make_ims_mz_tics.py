@@ -1,21 +1,51 @@
+"""Example Google style docstrings.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
+import os
+import sys
+import gzip
+import ipdb
+import zlib
 import pymzml
 import argparse
 import collections
 import numpy as np
+import pandas as pd
 import _pickle as cpickle
-import zlib
 
-
-def save_obj_to_compressed_file(output_path, obj):
-    """
-    save object to a compressed file
-    :param output_path: file output path
-    :param object: object to save
-    :return: None
-    """
-    with open(output_path, "wb") as outfile:
-        outfile.write(zlib.compress(cpickle.dumps(obj)))
-
+# TODO: Remove when hdx_limit can be installed with pip.
+sys.path.append("./workflow/scripts")
+from HDX_LIMIT.io import limit_write
 
 def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
     """Generate LC Chromatogram by summing ionic current over IMS and m/Z dimensions.
@@ -105,7 +135,7 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
     # ref_tic_cumsum = np.cumsum(ref_tic_ims_only[:, 1:], axis=1)
 
     if out_path is not None:
-        save_obj_to_compressed_file(output_path=out_path, obj=out_dict)
+        limit_write(obj=out_dict, out_path=out_path)
 
     if mzml_sum_outpath is not None:
         with open(mzml_sum_outpath, "w") as txt_file:
@@ -127,7 +157,7 @@ if __name__ == "__main__":
                         help="path/to/file for one timepoint .mzML")
     parser.add_argument("-o",
                         "--out_path",
-                        help="path/to/file for main tic output .tic.cpickle.zlib")
+                        help="path/to/file for main output .ims.mz.tic.cpickle.zlib")
     parser.add_argument("-s",
                         "--mzml_sum_outpath",
                         help="path/to/file for <mzml>_sum.txt")

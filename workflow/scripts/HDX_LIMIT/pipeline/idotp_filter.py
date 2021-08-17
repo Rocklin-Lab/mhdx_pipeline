@@ -1,3 +1,36 @@
+"""Example Google style docstrings.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
 import sys
 import glob
 import argparse
@@ -31,6 +64,8 @@ def main(library_info_path,
 
     """
     library_info = pd.read_json(library_info_path)
+    sorted_inputs = sorted(all_idotp_csv_inputs, key=lambda fn: int(fn.split("_")[-3]))
+    print("Length of inputs: "+str(len(sorted_inputs)))
 
     out_dict = {}
     filter_passing_indices = []
@@ -39,10 +74,10 @@ def main(library_info_path,
     theor_mz_dists = []
     integrated_mz_width_list = []
 
-    sorted_inputs = sorted(all_idotp_csv_inputs, key=lambda fn: int(fn.split("/")[-1].split("_")[0]))
-
     for fn in sorted_inputs:
-        lib_idx = int(fn.split("/")[-1].split("_")[0])
+        prot_name = fn.split("/")[-2] # Name from protein directory.
+        prot_charge = int([item[6:] for item in fn.split("/")[-1].split("_") if "charge" in item][0]) # Finds by keyword and strip text.
+        lib_idx = library_info.loc[(library_info["name"]==prot_name) & (library_info["charge"]==prot_charge)].index
         idpc = pd.read_json(fn)
         idotps.append(idpc["idotp"].values[0])
         mz_centers.append(idpc["mz_centers"][0]) # Account for nested list structure
@@ -83,7 +118,7 @@ def main(library_info_path,
 
 
 if __name__ == "__main__":
-
+    # If the snakemake global object is present, save expected arguments from snakemake to be passed to main().
     if "snakemake" in globals():
         library_info_path = snakemake.input.pop(0)
         all_idotp_csv_inputs = snakemake.input
@@ -98,9 +133,8 @@ if __name__ == "__main__":
              indices_out_path=indices_out_path,
              library_info_out_path=library_info_out_path,
              plot_out_path=plot_out_path)
-
     else:
-        # set expected command line arguments
+        # CLI context, set expected arguments with argparse module.
         parser = argparse.ArgumentParser(
             description=
             "Reads all rt-group idotp csvs and returns or saves a list of indices with idotp >= idotp_cutoff."

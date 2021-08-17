@@ -1,30 +1,59 @@
+"""Example Google style docstrings.
+
+This module demonstrates documentation as specified by the `Google Python
+Style Guide`_. Docstrings may extend over multiple lines. Sections are created
+with a section header and a colon followed by a block of indented text.
+
+Example:
+    Examples can be given using either the ``Example`` or ``Examples``
+    sections. Sections support any reStructuredText formatting, including
+    literal blocks::
+
+        $ python example_google.py
+
+Section breaks are created by resuming unindented text. Section breaks
+are also implicitly created anytime a new section starts.
+
+Attributes:
+    module_level_variable1 (int): Module level variables may be documented in
+        either the ``Attributes`` section of the module docstring, or in an
+        inline docstring immediately following the variable.
+
+        Either form is acceptable, but the two should not be mixed. Choose
+        one convention to document module level variables and be consistent
+        with it.
+
+Todo:
+    * For module TODOs
+    * You have to also use ``sphinx.ext.todo`` extension
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
+import os
+import sys  
 import copy
 import glob
 import yaml
 import pymzml
 import argparse
+import peakutils
+import statistics
+import matplotlib
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from fastdtw import fastdtw
 from collections import OrderedDict
+from scipy.signal import find_peaks
 from matplotlib import pyplot as plt
 from scipy.spatial.distance import euclidean
-import _pickle as cpickle
-import zlib
-import matplotlib
+
+sys.path.append(os.getcwd() + "/workflow/scripts/")
+from HDX_LIMIT.io import limit_read
 
 matplotlib.use("Agg")
-
-###Definitions###
-
-def load_tic_file(filepath):
-    """
-    load the tic file dictionary
-    :param filepath: tic file path
-    :return: tic dictionary
-    """
-    tic_dict = cpickle.loads(zlib.decompress(open(filepath, "rb").read()))
-    return tic_dict
 
 
 def path_to_stretch_times(path, to_stretch=0):
@@ -113,7 +142,7 @@ def subset_filter(clusters, n_df):
         if sup:
             final.append(sets[i])
 
-    #find any rt-group index intersections and resolve
+    # Finds any rt-group index intersections and resolves.
     intersections = []
     for s1 in final:
         for i in s1:
@@ -129,7 +158,7 @@ def subset_filter(clusters, n_df):
 
 
 def intersection_filter(final, intersections, n_df):
-    """Resolve remianing intersections of subset-filtered rt-clusters.
+    """Resolves remianing intersections of subset-filtered rt-clusters.
 
     Args:
         final (list of list  of ints): output of subset_filter, list of lists of all rt-cluster indices
@@ -163,7 +192,7 @@ def intersection_filter(final, intersections, n_df):
 
 
 def set_global_scan_bounds(mzml):
-    """Search .mzML for LC-dimension extrema and magnitude.
+    """Searches .mzML for LC-dimension extrema and magnitude.
 
     Args:
         mzml (string): path/to/undeuterated.mzML
@@ -216,7 +245,7 @@ def gen_warp_path_for_timepoints(reference_tic, target_tic):
 
 
 def norm_tic(tic):
-    """Normalize tic magnitude to 1.
+    """Normalizes tic magnitude to 1.
 
     Args:
         tic (np_array): Chromatogram of Total Ionic Current of an LC-MS run
@@ -240,19 +269,19 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
         stretched_ts2_times (nested list): all rt-labels stretching later timepoints to the undeuterated
     
     """
-    ref_tic_dict = load_tic_file(tic_file_list[0])
+    ref_tic_dict = limit_read(tic_file_list[0])
     ref_tic_base_sum = ref_tic_dict['tics_base_sums']
     ref_tic_cumulative_sum = ref_tic_dict['tic_cumulative_sum']
     
     stretched_ts1_times = []
     stretched_ts2_times = []
 
-    # Make stretched times plot.
+    # Makes stretched times plot.
     fig, ax = plt.subplots()
 
     for index, tic_file in enumerate(tic_file_list):
 
-        tic_dict = load_tic_file(tic_file)
+        tic_dict = limit_read(tic_file)
         tic_cumulative_sum = tic_dict['tic_cumulative_sum']
         tic_base_sum = tic_dict['tics_base_sums']
 
@@ -276,11 +305,6 @@ def gen_stretched_times(tic_file_list, stretched_times_plot_outpath=None):
         plt.savefig(stretched_times_plot_outpath)
 
     return stretched_ts1_times, stretched_ts2_times
-
-
-##########################################################
-####################    Operation    s####################
-##########################################################
 
 
 def main(names_and_seqs_path,
@@ -321,8 +345,7 @@ def main(names_and_seqs_path,
 
     lo_time, hi_time, n_lc_timepoints = set_global_scan_bounds(undeut_mzml)
 
-    # TODO: This implementation is weird.
-    # Merge UNs - no, appends open dfs to list, why?
+    # Lists undeuterated dataframes to warp and concatenate.
     undfs = []
     for file in intermediates:
         undfs.append(pd.read_csv(file))
@@ -336,12 +359,12 @@ def main(names_and_seqs_path,
         undfs[i]["UN"] = [i for line in undfs[i]["RT"]
                          ]  #apply source index to each line
 
-    # Combine undfs and sort.
+    # Combines undfs and sort.
     catdf = pd.concat(undfs)
-    catdf = catdf.sort_values(["name", "charge", "pred_RT"])
+    catdf = catdf.sort_values(["name", "charge", "pred_RT", "abs_ppm"])
     catdf.index = range(len(catdf))
 
-    # clear duplicate lines TODO: this can be done with DataFrame.drop_duplicates()
+    # Clears duplicate charges close in RT.
     dups = [False]
     for i in range(1, len(catdf)):
         if ((catdf["name"].values[i] == catdf["name"].values[i - 1]) and
@@ -353,13 +376,17 @@ def main(names_and_seqs_path,
             dups.append(False)
     catdf["dup"] = dups
     catdf = catdf.query("dup == False")
+
+    # Adds sequences to dataframe.
     catdf["sequence"] = [
         list(name_and_seq.loc[name_and_seq["name"] == catdf.iloc[i]["name"]]
              ["sequence"].values)[0] for i in range(len(catdf))
-    ]  # Adds sequences to output.
+    ]
+
+    # Applies index after sorting and removing duplicates.
     catdf["idx"] = [i for i in range(len(catdf))]
 
-    # Cluster RT values and rename.
+    # Clusters RT values and renames.
     name_dict = OrderedDict.fromkeys(catdf["name"].values)
     [
         rt_cluster(catdf, name_dict, key, rt_group_cutoff)
@@ -373,19 +400,24 @@ def main(names_and_seqs_path,
                 catdf.iat[line, 0] = catdf.iloc[line]["name"] + "_" + str(
                     round(mean, 5))
 
-    # Make rt-group averages weighted by total intensity.
+    # Drops duplicate charge states, keeps lower error duplicates.
+    catdf = catdf.sort_values(["name", "charge", "abs_ppm"])
+    catdf = catdf.drop_duplicates(subset=["name", "charge"])
+
+    # Makes rt-group averages weighted by total intensity.
     weighted_avgs = {}
     for name in set(catdf["name"].values):
         weighted_avgs[name] = np.average(
             catdf.loc[catdf["name"]==name]["pred_RT"].values,
             weights=catdf.loc[catdf["name"]==name]["ab_cluster_total"])
-    # Apply weighted avg to all rt-group members.
+    
+    # Applies weighted avg to all rt-group members.
     catdf["weighted_average_rt"] = [weighted_avgs[x] for x in catdf["name"].values]
 
     catdf = catdf.sort_values(["weighted_average_rt", "charge"])
     catdf.index = range(len(catdf))
 
-    # Create RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint].
+    # Creates RT_n_m names, where n is the index of the timepoint the source tic came from, and m is the filename index of the tic sourcefile in config[timepoint].
     rt_columns = []
     for i in range(len(timepoints["timepoints"])):
         base = "RT_%s" % i
@@ -395,14 +427,14 @@ def main(names_and_seqs_path,
         else:
             rt_columns.append(base + "_0")
 
-    # Apply warp from provided undeut_mzml RT to each later timepoint RT for each charged species identified.
+    # Applies warp from provided undeut_mzml RT to each later timepoint RT for each charged species identified.
     for i, stretched in enumerate(stretched_ts2_times):
         catdf[rt_columns[i]] = [
             pred_time(x, stretched, lo_time, hi_time, n_lc_timepoints)
             for x in catdf["pred_RT"]
         ]
 
-    # Determine rt-group average pred-RT-n times from above.
+    # Determines rt-group average pred-RT-n times from above.
     prev_name = None
     all_tp_mean_preds = [[] for i in range(len(rt_columns))]
     catdf = catdf.sort_values(["weighted_average_rt", "name"])
@@ -411,7 +443,7 @@ def main(names_and_seqs_path,
             # Get sub frame of rt-group.
             protein_name = catdf.iloc[i]["name"]
             subdf = catdf.loc[catdf["name"] == protein_name]
-            # Take weighted-avg of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins.
+            # Takes weighted-avg of rt-tp-predictions for all charges in rt-group, if single species group, use species pred-rts as 'mean' stand-ins.
             if len(subdf) > 1:
                 name_rt_preds = [
                     np.average(subdf.iloc[:, j].values, weights=catdf.loc[catdf["name"]==protein_name]["ab_cluster_total"])
@@ -419,7 +451,7 @@ def main(names_and_seqs_path,
                 ]
             else:
                 name_rt_preds = subdf.iloc[0, -len(rt_columns):].values
-            # Set avg rt preds for all lines in rt-group
+            # Sets avg rt preds for all lines in rt-group
             [[
                 all_tp_mean_preds[i].append(name_rt_preds[i])
                 for i in range(len(all_tp_mean_preds))
@@ -429,13 +461,13 @@ def main(names_and_seqs_path,
             prev_name = catdf.iloc[i]["name"]
         else:
             pass
-    # Set new columns to give all lines their rt-group RT_n consensus rt-positions.
+    # Sets new columns to give all lines their rt-group RT_n consensus rt-positions.
     for i in range(len(all_tp_mean_preds)):
         catdf["rt_group_mean_" + rt_columns[i]] = all_tp_mean_preds[i]
 
     ref_mzml_path = [mzml_path for mzml_path in mzml_sum_paths if timepoints[0][0] in mzml_path][0] # Default first undeuterated replicate. 
     ref_sum = float(open(ref_mzml_path, 'r').read())
-    # Initialize normalization_factors dict with reference mzml.
+    # Initializes normalization_factors dict with reference mzml.
     normalization_factors = {"mzml": ["_".join(ref_mzml_path.split("/")[-1].split("_")[:-1])], "sum": [ref_sum], "normalization_factor": [1]}
     for mzml_sum_path in mzml_sum_paths[1:]:
         my_sum = float(open(mzml_sum_path, 'r').read())
@@ -444,7 +476,7 @@ def main(names_and_seqs_path,
         normalization_factors["sum"].append(my_sum)
         normalization_factors["normalization_factor"].append(my_sum/ref_sum)
 
-    # Handle output options:
+    # Handles output options:
     if out_path is not None:
         catdf.to_json(out_path)
 
@@ -465,96 +497,117 @@ def main(names_and_seqs_path,
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(
-        description=
-        "Creates a list of library proteins observed in HDX-LC-IM-MS from imtbx .peaks.isotopes, undeuterated .mzML, and .ims.mz.tic files."
-    )
-    # inputs
-    parser.add_argument(
-        "names_and_seqs_path",
-        help="path/to/file .csv of protein library names and sequences")
-    parser.add_argument("-m",
-                        "--mzml_dir",
-                        help="path/to/dir/ containing undeuterated .mzML files")
-    parser.add_argument(
-        "-s",
-        "--undeut_match_string",
-        help="unique part of undeuterated mzML filename to be used in matching")
-    parser.add_argument("-i",
-                        "--intermediates_dir",
-                        help="path/to/dir/ containing intermediate imtbx files")
-    parser.add_argument("-t",
-                        "--tics_dir",
-                        help="path/to/dir/ containing .ims.mz.tic files")
-    parser.add_argument("-n",
-                        "--undeut_mzml",
-                        help="path/to/file, one undeuterated .mzML")
-    parser.add_argument(
-        "-j",
-        "--intermediates",
-        nargs="+",
-        help="used in snakemake, list of all imtbx intermediate file paths")
-    parser.add_argument(
-        "-u",
-        "--tics",
-        nargs="+",
-        help="used in snakemake, list of all .imx.mz.tic file paths")
-    parser.add_argument(
-        "-v",
-        "--mzml_sum_paths",
-        nargs="+",
-        help="used in snakemake, list of all mzml_sum.txt file paths")
-    parser.add_argument(
-        "-e",
-        "--timepoints",
-        required=True,
-        help=
-        "path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint"
-    )
-    parser.add_argument(
-        "-c",
-        "--rt_group_cutoff",
-        default=0.2,
-        type=float,
-        help=
-        "control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters"
-    )
-    # outputs
-    parser.add_argument("-p",
-                        "--stretched_times_plot_outpath",
-                        help="path/to/stretched_times_plot.png")
-    parser.add_argument("-o",
-                        "--out_path",
-                        help="path/to/library_info.json main output file")
-    parser.add_argument("-f",
-                        "--normalization_factors_outpath",
-                        help="path/to/normalization_factors.csv")
-    parser.add_argument("-l",
-                        "--normalization_factors_plot_outpath",
-                        help="path/to/normalization_factors_plot.png")
+    if "snakemake" in globals():
+        names_and_seqs_path = snakemake.input[0]
+        open_timepoints = yaml.load(open(snakemake.input[1], "rt"),Loader=yaml.FullLoader)
+        undeut_mzml = [fn for fn in snakemake.input if fn.endswith('.mzML.gz')][0]
+        tics = [fn for fn in snakemake.input if '.tic' in fn]
+        intermediates = [fn for fn in snakemake.input if '_intermediate.csv' in fn]
+        mzml_sum_paths = [fn for fn in snakemake.input if '_sum.txt' in fn]
+        out_path = snakemake.output[0]
+        stretched_times_plot_outpath = snakemake.output[1]
+        normalization_factors_outpath = snakemake.output[2]
+        normalization_factors_plot_outpath = snakemake.output[3]
 
-    args = parser.parse_args()
+        main(names_and_seqs_path=names_and_seqs_path,
+             out_path=out_path,
+             undeut_mzml=undeut_mzml,
+             intermediates=intermediates,
+             tics=tics,
+             mzml_sum_paths=mzml_sum_paths,
+             timepoints=open_timepoints,
+             stretched_times_plot_outpath=stretched_times_plot_outpath,
+             normalization_factors_outpath=normalization_factors_outpath,
+             normalization_factors_plot_outpath=normalization_factors_plot_outpath)
 
-    #Generate explicit filenames and open timepoints .yaml
-    if args.mzml_dir is not None and args.undeut_match_string is not None and args.undeut_mzMLs is None:
-        args.undeut_mzml = list(
-            glob.glob(args.mzml_dir + "*" + args.undeut_match_string + "*" + ".mzML"))
-    if args.intermediates_dir is not None and args.intermediates is None:
-        args.intermediates = list(
-            glob.glob(args.intermediates_dir + "*intermediate.csv"))
-    if args.tics_dir is not None and args.tics is None:
-        args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic.cpickle.zlib"))
-    open_timepoints = yaml.load(open(args.timepoints, "rt"),
-                                Loader=yaml.FullLoader)
+    else:
+        parser = argparse.ArgumentParser(
+            description=
+            "Creates a list of library proteins observed in HDX-LC-IM-MS from imtbx .peaks.isotopes, undeuterated .mzML, and .ims.mz.tic files."
+        )
+        parser.add_argument(
+            "names_and_seqs_path",
+            help="path/to/file .csv of protein library names and sequences")
+        parser.add_argument("-m",
+                            "--mzml_dir",
+                            help="path/to/dir/ containing undeuterated .mzML files")
+        parser.add_argument(
+            "-s",
+            "--undeut_match_string",
+            help="unique part of undeuterated mzML filename to be used in matching")
+        parser.add_argument("-i",
+                            "--intermediates_dir",
+                            help="path/to/dir/ containing intermediate imtbx files")
+        parser.add_argument("-t",
+                            "--tics_dir",
+                            help="path/to/dir/ containing .ims.mz.tic files")
+        parser.add_argument("-n",
+                            "--undeut_mzml",
+                            help="path/to/file, one undeuterated .mzML")
+        parser.add_argument(
+            "-j",
+            "--intermediates",
+            nargs="+",
+            help="used in snakemake, list of all imtbx intermediate file paths")
+        parser.add_argument(
+            "-u",
+            "--tics",
+            nargs="+",
+            help="used in snakemake, list of all .imx.mz.tic file paths")
+        parser.add_argument(
+            "-v",
+            "--mzml_sum_paths",
+            nargs="+",
+            help="used in snakemake, list of all mzml_sum.txt file paths")
+        parser.add_argument(
+            "-e",
+            "--timepoints",
+            required=True,
+            help=
+            "path/to/.yaml file with snakemake.config timepoints and .mzML filenames by timepoint"
+        )
+        parser.add_argument(
+            "-c",
+            "--rt_group_cutoff",
+            default=0.2,
+            type=float,
+            help=
+            "control value for creation of RT-groups, maximum rt-distance between same-mass isotope clusters"
+        )
+        parser.add_argument("-p",
+                            "--stretched_times_plot_outpath",
+                            help="path/to/stretched_times_plot.png")
+        parser.add_argument("-o",
+                            "--out_path",
+                            help="path/to/library_info.json main output file")
+        parser.add_argument("-f",
+                            "--normalization_factors_outpath",
+                            help="path/to/normalization_factors.csv")
+        parser.add_argument("-l",
+                            "--normalization_factors_plot_outpath",
+                            help="path/to/normalization_factors_plot.png")
+        args = parser.parse_args()
 
-    main(args.names_and_seqs_path,
-         out_path=args.out_path,
-         undeut_mzml=args.undeut_mzml,
-         intermediates=args.intermediates,
-         tics=args.tics,
-         mzml_sum_paths=args.mzml_sum_paths,
-         timepoints=open_timepoints,
-         rt_group_cutoff=args.rt_group_cutoff,
-         stretched_times_plot_outpath=args.stretched_times_plot_outpath,
-         normalization_factors_outpath=args.normalization_factors_outpath,
-         normalization_factors_plot_outpath=args.normalization_factors_plot_outpath)
+        # Generates explicit filenames and open timepoints .yaml.
+        if args.mzml_dir is not None and args.undeut_match_string is not None and args.undeut_mzMLs is None:
+            args.undeut_mzml = list(
+                glob.glob(args.mzml_dir + "*" + args.undeut_match_string + "*" + ".mzML"))
+        if args.intermediates_dir is not None and args.intermediates is None:
+            args.intermediates = list(
+                glob.glob(args.intermediates_dir + "*intermediate.csv"))
+        if args.tics_dir is not None and args.tics is None:
+            args.tics = list(glob.glob(args.tics_dir + "*.ims.mz.tic.cpickle.zlib"))
+        open_timepoints = yaml.load(open(args.timepoints, "rt"),
+                                    Loader=yaml.FullLoader)
+
+        main(args.names_and_seqs_path,
+             out_path=args.out_path,
+             undeut_mzml=args.undeut_mzml,
+             intermediates=args.intermediates,
+             tics=args.tics,
+             mzml_sum_paths=args.mzml_sum_paths,
+             timepoints=open_timepoints,
+             rt_group_cutoff=args.rt_group_cutoff,
+             stretched_times_plot_outpath=args.stretched_times_plot_outpath,
+             normalization_factors_outpath=args.normalization_factors_outpath,
+             normalization_factors_plot_outpath=args.normalization_factors_plot_outpath)
