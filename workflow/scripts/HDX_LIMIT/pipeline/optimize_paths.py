@@ -180,7 +180,7 @@ def main(library_info_path,
         # Transfer folder and files to monobody folder
         if not os.path.isfile('resources/ic_time_series/monobody/' + '/'.join(winner_out_path.split('/')[-2:])):
             shutil.move('/'.join(winner_out_path.split('/')[:-1]), 'resources/ic_time_series/monobody/')
-        if not os.path.isfile('resources/ic_time_series/monobody/' + '/'.join(winner_out_path.split('/')[-2:])):
+        if not os.path.isfile('results/plots/ic_time_series/winner_plots/monobody/' + '/'.join(path_plot_out_path.split('/')[-2:])):
             shutil.move(path_plot_out_path, 'results/plots/ic_time_series/winner_plots/monobody/')
 
     # Create folders and move files for multibody score terms
