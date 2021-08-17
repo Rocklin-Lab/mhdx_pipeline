@@ -319,6 +319,7 @@ class PathOptimizer:
 
     def weak_pareto_dom_filter(self):
         out = []
+        self.all_tp_clusters[0] = [self.undeut_grounds[ic] for ic in self.undeut_grounds]
         for tp in self.all_tp_clusters:
             tp_buffer = []
             for ic1 in tp:
