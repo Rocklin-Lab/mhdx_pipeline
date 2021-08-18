@@ -74,13 +74,13 @@ if config['polyfit_calibration']:
         """
         input:
             # The .peaks.isotopes files must be made in windows, but only for undeuterated MS runs.
-            "resources/isotopes/{undeut_fn}.peaks.isotopes",
+            "resources/0_isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
         output:
-            "resources/imtbx/{undeut_fn}_intermediate.csv",
+            "resources/1_imtbx/{undeut_fn}_intermediate.csv",
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
-            "results/imtbx/{undeut_fn}_mz_calib_dict.pk"
+            "results/1_imtbx/{undeut_fn}_mz_calib_dict.pk"
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
@@ -157,7 +157,7 @@ rule make_library_master_list_4:
         "resources/4_library_info/normalization_factors.csv",
         "results/plots/normalization_factors_plot.png"
     conda: 
-        "envs/full_hdx_env.yml"
+        "../envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/4_make_library_master_list.benchmark.txt"
     script:

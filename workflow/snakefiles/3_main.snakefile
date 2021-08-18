@@ -147,7 +147,7 @@ rule mv_passing_tensors_8:
             )
         )
     conda:
-        "envs/full_hdx_env.yml"
+        "../envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/8_mv_passing_tensors.benchmark.txt"
     script:
@@ -174,7 +174,7 @@ if config['polyfit_calibration']:
                 charge=zippable_charges
             )
         conda:
-            "envs/full_hdx_env.yml"
+            "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
         
@@ -197,7 +197,7 @@ else:
                 charge=zippable_charges
             )
         conda:
-            "envs/full_hdx_env.yml"
+            "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
@@ -218,7 +218,7 @@ rule generate_tensor_ics_10:
         "results/plots/factors/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.factor.pdf",
         "results/plots/ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.ics.pdf"
     conda:
-        "envs/full_hdx_env.yml"
+        "../envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/10_generate_tensor_ics.{name}/{name}_charge{charge}_{mzml}.benchmark.txt"
     shell:
@@ -243,7 +243,7 @@ rule optimize_paths_11:
     benchmark:
         "results/benchmarks/11_optimize_paths.{name}.benchmark.txt"
     conda:
-        "envs/full_hdx_env.yml"
+        "../envs/full_hdx_env.yml"
     script:
         "scripts/10_optimize_paths.py"
 

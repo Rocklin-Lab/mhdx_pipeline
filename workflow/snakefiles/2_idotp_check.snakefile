@@ -113,7 +113,7 @@ if config['polyfit_calibration']:
                 charge=zippable_charges
             )
         conda: 
-            "envs/full_hdx_env.yml"
+            "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
 
@@ -136,7 +136,7 @@ else:
                 charge=zippable_charges
             )
         conda: 
-            "envs/full_hdx_env.yml"
+            "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
@@ -157,7 +157,7 @@ rule idotp_check_6:
         expand("resources/6_idotp_check/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
         expand("results/plots/factors/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
     conda: 
-        "envs/full_hdx_env.yml"
+        "../envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/6_idotp_check.{name}_charge{charge}.benchmark.txt"
     script:
@@ -182,7 +182,7 @@ rule idotp_filter_7:
         "resources/7_idotp_filter/checked_library_info.json",
         "results/plots/idotp_distribution.png"
     conda: 
-        "envs/full_hdx_env.yml"
+        "../envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/7_idotp_filter.benchmark.txt"
     script:

@@ -22,7 +22,7 @@
 "run_name": "2021_lib15_ph6"
 
 #Path to .csv file where each row is a library protein name followed by its sequence
-"names_and_seqs": "resources/library_info/lib_info.csv"
+"names_and_seqs": "resources/0_names_seqs_masses/lib_info.csv"
 
 ########################################
 ###############TIMEPOINTS###############
