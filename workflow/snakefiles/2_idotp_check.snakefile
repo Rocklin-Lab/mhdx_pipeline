@@ -118,7 +118,7 @@ if config['polyfit_calibration']:
             "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
 
         script:
-            "scripts/HDX_LIMIT/pipeline/5_extract_timepoint_tensors.py"
+            "scripts/5_extract_timepoint_tensors.py"
 else:
     rule 5_extract_tensors:
         """
@@ -140,7 +140,7 @@ else:
         benchmark:
             "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
-            "scripts/HDX_LIMIT/pipeline/5_extract_timepoint_tensors.py"
+            "scripts/5_extract_timepoint_tensors.py"
 
 
 rule 6_idotp_check:
@@ -161,7 +161,7 @@ rule 6_idotp_check:
     benchmark:
         "results/benchmarks/6_idotp_check.{name}_charge{charge}.benchmark.txt"
     script:
-        "scripts/HDX_LIMIT/pipeline/6_idotp_check.py"
+        "scripts/6_idotp_check.py"
 
 
 rule 7_idotp_filter:
@@ -186,5 +186,5 @@ rule 7_idotp_filter:
     benchmark:
         "results/benchmarks/7_idotp_filter.benchmark.txt"
     script:
-        "scripts/HDX_LIMIT/pipeline/7_idotp_filter.py"
+        "scripts/7_idotp_filter.py"
 

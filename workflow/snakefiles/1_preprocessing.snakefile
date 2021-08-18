@@ -84,7 +84,7 @@ if config['polyfit_calibration']:
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
-            "python workflow/scripts/HDX_LIMIT/preprocessing/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
+            "python workflow/scripts/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
 else: 
     rule 1_read_imtbx:
         """
@@ -103,7 +103,7 @@ else:
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
-            "python workflow/scripts/HDX_LIMIT/preprocessing/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]}"
+            "python workflow/scripts/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]}"
 
 
 rule 2_gzip_mzmls:
@@ -117,7 +117,7 @@ rule 2_gzip_mzmls:
     benchmark:
         "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}"
+        "python workflow/scripts/2_gzip_mzml.py {input} --delete_source --out_path {output}"
 
 
 rule 3_make_ims_mz_tics:
@@ -133,7 +133,7 @@ rule 3_make_ims_mz_tics:
     benchmark:
         "results/benchmarks/3_make_ims_mz_tics.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/preprocessing/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
+        "python workflow/scripts/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
 
 
 rule 4_make_library_master_list:
@@ -161,4 +161,4 @@ rule 4_make_library_master_list:
     benchmark:
         "results/benchmarks/4_make_library_master_list.benchmark.txt"
     script:
-        "scripts/HDX_LIMIT/preprocessing/4_make_library_master_list.py"
+        "scripts/4_make_library_master_list.py"
