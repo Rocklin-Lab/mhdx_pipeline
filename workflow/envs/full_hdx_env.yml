@@ -1,11 +1,9 @@
-name: hdx_limit_2
+name: hdx_limit_full
 channels:
   - bioconda
   - conda-forge
   - defaults
 dependencies:
-- snakemake=5.26.1=0
-- snakemake-minimal=5.26.1=py_0
 - bokeh=2.3.2=py37h06a4308_0
 - matplotlib=3.3.4=py37h06a4308_0
 - matplotlib-base=3.3.4=py37h62a2d02_0
