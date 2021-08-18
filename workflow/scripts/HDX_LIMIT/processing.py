@@ -450,6 +450,7 @@ class PathOptimizer:
             out_name (type): Description of any returned objects.
 
         """
+        self.all_tp_clusters[0] = [self.undeut_grounds[charge] for charge in self.undeut_grounds]
         out = []
         for tp in self.all_tp_clusters:
             tp_buffer = []
