@@ -22,7 +22,7 @@ notebooks/*
 !.editorconfig
 !.travis.yml
 !.test
-!LICENSE
+!LICENSE.md
 !README.md
 !StyleGuide.txt
 **/__pycache__/
