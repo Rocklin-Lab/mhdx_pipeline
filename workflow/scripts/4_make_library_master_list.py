@@ -49,8 +49,6 @@ from collections import OrderedDict
 from scipy.signal import find_peaks
 from matplotlib import pyplot as plt
 from scipy.spatial.distance import euclidean
-
-sys.path.append(os.getcwd() + "/workflow/scripts/")
 from HDX_LIMIT.core.io import limit_read
 
 matplotlib.use("Agg")

@@ -40,9 +40,6 @@ import shutil
 import argparse
 import numpy as np
 import pandas as pd
-
-# TODO: This will be replaced by an installable hdx_limit.
-sys.path.append(os.getcwd() + "/workflow/scripts/")
 from HDX_LIMIT.core.io import limit_read, limit_write
 from HDX_LIMIT.core.processing import PathOptimizer
 from HDX_LIMIT.core.gjr_plot import plot_gjr_

@@ -42,9 +42,6 @@ import collections
 import numpy as np
 import pandas as pd
 import _pickle as cpickle
-
-# TODO: Remove when hdx_limit can be installed with pip.
-sys.path.append("./workflow/scripts")
 from HDX_LIMIT.core.io import limit_write
 
 def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
