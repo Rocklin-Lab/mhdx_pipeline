@@ -19,10 +19,10 @@
 
 
 #Name for pipeline run:
-"run_name": "180604_Mix2_MES_nonlin_05_21_2020"
+"run_name": "2021_lib15_ph6"
 
 #Path to .csv file where each row is a library protein name followed by its sequence
-"names_and_seqs": "resources/library_info/new_HX_order.csv"
+"names_and_seqs": "resources/library_info/lib_info.csv"
 
 ########################################
 ###############TIMEPOINTS###############
@@ -45,26 +45,26 @@
 #in seconds, in ascending order, including 0
 timepoints:
   - 0
-  - 10
-  - 16
-  - 26
-  - 40
-  - 65
-  - 105
-  - 160
-  - 270
-  - 430
-  - 690
-  - 1050
-  - 1680
-  - 2640
-  - 4200
-  - 6600
-  - 11400
-  - 18900
-  - 33600
-  - 62220
-  - 100800
+  - 15
+  - 23
+  - 37
+  - 59
+  - 93
+  - 147
+  - 233
+  - 368
+  - 582
+  - 920
+  - 1454
+  - 2297
+  - 3630
+  - 5736
+  - 9063
+  - 14320
+  - 22625
+  - 35748
+  - 56483
+  - 89243
 
 
 
@@ -94,49 +94,68 @@ timepoints:
 
 
 0: 
-  - "180604_Mix2_MES_nonlin_UN.mzML"
-  - "180604_Mix2_MES_nonlin_UN2.mzML"
-  - "180604_Mix2_MES_nonlin_UN3.mzML"
-10:
-  - "180604_Mix2_MES_nonlin_10s.mzML"
-16:
-  - "180604_Mix2_MES_nonlin_16s.mzML"
-26:
-  - "180604_Mix2_MES_nonlin_26s.mzML"
-40:
-  - "180604_Mix2_MES_nonlin_40s.mzML"
-65:
-  - "180604_Mix2_MES_nonlin_65s.mzML"
-105:
-  - "180604_Mix2_MES_nonlin_105s.mzML"
-160:
-  - "180604_Mix2_MES_nonlin_160s.mzML"
-270:
-  - "180604_Mix2_MES_nonlin_4m30.mzML"
-430:
-  - "180604_Mix2_MES_nonlin_7m10.mzML"
-690:
-  - "180604_Mix2_MES_nonlin_11m30s.mzML"
-1050:
-  - "180604_Mix2_MES_nonlin_17m30s.mzML"
-1680:
-  - "180604_Mix2_MES_nonlin_28m.mzML"
-2640:
-  - "180604_Mix2_MES_nonlin_44m.mzML"
-4200:
-  - "180604_Mix2_MES_nonlin_70m.mzML"
-6600:
-  - "180604_Mix2_MES_nonlin_1hr50.mzML"
-11400:
-  - "180604_Mix2_MES_nonlin_3hr10.mzML"
-18900:
-  - "180604_Mix2_MES_nonlin_5hr15.mzML"
-33600:
-  - "180604_Mix2_MES_nonlin_9hr20.mzML"
-62220:
-  - "180604_Mix2_MES_nonlin_17hr45.mzML"
-100800:
-  - "180604_Mix2_MES_nonlin_28hr.mzML"
+  - "20210323_lib15_ph6_0sec_01.mzML"
+  - "20210323_lib15_ph6_0sec_02.mzML"
+15:
+  - "20210323_lib15_ph6_15sec_01.mzML"
+  - "20210323_lib15_ph6_15sec_02.mzML"
+23:
+  - "20210323_lib15_ph6_23sec_01.mzML"
+  - "20210323_lib15_ph6_23sec_02.mzML"
+37:
+  - "20210323_lib15_ph6_37sec_01.mzML"
+  - "20210323_lib15_ph6_37sec_02.mzML"
+59:
+  - "20210323_lib15_ph6_59sec_01.mzML"
+  - "20210323_lib15_ph6_59sec_02.mzML"
+93:
+  - "20210323_lib15_ph6_93sec_01.mzML"
+  - "20210323_lib15_ph6_93sec_02.mzML"
+147:
+  - "20210323_lib15_ph6_147sec_01.mzML"
+  - "20210323_lib15_ph6_147sec_02.mzML"
+233:
+  - "20210323_lib15_ph6_233sec_01.mzML"
+  - "20210323_lib15_ph6_233sec_02.mzML"
+368:
+  - "20210323_lib15_ph6_368sec_01.mzML"
+  - "20210323_lib15_ph6_368sec_02.mzML"
+582:
+  - "20210323_lib15_ph6_582sec_01.mzML"
+  - "20210323_lib15_ph6_582sec_02.mzML"
+920:
+  - "20210323_lib15_ph6_920sec_01.mzML"
+  - "20210323_lib15_ph6_920sec_02.mzML"
+1454:
+  - "20210323_lib15_ph6_1454sec_01.mzML"
+  - "20210323_lib15_ph6_1454sec_02.mzML"
+2297:
+  - "20210323_lib15_ph6_2297sec_01.mzML"
+  - "20210323_lib15_ph6_2297sec_02.mzML"
+3630:
+  - "20210323_lib15_ph6_3630sec_01.mzML"
+  - "20210323_lib15_ph6_3630sec_02.mzML"
+5736:
+  - "20210323_lib15_ph6_5736sec_01.mzML"
+  - "20210323_lib15_ph6_5736sec_02.mzML"
+9063:
+  - "20210323_lib15_ph6_9063sec_01.mzML"
+  - "20210323_lib15_ph6_9063sec_02.mzML"
+14320:
+  - "20210323_lib15_ph6_14320sec_01.mzML"
+  - "20210323_lib15_ph6_14320sec_02.mzML"
+22625:
+  - "20210323_lib15_ph6_22625sec_01.mzML"
+  - "20210323_lib15_ph6_22625sec_02.mzML"
+35748:
+  - "20210323_lib15_ph6_35748sec_01.mzML"
+  - "20210323_lib15_ph6_35748sec_02.mzML"
+56483:
+  - "20210323_lib15_ph6_56483sec_01.mzML"
+  - "20210323_lib15_ph6_56483sec_02.mzML"
+89243:
+  - "20210323_lib15_ph6_89243sec_01.mzML"
+  - "20210323_lib15_ph6_89243sec_02.mzML"
 
 
 
@@ -218,7 +237,7 @@ timepoints:
 "n_runners": 5
 
 #mz calibration polyfit parameters
-"polyfit_calibration": False
+"polyfit_calibration": True
 "polyfit_deg": 2
 "ppm_tolerance": 50
 "intensity_tolerance": 10000

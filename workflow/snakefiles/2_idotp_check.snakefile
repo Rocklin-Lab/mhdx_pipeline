@@ -94,7 +94,7 @@ rule all:
 
 
 if config['polyfit_calibration']:
-    rule 5_extract_tensors:
+    rule extract_tensors_5:
         """
         Extract all identified tensors from each .mzML.gz. 
         """
@@ -120,7 +120,7 @@ if config['polyfit_calibration']:
         script:
             "scripts/5_extract_timepoint_tensors.py"
 else:
-    rule 5_extract_tensors:
+    rule extract_tensors_5:
         """
         Extract all identified tensors from each .mzML.gz. 
         """
@@ -143,7 +143,7 @@ else:
             "scripts/5_extract_timepoint_tensors.py"
 
 
-rule 6_idotp_check:
+rule idotp_check_6:
     """
     Test processed signal from each extracted tensor from undeuterated timepoints against the theoretical signal. 
     """
@@ -164,7 +164,7 @@ rule 6_idotp_check:
         "scripts/6_idotp_check.py"
 
 
-rule 7_idotp_filter:
+rule idotp_filter_7:
     """
     Read results of idotp_check for all undeuterated tensors and apply a high-pass filter. 
     Produces a list of passing indices and and edited version of library_info. 

@@ -122,7 +122,7 @@ def optimize_paths_inputs(name, library_info):
     return name_inputs
 
 
-rule 8_mv_passing_tensors:
+rule mv_passing_tensors_8:
     """
     Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
     """
@@ -158,7 +158,7 @@ if config['polyfit_calibration']:
     """
     Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
     """
-    rule 9_extract_tensors:
+    rule extract_tensors_9:
         input:
             library_info_fn,
             "resources/2_mzml_gz/{mzml}.gz",
@@ -184,7 +184,7 @@ else:
     """
     Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
     """
-    rule 9_extract_tensors:
+    rule extract_tensors_9:
         input:
             library_info_fn,
             "resources/2_mzml_gz/{mzml}.gz",
@@ -204,7 +204,7 @@ else:
             "scripts/5_extract_timepoint_tensors.py"
 
 
-rule 10_generate_tensor_ics:
+rule generate_tensor_ics_10:
     """
     Deconvolutes tensor signal and outputs candidate IsotopeClusters for path optimization.
     """
@@ -225,7 +225,7 @@ rule 10_generate_tensor_ics:
         "python workflow/scripts/9_generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
 
 
-rule 11_optimize_paths:
+rule optimize_paths_11:
     """
     Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
     """

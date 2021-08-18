@@ -66,7 +66,7 @@ rule all:
 
 
 if config['polyfit_calibration']:
-    rule 1_read_imtbx:
+    rule read_imtbx_1:
         """
         Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
         Determines associations between identified peaks and expected masses of library proteins. 
@@ -86,7 +86,7 @@ if config['polyfit_calibration']:
         shell:
             "python workflow/scripts/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
 else: 
-    rule 1_read_imtbx:
+    rule read_imtbx_1:
         """
         Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
         Determines associations between identified peaks and expected masses of library proteins. 
@@ -106,7 +106,7 @@ else:
             "python workflow/scripts/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]}"
 
 
-rule 2_gzip_mzmls:
+rule gzip_mzmls_2:
     """
     Uses the pymzml module to make all .mzML files into randomly accessible .mzML.gz file, removes .mzMLs after conversion to save space.
     """
@@ -120,7 +120,7 @@ rule 2_gzip_mzmls:
         "python workflow/scripts/2_gzip_mzml.py {input} --delete_source --out_path {output}"
 
 
-rule 3_make_ims_mz_tics:
+rule make_ims_mz_tics_3:
     """
     Calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
     """
@@ -136,7 +136,7 @@ rule 3_make_ims_mz_tics:
         "python workflow/scripts/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
 
 
-rule 4_make_library_master_list:
+rule make_library_master_list_4:
     """
     Reads all candidate peaks from imtbx_reader output, 
     combines redundant references, clusters by retention-time,
