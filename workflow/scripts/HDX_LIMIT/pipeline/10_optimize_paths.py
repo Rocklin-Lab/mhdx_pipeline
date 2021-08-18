@@ -43,9 +43,9 @@ import pandas as pd
 
 # TODO: This will be replaced by an installable hdx_limit.
 sys.path.append(os.getcwd() + "/workflow/scripts/")
-from HDX_LIMIT.io import limit_read, limit_write
-from HDX_LIMIT.processing import PathOptimizer
-from HDX_LIMIT.gjr_plot import plot_gjr_
+from HDX_LIMIT.core.io import limit_read, limit_write
+from HDX_LIMIT.core.processing import PathOptimizer
+from HDX_LIMIT.core.gjr_plot import plot_gjr_
 
 
 def optimize_paths_inputs(library_info_path, input_directory_path,
@@ -198,16 +198,17 @@ def main(library_info_path,
         old_data_dir=old_data_dir,
     )
 
+    # TODO: ALL IN/OUTPUTS SHOULD BE HANDLED BY SNAKEMAKE OR ARGPARSE. NO HARDCODED PATHS.
     if out_monobody_path:
-        # Create folders for monobody score function.
+        # Creates folders for monobody score function.
         if not os.path.isdir('/'.join(winner_out_path.split('/')[:-1])):
             os.mkdir('/'.join(winner_out_path.split('/')[:-1]))
-        if not os.path.isdir('resources/ic_time_series/monobody'):
-            os.mkdir('resources/ic_time_series/monobody')
+        if not os.path.isdir('resources/10_ic_time_series/monobody'):
+            os.mkdir('resources/10_ic_time_series/monobody')
         if not os.path.isdir('results/plots/ic_time_series/winner_plots/monobody'):
             os.mkdir('results/plots/ic_time_series/winner_plots/monobody')
 
-        # Generate best paths for monobody score function.
+        # Generates best paths for monobody score function.
         p1.optimize_paths_mono()
 
         if winner_out_path is not None:
@@ -228,17 +229,17 @@ def main(library_info_path,
                       output_path=path_plot_out_path,
                       prefix=name)
 
-        # Transfer folder and files to monobody folder.
-        if not os.path.isfile('resources/ic_time_series/monobody/' + '/'.join(winner_out_path.split('/')[-2:])):
-            shutil.move('/'.join(winner_out_path.split('/')[:-1]), 'resources/ic_time_series/monobody/')
+        # Transfers folders and files to monobody folder.
+        if not os.path.isfile('resources/10_ic_time_series/monobody/' + '/'.join(winner_out_path.split('/')[-2:])):
+            shutil.move('/'.join(winner_out_path.split('/')[:-1]), 'resources/10_ic_time_series/monobody/')
         if not os.path.isfile('results/plots/ic_time_series/winner_plots/monobody/' + '/'.join(path_plot_out_path.split('/')[-2:])):
             shutil.move(path_plot_out_path, 'results/plots/ic_time_series/winner_plots/monobody/')
 
-    # Create folders and move files for multibody score terms.
+    # Creates folders for multibody score terms.
     if not os.path.isdir('/'.join(winner_out_path.split('/')[:-1])):
         os.mkdir('/'.join(winner_out_path.split('/')[:-1]))
-    if not os.path.isdir('resources/ic_time_series/multibody'):
-        os.mkdir('resources/ic_time_series/multibody/')
+    if not os.path.isdir('resources/10_ic_time_series/multibody'):
+        os.mkdir('resources/10_ic_time_series/multibody/')
     if not os.path.isdir('results/plots/ic_time_series/winner_plots/multibody'):
         os.mkdir('results/plots/ic_time_series/winner_plots/multibody')
 
@@ -264,16 +265,17 @@ def main(library_info_path,
                   output_path=path_plot_out_path,
                   prefix=name)
     
-    # Transfer folder and files to multibody folder.
-    if not os.path.isfile('resources/ic_time_series/multibody/' + '/'.join(winner_out_path.split('/')[-2:])):
-        shutil.move('/'.join(winner_out_path.split('/')[:-1]), 'resources/ic_time_series/multibody/')
-    if not os.path.isfile('resources/ic_time_series/multibody/' + '/'.join(winner_out_path.split('/')[-2:])):
+    # Transfers folders and files to multibody folder.
+    if not os.path.isfile('resources/10_ic_time_series/multibody/' + '/'.join(winner_out_path.split('/')[-2:])):
+        shutil.move('/'.join(winner_out_path.split('/')[:-1]), 'resources/10_ic_time_series/multibody/')
+    if not os.path.isfile('resources/10_ic_time_series/multibody/' + '/'.join(winner_out_path.split('/')[-2:])):
         shutil.move(path_plot_out_path, 'results/plots/ic_time_series/winner_plots/multibody/')
 
     if return_flag:
         out_dict["PathOptimizer"] = p1
         return out_dict
 
+    # TODO: ALL OUTPUTS FROM A RULE SHOULD GO TO ONE RESOURCES FOLDER.
     # Save all ics with all computed attributes to one file.
     if not os.path.isdir('resources/ics'):
         os.mkdir('resources/ics')

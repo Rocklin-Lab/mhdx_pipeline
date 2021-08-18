@@ -56,7 +56,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 # TODO: This is bad andd should be done away with by installing hdx_limit with a setup.py.
 sys.path.append("./workflow/scripts/")
-from HDX_LIMIT.processing import TensorGenerator, generate_tensor_factors
+from HDX_LIMIT.core.processing import TensorGenerator, generate_tensor_factors
 
 def cum_peak_gaps_from_sequence(sequence):
     """Determine expected cumulative mass distances between isotopes of a given protein sequence. 

@@ -47,7 +47,7 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read post idotp_check library_info. 
-library_info_fn = "resources/idotp_filter/checked_library_info.json"
+library_info_fn = "resources/4_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
 names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
@@ -72,7 +72,7 @@ rule all:
     Defines final outputs desired by pipeline run.
     """
     input:
-        expand("resources/ic_time_series/{name}/{name}_winner.cpickle.zlib", name=names)
+        expand("resources/10_ic_time_series/{name}/{name}_winner.cpickle.zlib", name=names)
 
 
 def optimize_paths_inputs(name, library_info): 
@@ -122,14 +122,14 @@ def optimize_paths_inputs(name, library_info):
     return name_inputs
 
 
-rule mv_passing_tensors:
+rule 8_mv_passing_tensors:
     """
     Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
     """
     input:
         sorted(
             expand(
-                "resources/tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
+                "resources/5_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
                 zip,
                 name=mv_passing_tensors_zippable_names,
                 charge=mv_passing_tensors_zippable_charges,
@@ -139,7 +139,7 @@ rule mv_passing_tensors:
     output:
         sorted(
             expand(
-                "resources/passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
                 zip,
                 name=zippable_names,
                 charge=zippable_charges,
@@ -149,26 +149,26 @@ rule mv_passing_tensors:
     conda:
         "envs/full_hdx_env.yml"
     benchmark:
-        "results/benchmarks/mv_passing_tensors.benchmark.txt"
+        "results/benchmarks/8_mv_passing_tensors.benchmark.txt"
     script:
-        "scripts/HDX_LIMIT/pipeline/mv_passing_tensors.py"
+        "scripts/HDX_LIMIT/pipeline/8_mv_passing_tensors.py"
 
 
 if config['polyfit_calibration']:
     """
     Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
     """
-    rule extract_tensors:
+    rule 9_extract_tensors:
         input:
             library_info_fn,
-            "resources/mzml/{mzml}.gz",
+            "resources/2_mzml_gz/{mzml}.gz",
             "config/config.yaml",
             expand(
-                "results/imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
+                "results/1_imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
             )
         output:
             expand(
-                "resources/passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
@@ -176,22 +176,22 @@ if config['polyfit_calibration']:
         conda:
             "envs/full_hdx_env.yml"
         benchmark:
-            "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+            "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
         
         script:
-            "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
+            "scripts/HDX_LIMIT/pipeline/5_extract_timepoint_tensors.py"
 else:
     """
     Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
     """
-    rule extract_tensors:
+    rule 9_extract_tensors:
         input:
             library_info_fn,
-            "resources/mzml/{mzml}.gz",
+            "resources/2_mzml_gz/{mzml}.gz",
             "config/config.yaml"
         output:
             expand(
-                "resources/passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
@@ -199,33 +199,33 @@ else:
         conda:
             "envs/full_hdx_env.yml"
         benchmark:
-            "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+            "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
-            "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
+            "scripts/HDX_LIMIT/pipeline/5_extract_timepoint_tensors.py"
 
 
-rule generate_tensor_ics:
+rule 10_generate_tensor_ics:
     """
     Deconvolutes tensor signal and outputs candidate IsotopeClusters for path optimization.
     """
     input:
         library_info_fn,
-        "resources/passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
+        "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
         "config/config.yaml",
-        "resources/library_info/normalization_factors.csv"
+        "resources/4_library_info/normalization_factors.csv"
     output:
-        "resources/subtensor_ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib",
+        "resources/9_subtensor_ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib",
         "results/plots/factors/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.factor.pdf",
         "results/plots/ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.ics.pdf"
     conda:
         "envs/full_hdx_env.yml"
     benchmark:
-        "results/benchmarks/generate_subtensor_ics.{name}/{name}_charge{charge}_{mzml}.benchmark.txt"
+        "results/benchmarks/10_generate_tensor_ics.{name}/{name}_charge{charge}_{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/pipeline/generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
+        "python workflow/scripts/HDX_LIMIT/pipeline/9_generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
 
 
-rule optimize_paths:
+rule 11_optimize_paths:
     """
     Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
     """
@@ -234,18 +234,18 @@ rule optimize_paths:
         "config/config.yaml",
         lambda wildcards: optimize_paths_inputs(wildcards.name, library_info) 
     output:
-        "resources/ic_time_series/{name}/{name}_winner.cpickle.zlib",
-        "resources/ic_time_series/{name}/{name}_runners.cpickle.zlib",
-        "resources/ic_time_series/{name}/{name}_undeut_grounds.cpickle.zlib",
-        "resources/ic_time_series/{name}/{name}_winner_scores.cpickle.zlib",
-        "resources/ic_time_series/{name}/{name}_rtdt_com_cvs.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/{name}_winner.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/{name}_runners.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/{name}_undeut_grounds.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/{name}_winner_scores.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/{name}_rtdt_com_cvs.cpickle.zlib",
         "results/plots/ic_time_series/winner_plots/{name}_winner_path.pdf"
     benchmark:
-        "results/benchmarks/optimize_paths.{name}.benchmark.txt"
+        "results/benchmarks/11_optimize_paths.{name}.benchmark.txt"
     conda:
         "envs/full_hdx_env.yml"
     script:
-        "scripts/HDX_LIMIT/pipeline/optimize_paths.py"
+        "scripts/HDX_LIMIT/pipeline/10_optimize_paths.py"
 
 """
 #REVIEW FUNCTIONALITY

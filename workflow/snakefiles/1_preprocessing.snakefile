@@ -62,11 +62,11 @@ rule all:
     Defines final outputs desired by pipeline run.
     """
     input:
-        "resources/library_info/library_info.json"
+        "resources/4_library_info/library_info.json"
 
 
 if config['polyfit_calibration']:
-    rule read_imtbx:
+    rule 1_read_imtbx:
         """
         Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
         Determines associations between identified peaks and expected masses of library proteins. 
@@ -82,11 +82,11 @@ if config['polyfit_calibration']:
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
             "results/imtbx/{undeut_fn}_mz_calib_dict.pk"
         benchmark:
-            "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
+            "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
-            "python workflow/scripts/HDX_LIMIT/preprocessing/imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
+            "python workflow/scripts/HDX_LIMIT/preprocessing/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
 else: 
-    rule read_imtbx:
+    rule 1_read_imtbx:
         """
         Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
         Determines associations between identified peaks and expected masses of library proteins. 
@@ -94,49 +94,49 @@ else:
         """
         input:
             # The .peaks.isotopes files must be made in windows, but only for undeuterated MS runs.
-            "resources/isotopes/{undeut_fn}.peaks.isotopes",
+            "resources/0_isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
         output:
-            "resources/imtbx/{undeut_fn}_intermediate.csv",
+            "resources/1_imtbx/{undeut_fn}_intermediate.csv",
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
         benchmark:
-            "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
+            "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         shell:
-            "python workflow/scripts/HDX_LIMIT/preprocessing/imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]}"
+            "python workflow/scripts/HDX_LIMIT/preprocessing/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]}"
 
 
-rule gzip_mzmls:
+rule 2_gzip_mzmls:
     """
     Uses the pymzml module to make all .mzML files into randomly accessible .mzML.gz file, removes .mzMLs after conversion to save space.
     """
     input:
-        "resources/mzml/{mzml}",
+        "resources/0_mzml/{mzml}",
     output:
-        "resources/mzml/{mzml}.gz",
+        "resources/2_mzml_gz/{mzml}.gz",
     benchmark:
-        "results/benchmarks/gzip_mzml.{mzml}.benchmark.txt"
+        "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/preprocessing/gzip_mzml.py {input} --delete_source --out_path {output}"
+        "python workflow/scripts/HDX_LIMIT/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}"
 
 
-rule make_ims_mz_tics:
+rule 3_make_ims_mz_tics:
     """
     Calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
     """
     input:
-        "resources/mzml/{mzml}",
+        "resources/0_mzml/{mzml}", #THIS WILL CHANGE TO 2_mzml_gz/
     output:
-        "resources/tics/{mzml}.ims.mz.tic.cpickle.zlib",
-        "resources/tics/{mzml}_sum.txt"
+        "resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib",
+        "resources/3_tics/{mzml}_sum.txt"
     priority: 1
     benchmark:
-        "results/benchmarks/make_ims_mz_tics.{mzml}.benchmark.txt"
+        "results/benchmarks/3_make_ims_mz_tics.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/HDX_LIMIT/preprocessing/make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
+        "python workflow/scripts/HDX_LIMIT/preprocessing/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
 
 
-rule make_library_master_list:
+rule 4_make_library_master_list:
     """
     Reads all candidate peaks from imtbx_reader output, 
     combines redundant references, clusters by retention-time,
@@ -145,20 +145,20 @@ rule make_library_master_list:
     input:
         config["names_and_seqs"],
         "config/config.yaml",
-        expand("resources/mzml/{mzml}.gz", mzml=all_timepoint_files[0]), # Pick a single mzML.gz
+        expand("resources/2_mzml_gz/{mzml}.gz", mzml=all_timepoint_files[0]), # Pick a single mzML.gz
         expand(
-            "resources/imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
+            "resources/1_imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
         ),
-        expand("resources/tics/{mzml}.ims.mz.tic.cpickle.zlib", mzml=all_timepoint_files),
-        expand("resources/tics/{mzml}_sum.txt", mzml=all_timepoint_files)
+        expand("resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib", mzml=all_timepoint_files),
+        expand("resources/3_tics/{mzml}_sum.txt", mzml=all_timepoint_files)
     output:
-        "resources/library_info/library_info.json",
+        "resources/4_library_info/library_info.json",
         "results/plots/preprocessing/stretched_times_plots.png",
-        "resources/library_info/normalization_factors.csv",
+        "resources/4_library_info/normalization_factors.csv",
         "results/plots/normalization_factors_plot.png"
     conda: 
-        "envs/hdx_test_1.yml"
+        "envs/full_hdx_env.yml"
     benchmark:
-        "results/benchmarks/make_library_master_list.benchmark.txt"
+        "results/benchmarks/4_make_library_master_list.benchmark.txt"
     script:
-        "scripts/HDX_LIMIT/preprocessing/make_library_master_list.py"
+        "scripts/HDX_LIMIT/preprocessing/4_make_library_master_list.py"

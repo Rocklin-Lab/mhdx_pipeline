@@ -43,8 +43,8 @@ import matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_pdf import PdfPages
 
 sys.path.append(os.getcwd() + "/workflow/scripts/")
-from HDX_LIMIT.processing import TensorGenerator, generate_tensor_factors
-from HDX_LIMIT.io import limit_write
+from HDX_LIMIT.core.processing import TensorGenerator, generate_tensor_factors
+from HDX_LIMIT.core.io import limit_write
 
 
 

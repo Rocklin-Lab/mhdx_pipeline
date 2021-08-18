@@ -755,7 +755,7 @@ if __name__ == "__main__":
     # Set expected command line arguments.
     parser = argparse.ArgumentParser(
         description=
-        "Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by make_library_master_list.py"
+        "Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by 4_make_library_master_list.py"
     )
     parser.add_argument(
         "isotopes_path",

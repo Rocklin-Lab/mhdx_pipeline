@@ -45,7 +45,7 @@ import _pickle as cpickle
 
 # TODO: Remove when hdx_limit can be installed with pip.
 sys.path.append("./workflow/scripts")
-from HDX_LIMIT.io import limit_write
+from HDX_LIMIT.core.io import limit_write
 
 def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
     """Generate LC Chromatogram by summing ionic current over IMS and m/Z dimensions.

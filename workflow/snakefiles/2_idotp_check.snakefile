@@ -44,7 +44,7 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
-library_info_fn = "resources/library_info/library_info.json"
+library_info_fn = "resources/4_library_info/library_info.json"
 library_info = pd.read_json(library_info_fn)
 names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
 
@@ -74,12 +74,12 @@ def idotp_check_inputs(rt_group_name, charge):
     if len(config[0]) > 1:
         for undeut_fn in config[0]:
             inputs.append(
-                "resources/tensors/" + rt_group_name + "/" + rt_group_name + "_" + str(charge) + "_" + undeut_fn + ".gz.cpickle.zlib"
+                "resources/5_tensors/" + rt_group_name + "/" + rt_group_name + "_" + "charge" + str(charge) + "_" + undeut_fn + ".gz.cpickle.zlib"
             )
     else: # Handle 0th timepoint with no replicates.
         undeut_fn = config[0][0]
         inputs.append(
-            "resources/tensors/" + rt_group_name + "/" + rt_group_name + "_" + str(charge) + "_" + undeut_fn + ".gz.cpickle.zlib"
+            "resources/5_tensors/" + rt_group_name + "/" + rt_group_name + "_" + "charge" + str(charge) + "_" + undeut_fn + ".gz.cpickle.zlib"
         )
     return inputs
     
@@ -89,25 +89,25 @@ rule all:
     Defines final outputs desired by pipeline run.
     """
     input:
-        "resources/idotp_filter/filter_passing_indices.csv",
-        "resources/idotp_filter/checked_library_info.json"
+        "resources/7_idotp_filter/filter_passing_indices.csv",
+        "resources/7_idotp_filter/checked_library_info.json"
 
 
 if config['polyfit_calibration']:
-    rule extract_tensors:
+    rule 5_extract_tensors:
         """
         Extract all identified tensors from each .mzML.gz. 
         """
         input:
             library_info_fn,
-            "resources/mzml/{mzml}.gz",
+            "resources/2_mzml_gz/{mzml}.gz",
             "config/config.yaml",
             expand(
-                "results/imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
+                "results/1_imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
             )
         output:
             expand(
-                "resources/tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/5_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
@@ -115,22 +115,22 @@ if config['polyfit_calibration']:
         conda: 
             "envs/full_hdx_env.yml"
         benchmark:
-            "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
 
         script:
-            "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
+            "scripts/HDX_LIMIT/pipeline/5_extract_timepoint_tensors.py"
 else:
-    rule extract_tensors:
+    rule 5_extract_tensors:
         """
         Extract all identified tensors from each .mzML.gz. 
         """
         input:
             library_info_fn,
-            "resources/mzml/{mzml}.gz",
+            "resources/2_mzml_gz/{mzml}.gz",
             "config/config.yaml"
         output:
             expand(
-                "resources/tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/5_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
@@ -138,33 +138,33 @@ else:
         conda: 
             "envs/full_hdx_env.yml"
         benchmark:
-            "results/benchmarks/extract_tensors.{mzml}.gz.benchmark.txt"
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
-            "scripts/HDX_LIMIT/pipeline/extract_timepoint_tensors.py"
+            "scripts/HDX_LIMIT/pipeline/5_extract_timepoint_tensors.py"
 
 
-rule idotp_check:
+rule 6_idotp_check:
     """
     Test processed signal from each extracted tensor from undeuterated timepoints against the theoretical signal. 
     """
     input:
         library_info_fn,
         "config/config.yaml",
-        "resources/library_info/normalization_factors.csv",
+        "resources/4_library_info/normalization_factors.csv",
         lambda wildcards: idotp_check_inputs(wildcards.name, wildcards.charge),
     output:
-        "resources/idotp_check/{name}/{name}_{charge}_idotp_check.json",
-        expand("resources/factor_data/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
+        "resources/6_idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
+        expand("resources/6_idotp_check/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
         expand("results/plots/factors/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor.pdf", file=config[0])
     conda: 
         "envs/full_hdx_env.yml"
     benchmark:
-        "results/benchmarks/idotp_check.{name}_charge{charge}.benchmark.txt"
+        "results/benchmarks/6_idotp_check.{name}_charge{charge}.benchmark.txt"
     script:
-        "scripts/HDX_LIMIT/pipeline/idotp_check.py"
+        "scripts/HDX_LIMIT/pipeline/6_idotp_check.py"
 
 
-rule idotp_filter:
+rule 7_idotp_filter:
     """
     Read results of idotp_check for all undeuterated tensors and apply a high-pass filter. 
     Produces a list of passing indices and and edited version of library_info. 
@@ -172,19 +172,19 @@ rule idotp_filter:
     input: 
         library_info_fn,
         expand(
-            "resources/idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
+            "resources/6_idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
             zip,
             name=zippable_names,
             charge=zippable_charges
         )
     output:
-        "resources/idotp_filter/filter_passing_indices.csv",
-        "resources/idotp_filter/checked_library_info.json",
+        "resources/7_idotp_filter/filter_passing_indices.csv",
+        "resources/7_idotp_filter/checked_library_info.json",
         "results/plots/idotp_distribution.png"
     conda: 
         "envs/full_hdx_env.yml"
     benchmark:
-        "results/benchmarks/idotp_filter.benchmark.txt"
+        "results/benchmarks/7_idotp_filter.benchmark.txt"
     script:
-        "scripts/HDX_LIMIT/pipeline/idotp_filter.py"
+        "scripts/HDX_LIMIT/pipeline/7_idotp_filter.py"
 
