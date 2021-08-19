@@ -178,7 +178,7 @@ def cluster_df_hq_signals(testq,
 
             near = getnear(mz, allseq, charge=charge, mix=2, ppm=ppm)
 
-            if len(near) > 0:
+            if len(near) == 1:
                 sum_data.append([
                     near["name"].values[0],
                     RT,
