@@ -81,10 +81,12 @@ if config['polyfit_calibration']:
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
             "results/1_imtbx/{undeut_fn}_mz_calib_dict.pk"
+        conda: 
+            "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
-        shell:
-            "python workflow/scripts/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]} --calibration_outpath {output[3]}"
+        script:
+            "../scripts/1_imtbx_reader.py"
 else: 
     rule read_imtbx_1:
         """
@@ -104,9 +106,8 @@ else:
             "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
-        shell:
-            "python workflow/scripts/1_imtbx_reader.py {input[0]} {input[1]} --out_path {output[0]} --original_mz_kde_path {output[1]} --adjusted_mz_kde_path {output[2]}"
-
+        script:
+            "../scripts/1_imtbx_reader.py"
 
 rule gzip_mzmls_2:
     """
@@ -163,4 +164,4 @@ rule make_library_master_list_4:
     benchmark:
         "results/benchmarks/4_make_library_master_list.benchmark.txt"
     script:
-        "scripts/4_make_library_master_list.py"
+        "../scripts/4_make_library_master_list.py"

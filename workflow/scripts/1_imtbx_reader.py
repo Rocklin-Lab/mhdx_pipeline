@@ -752,104 +752,135 @@ def main(isotopes_path,
 
 if __name__ == "__main__":
 
-    # Set expected command line arguments.
-    parser = argparse.ArgumentParser(
-        description=
-        "Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by 4_make_library_master_list.py"
-    )
-    parser.add_argument(
-        "isotopes_path",
-        help="path/to/.peaks.isotopes file from undeuterated mzml"
-    )
-    parser.add_argument(
-        "names_and_seqs_path",
-        help="path/to/.csv with names and sequences of library proteins"
-    )
-    parser.add_argument("-q",
-                        "--out_path",
-                        help="path/to/_intermediate.csv main output file")
-    parser.add_argument(
-        "-p",
-        "--plot",
-        help=
-        "/path/to/directory/ to save original and adjusted mz-error kde plots, use instead of -o and -a"
-    )
-    parser.add_argument(
-        "-o",
-        "--original_mz_kde_path",
-        help="/path/to/file to save original mz-error kde plots, use with -a")
-    parser.add_argument(
-        "-a",
-        "--adjusted_mz_kde_path",
-        help="/path/to/file to save adjusted mz-error kde plots, use with -o")
-    parser.add_argument(
-        "-c",
-        "--calibration_outpath",
-        help=
-        "/path/to/file for polyfit-calibration output, determines use of polyfit calibration"
-    )
-    parser.add_argument(
-        "-d",
-        "--polyfit_deg",
-        help=
-        "degree of polynomial curve to fit to mz data for non-linear correction",
-        type=int,
-        default=1)
-    parser.add_argument(
-        "-t",
-        "--ppm_tolerance",
-        help="ppm error tolerance of observed to expected mz, defualt 50 ppm",
-        type=float,
-        default=50)
-    parser.add_argument(
-        "-i",
-        "--intensity_tolerance",
-        help="minimum intensity to consider cluster, default 10E4",
-        type=float,
-        default=10000)
-    parser.add_argument(
-        "-r",
-        "--cluster_corr_tolerance",
-        help=
-        "minimum correlation between isotope clusters to consider them redundant, default 0.99",
-        type=float,
-        default=0.99)
-    parser.add_argument(
-        "-f",
-        "--ppm_refilter",
-        help=
-        "ppm error tolerance for post-mz-adjustment clusters, default 10 ppm",
-        type=float,
-        default=10)
+    if "snakemake" in globals():
 
-    # parse given arguments
-    args = parser.parse_args()
+        isotopes_path = snakemake.input[0]
+        names_and_seqs_path = snakemake.input[1]
+        out_path = snakemake.output[0]
+        original_mz_kde_path = snakemake.output[1]
+        adjusted_mz_kde_path = snakemake.output[2]
+        calibration_outpath = None
+        polyfit_deg = None
+        if len(snakemake.output) == 4:
+            calibration_outpath = snakemake.output[3]
+            polyfit_deg = 3
+        ppm_tolerance = None
+        intensity_tolerance = None
+        cluster_corr_tolerance = None
+        ppm_refilter = None
 
-    # check for any plotting argument
-    if args.plot is not None or args.original_mz_kde_path is not None or args.adjusted_mz_kde_path is not None:
-        # make explicit filenames if directory given
-        if args.plot is not None:
-            args.original_mz_kde_path = args.plot + "original_mz_kde_path.pdf"
-            args.adjusted_mz_kde_path = args.plot + "adjusted_mz_kde_path.pdf"
-        else:
-            # require both explicit filenames
-            if args.original_mz_kde_path is None or args.adjusted_mz_kde_path is None:
-                parser.print_help()
-                print(
-                    "Plotting with explicit paths requires both -o and -a to be set"
-                )
-                sys.exit()
+        main(isotopes_path,
+             names_and_seqs_path,
+             out_path=out_path,
+             original_mz_kde_path=original_mz_kde_path,
+             adjusted_mz_kde_path=adjusted_mz_kde_path,
+             calibration_outpath=calibration_outpath,
+             polyfit_deg=polyfit_deg,
+             ppm_tolerance=ppm_tolerance,
+             intensity_tolerance=intensity_tolerance,
+             cluster_corr_tolerance=cluster_corr_tolerance,
+             ppm_refilter=ppm_refilter)
 
-            # continue, we have -o and -a
+    else:
+        # Set expected command line arguments.
+        parser = argparse.ArgumentParser(
+            description=
+            "Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by 4_make_library_master_list.py"
+        )
+        parser.add_argument(
+            "isotopes_path",
+            help="path/to/.peaks.isotopes file from undeuterated mzml"
+        )
+        parser.add_argument(
+            "names_and_seqs_path",
+            help="path/to/.csv with names and sequences of library proteins"
+        )
+        parser.add_argument("-q",
+                            "--out_path",
+                            help="path/to/_intermediate.csv main output file")
+        parser.add_argument(
+            "-p",
+            "--plot",
+            help=
+            "/path/to/directory/ to save original and adjusted mz-error kde plots, use instead of -o and -a"
+        )
+        parser.add_argument(
+            "-o",
+            "--original_mz_kde_path",
+            help="/path/to/file to save original mz-error kde plots, use with -a")
+        parser.add_argument(
+            "-a",
+            "--adjusted_mz_kde_path",
+            help="/path/to/file to save adjusted mz-error kde plots, use with -o")
+        parser.add_argument(
+            "-c",
+            "--calibration_outpath",
+            help=
+            "/path/to/file for polyfit-calibration output, determines use of polyfit calibration"
+        )
+        parser.add_argument(
+            "-d",
+            "--polyfit_deg",
+            help=
+            "degree of polynomial curve to fit to mz data for non-linear correction",
+            type=int,
+            default=1)
+        parser.add_argument(
+            "-t",
+            "--ppm_tolerance",
+            help="ppm error tolerance of observed to expected mz, defualt 50 ppm",
+            type=float,
+            default=50)
+        parser.add_argument(
+            "-i",
+            "--intensity_tolerance",
+            help="minimum intensity to consider cluster, default 10E4",
+            type=float,
+            default=10000)
+        parser.add_argument(
+            "-r",
+            "--cluster_corr_tolerance",
+            help=
+            "minimum correlation between isotope clusters to consider them redundant, default 0.99",
+            type=float,
+            default=0.99)
+        parser.add_argument(
+            "-f",
+            "--ppm_refilter",
+            help=
+            "ppm error tolerance for post-mz-adjustment clusters, default 10 ppm",
+            type=float,
+            default=10)
 
-    main(args.isotopes_path,
-         args.names_and_seqs_path,
-         out_path=args.out_path,
-         original_mz_kde_path=args.original_mz_kde_path,
-         adjusted_mz_kde_path=args.adjusted_mz_kde_path,
-         calibration_outpath=args.calibration_outpath,
-         polyfit_deg=args.polyfit_deg,
-         ppm_tolerance=args.ppm_tolerance,
-         intensity_tolerance=args.intensity_tolerance,
-         cluster_corr_tolerance=args.cluster_corr_tolerance,
-         ppm_refilter=args.ppm_refilter)
+        # parse given arguments
+        args = parser.parse_args()
+
+        # check for any plotting argument
+        if args.plot is not None or args.original_mz_kde_path is not None or args.adjusted_mz_kde_path is not None:
+            # make explicit filenames if directory given
+            if args.plot is not None:
+                args.original_mz_kde_path = args.plot + "original_mz_kde_path.pdf"
+                args.adjusted_mz_kde_path = args.plot + "adjusted_mz_kde_path.pdf"
+            else:
+                # require both explicit filenames
+                if args.original_mz_kde_path is None or args.adjusted_mz_kde_path is None:
+                    parser.print_help()
+                    print(
+                        "Plotting with explicit paths requires both -o and -a to be set"
+                    )
+                    sys.exit()
+
+        if calibration_outpath is not None and args.polyfit_deg == 1:
+            args.polyfit_deg = 3
+
+        main(args.isotopes_path,
+             args.names_and_seqs_path,
+             out_path=args.out_path,
+             original_mz_kde_path=args.original_mz_kde_path,
+             adjusted_mz_kde_path=args.adjusted_mz_kde_path,
+             calibration_outpath=args.calibration_outpath,
+             polyfit_deg=args.polyfit_deg,
+             ppm_tolerance=args.ppm_tolerance,
+             intensity_tolerance=args.intensity_tolerance,
+             cluster_corr_tolerance=args.cluster_corr_tolerance,
+             ppm_refilter=args.ppm_refilter)
