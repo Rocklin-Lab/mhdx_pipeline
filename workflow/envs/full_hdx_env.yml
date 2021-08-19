@@ -21,6 +21,7 @@ dependencies:
   - scikit-learn>=0.24.2<0.26
   - scipy>=1.6.2<1.8
   - nn-fac>=0.1.2<0.2
+  - pymzml=2.5.*
   - molmass
   - ipdb
   - git+https://github.com/Rocklin-Lab/hdx_limit
