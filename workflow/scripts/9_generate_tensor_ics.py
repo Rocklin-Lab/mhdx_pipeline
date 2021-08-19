@@ -41,8 +41,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_pdf import PdfPages
-from HDX_LIMIT.core.processing import TensorGenerator, generate_tensor_factors
-from HDX_LIMIT.core.io import limit_write
+from hdx_limit.core.processing import TensorGenerator, generate_tensor_factors
+from hdx_limit.core.io import limit_write
 
 
 

@@ -151,7 +151,7 @@ rule mv_passing_tensors_8:
     benchmark:
         "results/benchmarks/8_mv_passing_tensors.benchmark.txt"
     script:
-        "scripts/8_mv_passing_tensors.py"
+        "../scripts/8_mv_passing_tensors.py"
 
 
 if config['polyfit_calibration']:
@@ -179,7 +179,7 @@ if config['polyfit_calibration']:
             "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
         
         script:
-            "scripts/5_extract_timepoint_tensors.py"
+            "../scripts/5_extract_timepoint_tensors.py"
 else:
     """
     Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
@@ -201,7 +201,7 @@ else:
         benchmark:
             "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
-            "scripts/5_extract_timepoint_tensors.py"
+            "../scripts/5_extract_timepoint_tensors.py"
 
 
 rule generate_tensor_ics_10:
@@ -245,7 +245,7 @@ rule optimize_paths_11:
     conda:
         "../envs/full_hdx_env.yml"
     script:
-        "scripts/10_optimize_paths.py"
+        "../scripts/10_optimize_paths.py"
 
 """
 #REVIEW FUNCTIONALITY

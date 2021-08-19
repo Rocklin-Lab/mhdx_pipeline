@@ -118,7 +118,7 @@ if config['polyfit_calibration']:
             "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
 
         script:
-            "scripts/5_extract_timepoint_tensors.py"
+            "../scripts/5_extract_timepoint_tensors.py"
 else:
     rule extract_tensors_5:
         """
@@ -140,7 +140,7 @@ else:
         benchmark:
             "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
-            "scripts/5_extract_timepoint_tensors.py"
+            "../scripts/5_extract_timepoint_tensors.py"
 
 
 rule idotp_check_6:
@@ -161,7 +161,7 @@ rule idotp_check_6:
     benchmark:
         "results/benchmarks/6_idotp_check.{name}_charge{charge}.benchmark.txt"
     script:
-        "scripts/6_idotp_check.py"
+        "../scripts/6_idotp_check.py"
 
 
 rule idotp_filter_7:
@@ -186,5 +186,5 @@ rule idotp_filter_7:
     benchmark:
         "results/benchmarks/7_idotp_filter.benchmark.txt"
     script:
-        "scripts/7_idotp_filter.py"
+        "../scripts/7_idotp_filter.py"
 

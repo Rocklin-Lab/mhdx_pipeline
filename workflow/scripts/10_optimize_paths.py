@@ -40,9 +40,9 @@ import shutil
 import argparse
 import numpy as np
 import pandas as pd
-from HDX_LIMIT.core.io import limit_read, limit_write
-from HDX_LIMIT.core.processing import PathOptimizer
-from HDX_LIMIT.core.gjr_plot import plot_gjr_
+from hdx_limit.core.io import limit_read, limit_write
+from hdx_limit.core.processing import PathOptimizer
+from hdx_limit.core.gjr_plot import plot_gjr_
 
 
 def optimize_paths_inputs(library_info_path, input_directory_path,

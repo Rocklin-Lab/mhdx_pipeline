@@ -49,7 +49,7 @@ from collections import OrderedDict
 from scipy.signal import find_peaks
 from matplotlib import pyplot as plt
 from scipy.spatial.distance import euclidean
-from HDX_LIMIT.core.io import limit_read
+from hdx_limit.core.io import limit_read
 
 matplotlib.use("Agg")
 
