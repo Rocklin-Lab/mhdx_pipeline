@@ -32,6 +32,8 @@ Todo:
 
 """
 import sys
+print(sys.path, flush=True)
+print(help("modules"))
 import time
 import copy
 import math

@@ -100,6 +100,8 @@ else:
             "resources/1_imtbx/{undeut_fn}_intermediate.csv",
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
+        conda: 
+            "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         shell:

@@ -4,13 +4,14 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+- python>=3.6
 - git
 - pip
+- biopython
 - zlib
 - peakutils
 - seaborn=0.11.1=pyhd3eb1b0_0
 - pip:
-  - biopython
   - psutil>=5.8.0<6
   - bokeh>=2.3.2<2.4
   - numpy>=1.20.2<2
