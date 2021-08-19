@@ -752,8 +752,8 @@ def main(isotopes_path,
 
 if __name__ == "__main__":
 
+    # Checks if script is being executed within Snakemake.
     if "snakemake" in globals():
-
         isotopes_path = snakemake.input[0]
         names_and_seqs_path = snakemake.input[1]
         out_path = snakemake.output[0]
@@ -763,11 +763,10 @@ if __name__ == "__main__":
         polyfit_deg = None
         if len(snakemake.output) == 4:
             calibration_outpath = snakemake.output[3]
-            polyfit_deg = 3
-        ppm_tolerance = None
-        intensity_tolerance = None
-        cluster_corr_tolerance = None
-        ppm_refilter = None
+            if "polyfit_deg" not in snakemake.params:
+                polyfit_deg = 5
+            else:
+                polyfit_deg = snakemake.params.polyfit_deg
 
         main(isotopes_path,
              names_and_seqs_path,
@@ -775,14 +774,10 @@ if __name__ == "__main__":
              original_mz_kde_path=original_mz_kde_path,
              adjusted_mz_kde_path=adjusted_mz_kde_path,
              calibration_outpath=calibration_outpath,
-             polyfit_deg=polyfit_deg,
-             ppm_tolerance=ppm_tolerance,
-             intensity_tolerance=intensity_tolerance,
-             cluster_corr_tolerance=cluster_corr_tolerance,
-             ppm_refilter=ppm_refilter)
+             polyfit_deg=polyfit_deg)
 
     else:
-        # Set expected command line arguments.
+        # Sets expected command line arguments.
         parser = argparse.ArgumentParser(
             description=
             "Reads an imtbx .peaks.isotopes file and creates an intermediate list of identified charged species to be used by 4_make_library_master_list.py"

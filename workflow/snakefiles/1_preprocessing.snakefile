@@ -81,6 +81,8 @@ if config['polyfit_calibration']:
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
             "results/1_imtbx/{undeut_fn}_mz_calib_dict.pk"
+        params:
+            polyfit_deg=config["polyfit_deg"]
         conda: 
             "../envs/full_hdx_env.yml"
         benchmark:
