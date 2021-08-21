@@ -848,8 +848,6 @@ class PathOptimizer:
                     self.auc_ground_rmse(series) * self.auc_ground_rmse_weight,
                 "rmses_sum":
                     self.rmses_sum(series) * self.rmses_sum_weight,
-                "maxint_sum":
-                    self.maxint_sum(series) * self.rmses_sum_weight,
                 "int_mz_FWHM_rmse":
                     self.int_mz_FWHM_rmse(series) * self.int_mz_FWHM_rmse_weight,
                 "nearest_neighbor_penalty":
@@ -876,8 +874,6 @@ class PathOptimizer:
                 substituted_scores["auc_ground_rmse"],
                 winner_scores["rmses_sum"]
                 - substituted_scores["rmses_sum"],
-                winner_scores["maxint_sum"]
-                - substituted_scores["maxint_sum"],
                 winner_scores["int_mz_FWHM_rmse"]
                 - substituted_scores["int_mz_FWHM_rmse"],
                 winner_scores["nearest_neighbor_penalty"]
@@ -1156,7 +1152,6 @@ class PathOptimizer:
         dt_ground_rmse_weight=None,
         auc_ground_rmse_weight=None,
         rmses_sum_weight=None,
-        maxint_sum_weight=None,
         int_mz_FWHM_rmse_weight=None,
         nearest_neighbor_penalty_weight=None
     ):
