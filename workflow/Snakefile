@@ -23,6 +23,7 @@ print("Protein Names: "+str(len(names))+", Names with indices: "+str(len(names_w
 # all rule defines default snakefile call without specification of rule: "snakemake" vs. "snakemake -s path/to/alt/snakefile"
 rule all:
     input:
+#        expand("resources/passing_tensors/{lib_idx}/{lib_idx}_{mzml}.gz.cpickle.zlib",lib_idx=idotp_check_indices,mzml=[i.split('/')[-1].replace(".gz","") for i in glob.glob('resources/mzml/*gz')]),
         expand("resources/ic_time_series/multibody/{name}/{name}_winner.cpickle.zlib", name=names_with_indices)
         #expand("results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf", name=names),  #config['run_name']+"_plot_linker.html"
 
