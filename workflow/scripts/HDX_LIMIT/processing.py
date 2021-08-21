@@ -858,8 +858,6 @@ class PathOptimizer:
 
         def score_diff(winner_scores, substituted_scores):
             return (
-                winner_scores["int_mz_std_rmse"] -
-                substituted_scores["int_mz_std_rmse"],
                 winner_scores["delta_mz_rate_backward"] -
                 substituted_scores["delta_mz_rate_backward"],
                 winner_scores["delta_mz_rate_afterward"] -
@@ -903,7 +901,6 @@ class PathOptimizer:
             ic.bokeh_tuple = ic.info_tuple + (
                 ic.rt_ground_err,
                 ic.dt_ground_err,
-                winner_scores["int_mz_std_rmse"],
                 winner_scores["delta_mz_rate_backward"],
                 winner_scores["delta_mz_rate_afterward"],
                 winner_scores["dt_ground_rmse"],
@@ -913,7 +910,6 @@ class PathOptimizer:
                 winner_scores["baseline_peak_error"],
                 winner_scores["auc_ground_rmse"],
                 winner_scores["rmses_sum"],
-                winner_scores["maxint_sum"],
                 winner_scores["int_mz_FWHM_rmse"],
                 winner_scores["nearest_neighbor_penalty"],
                 0,
@@ -1009,14 +1005,6 @@ class PathOptimizer:
     ### Scoring Functions for PathOptimizer ##################################################################################################################################################################################################
     ##########################################################################################################################################################################################################################################
 
-    def int_mz_std_rmse(self, ics):
-        # calculates the difference in standard deviation from the mean from timepoint i-1 to i for i in [2, len(ics)]
-        sd = 0
-        for i in range(2, len(ics)):
-            sd += (ics[i].baseline_integrated_mz_std -
-                   ics[i - 1].baseline_integrated_mz_std)**2.0
-
-        return math.sqrt(sd)
 
     def gabe_delta_mz_rate(self, major_species_centroids, timepoints=None):
         # reproduce logic of delta_mz_rate for Gabe's old data
@@ -1140,19 +1128,12 @@ class PathOptimizer:
             rmses += 100*ic.baseline_integrated_mz_rmse
         return rmses
 
-    def maxint_sum(self, ics):
-        maxint = 0
-        for ic in ics:
-            maxint += max(ic.baseline_integrated_mz)
-            return 100000/maxint
-
     def int_mz_FWHM_rmse(self, ics):
         sd = 0
         for i in range(2, len(ics)):
             sd += (
                 ics[i].baseline_integrated_mz_FWHM - ics[i - 1].baseline_integrated_mz_FWHM
             ) ** 2.0
-
         return math.sqrt(sd)
 
     def nearest_neighbor_penalty(self, ics):
@@ -1784,7 +1765,6 @@ class PathOptimizer:
             "int_mz_y",
             "rt_ground_err",
             "dt_ground_err",
-            "int_mz_std_rmse",
             "delta_mz_rate",
             "dt_ground_rmse_score",
             "rt_ground_rmse_score",
@@ -1826,7 +1806,6 @@ class PathOptimizer:
             ("Center of Mass in M/Z", "@abs_mz_com"),
             ("Retention Time COM Error to Ground", "@rt_ground_err"),
             ("Drift Time COM Error to Ground", "@dt_ground_err"),
-            ("int_mz_std_rmse", "@int_mz_std_rmse"),
             ("delta_mz_rate", "@delta_mz_rate"),
             ("dt_ground_rmse", "@dt_ground_rmse_score"),
             ("rt_ground_rmse", "@rt_ground_rmse_score"),
