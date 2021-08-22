@@ -32,6 +32,7 @@ Todo:
 
 """
 import sys
+import ipdb
 import glob
 import argparse
 import pandas as pd
@@ -63,8 +64,9 @@ def main(library_info_path,
         out_dict (dict) = dictionary containing "filter_passing_indices"
 
     """
+    ipdb.set_trace()
     library_info = pd.read_json(library_info_path)
-    sorted_inputs = sorted(all_idotp_csv_inputs, key=lambda fn: int(fn.split("_")[-3]))
+    sorted_inputs = sorted(all_idotp_csv_inputs, key=lambda fn: int([item[6:] for item in fn.split("/")[-1].split("_") if "charge" in item][0]))
     print("Length of inputs: "+str(len(sorted_inputs)))
 
     out_dict = {}
