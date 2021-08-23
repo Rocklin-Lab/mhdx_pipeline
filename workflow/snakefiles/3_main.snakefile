@@ -47,7 +47,7 @@ import pandas as pd
 from collections import OrderedDict
 
 # Read post idotp_check library_info. 
-library_info_fn = "resources/4_idotp_filter/checked_library_info.json"
+library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
 names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
@@ -92,7 +92,7 @@ def optimize_paths_inputs(name, library_info):
             for charge in library_info.loc[library_info["name"]==name]['charge'].values:
                 for file in config[key]:
                     name_inputs.append(
-                        "resources/subtensor_ics/"
+                        "resources/9_subtensor_ics/"
                         + name
                         + "/"
                         + name
@@ -107,7 +107,7 @@ def optimize_paths_inputs(name, library_info):
             file = config[key][0]
             for charge in library_info.loc[library_info["name"]==name]['charge'].values:
                     name_inputs.append(
-                    "resources/subtensor_ics/"
+                    "resources/9_subtensor_ics/"
                     + name
                     + "/"
                     + name

@@ -210,7 +210,7 @@ timepoints:
 #do not include in downstream if idotp is lower than cutoff
 "idotp_filter": 1
 #idotp < cutoff will not be considered for rt_groups
-"idotp_cutoff": 0.95
+"idotp_cutoff": 0.99
 
 #factor filter option. bool (True or False)
 # set the r2 cutoff values for rt and dt data of the factors
