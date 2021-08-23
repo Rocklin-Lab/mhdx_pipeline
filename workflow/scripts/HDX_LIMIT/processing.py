@@ -1258,8 +1258,6 @@ class PathOptimizer:
                                 self.auc_ground_rmse(ics)),
             "rmses_sum": (self.rmses_sum_weight,
                           self.rmses_sum(ics)),
-            "int_mz_FWHM_rmse": (self.int_mz_FWHM_rmse_weight,
-                          self.int_mz_FWHM_rmse(ics)),
             "nearest_neighbor_penalty": (self.nearest_neighbor_penalty_weight,
                                  self.nearest_neighbor_penalty(ics)),
         }
