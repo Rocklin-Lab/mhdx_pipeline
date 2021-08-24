@@ -249,6 +249,8 @@ rule optimize_paths_11:
         "resources/10_ic_time_series/{name}/multibody/{name}_undeut_grounds_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib"
+    params:
+        rt_group_name = "{name}"
     benchmark:
         "results/benchmarks/11_optimize_paths.{name}.benchmark.txt"
     conda:

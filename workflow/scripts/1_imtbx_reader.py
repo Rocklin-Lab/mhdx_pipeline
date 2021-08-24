@@ -38,6 +38,7 @@ import math
 import argparse
 import Bio.PDB
 import numpy as np
+import pickle as pk
 import pandas as pd
 import scipy as sp
 import matplotlib
@@ -49,7 +50,6 @@ from scipy import signal
 from sklearn.cluster import DBSCAN
 from sklearn.metrics import pairwise_distances
 from scipy.stats import gaussian_kde
-import pickle as pk
 matplotlib.use("Agg")
 
 

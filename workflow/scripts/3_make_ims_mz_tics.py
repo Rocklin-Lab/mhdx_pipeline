@@ -62,7 +62,7 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
     drift_times = []
     scan_times = []
 
-    # Uses mzML string pattern to find ims drift and m/z scan times
+    # Uses mzML string pattern to find ims drift and m/z scan times.
     lines = open(mzml_path, "rt").readlines()
     for line in lines:
         if ('<cvParam cvRef="MS" accession="MS:1002476" name="ion mobility drift time" value'
@@ -76,10 +76,6 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
             st = line.split('value="')[1].split('"')[0]  # replace('"/>',''))
             scan_times.append(float(st))
 
-    # drift_times = np.array(drift_times)
-    # scan_times = np.array(scan_times)
-    # scan_numbers=np.arange(0,len(scan_times))
-
     run = pymzml.run.Reader(mzml_path)
     # These are hardcoded values controlling the density of sampling - TODO: Arguments?
     mz_bins = 70
@@ -87,7 +83,6 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
         600, 2020, 20
     )
 
-    # print ((len(set(drift_times)),len(set(scan_times))))
     ms1_ims_tic = np.zeros(
         (len(set(drift_times)) * mz_bins, len(set(scan_times))), np.int)
     print(np.shape(ms1_ims_tic))
@@ -102,7 +97,7 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
         if id_appearance_count[spec_id] == 1:
             ims_bin = (
                 spec_id % 200
-            )  # Waters synapt-G2 has 200 IMS bins for each LC timepoint, TODO - make main argument with default and config variable
+            )  # Waters synapt-G2 has 200 IMS bins for each LC timepoint, TODO - make main argument with default and config variable.
             specpeaks = np.array(spectrum.peaks("raw")).T
             if len(specpeaks) > 0:
                 for mz_bin in range(mz_bins):
@@ -117,7 +112,7 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
                     print(rtIndex)
     mzml_sum = np.sum(ms1_ims_tic)
 
-    # convert ms1_ims_tic to tic_cumulative_sum and tic_base_sum and save those
+    # Converts ms1_ims_tic to tic_cumulative_sum and tic_base_sum and saves.
     tic_reshape = np.reshape(ms1_ims_tic, (200, 70, -1))
     tic_ims_only = np.sum(tic_reshape, axis=1)
     tic_base_sums = np.sum(tic_ims_only[:, 1:], axis=1)
@@ -126,10 +121,6 @@ def main(mzml_path, return_flag=None, out_path=None, mzml_sum_outpath=None):
     out_dict = dict()
     out_dict['tics_base_sums'] = tic_base_sums
     out_dict['tic_cumulative_sum'] = tic_cumulative_sum
-
-    # ref_tic_ims_only = np.sum(ref_tic_reshape, axis=1)
-    # base_sums = np.sum(ref_tic_ims_only[:, 1:], axis=1)
-    # ref_tic_cumsum = np.cumsum(ref_tic_ims_only[:, 1:], axis=1)
 
     if out_path is not None:
         limit_write(obj=out_dict, out_path=out_path)

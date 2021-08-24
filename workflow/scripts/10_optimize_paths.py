@@ -315,6 +315,7 @@ if __name__ == "__main__":
         timepoints = yaml.load(open(snakemake.input[1], "rb").read(), Loader=yaml.Loader)
         all_ic_input_paths = snakemake.input[2:]
         old_data_dir = None
+        rt_group_name = snakemake.params.rt_group_name
         all_timepoint_clusters_out_path = snakemake.output[0]
         prefiltered_ics_out_path = snakemake.output[1]
         mono_path_plot_out_path = snakemake.output[2]
