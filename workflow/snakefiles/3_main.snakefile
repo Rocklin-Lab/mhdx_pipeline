@@ -234,12 +234,20 @@ rule optimize_paths_11:
         "config/config.yaml",
         lambda wildcards: optimize_paths_inputs(wildcards.name, library_info) 
     output:
-        "resources/10_ic_time_series/{name}/{name}_winner.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/{name}_runners.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/{name}_undeut_grounds.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/{name}_winner_scores.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/{name}_rtdt_com_cvs.cpickle.zlib",
-        "results/plots/ic_time_series/winner_plots/{name}_winner_path.pdf"
+        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/{name}_prefiltered_ics",
+        "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
+        "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/monobody/{name}_runners_monobody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/monobody/{name}_undeut_grounds_monobody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/monobody/{name}_winner_scores_monobody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/monobody/{name}_rtdt_com_cvs_monobody.cpickle.zlib",
+        "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path_multibody.pdf",
+        "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/multibody/{name}_runners_multibody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/multibody/{name}_undeut_grounds_multibody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib"
     benchmark:
         "results/benchmarks/11_optimize_paths.{name}.benchmark.txt"
     conda:

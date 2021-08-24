@@ -59,7 +59,7 @@ for timepoint in config["timepoints"]:
     for fn in config[timepoint]:
         mzml_list.append(fn)
 
-def idotp_check_inputs(rt_group_name, charge):
+def idotp_check_inputs(config, rt_group_name, charge):
     """Wildcard-based input-file-path generator for idotp_check rule, writes based on rt_group and charge.
 
     Args:
@@ -151,7 +151,7 @@ rule idotp_check_6:
         library_info_fn,
         "config/config.yaml",
         "resources/4_library_info/normalization_factors.csv",
-        lambda wildcards: idotp_check_inputs(wildcards.name, wildcards.charge),
+        lambda wildcards: idotp_check_inputs(config,wildcards.name, wildcards.charge),
     output:
         "resources/6_idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
         expand("resources/6_idotp_check/{{name}}/{{name}}_charge{{charge}}_{file}.cpickle.zlib.factor", file=config[0]),
