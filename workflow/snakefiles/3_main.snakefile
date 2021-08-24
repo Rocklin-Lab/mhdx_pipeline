@@ -152,7 +152,7 @@ rule mv_passing_tensors_8:
     benchmark:
         "results/benchmarks/8_mv_passing_tensors.benchmark.txt"
     script:
-        "../scripts/8_mv_passing_tensors.py"
+        "../scripts/hdx_limit/pipeline/8_mv_passing_tensors.py"
 
 
 if config['polyfit_calibration']:
@@ -180,7 +180,7 @@ if config['polyfit_calibration']:
             "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
         
         script:
-            "../scripts/5_extract_timepoint_tensors.py"
+            "../scripts/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
 else:
     """
     Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
@@ -202,7 +202,7 @@ else:
         benchmark:
             "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
-            "../scripts/5_extract_timepoint_tensors.py"
+            "../scripts/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
 
 
 rule generate_tensor_ics_10:
@@ -223,7 +223,7 @@ rule generate_tensor_ics_10:
     benchmark:
         "results/benchmarks/10_generate_tensor_ics.{name}/{name}_charge{charge}_{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/9_generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
+        "python workflow/scripts/hdx_limit/pipeline/9_generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
 
 
 rule optimize_paths_11:
@@ -256,7 +256,7 @@ rule optimize_paths_11:
     conda:
         "../envs/full_hdx_env.yml"
     script:
-        "../scripts/10_optimize_paths.py"
+        "../scripts/hdx_limit/pipeline/10_optimize_paths.py"
 
 """
 #REVIEW FUNCTIONALITY

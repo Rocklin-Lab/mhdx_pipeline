@@ -88,7 +88,7 @@ if config['polyfit_calibration']:
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         script:
-            "../scripts/1_imtbx_reader.py"
+            "../scripts/hdx_limit/preprocessing/1_imtbx_reader.py"
 else: 
     rule read_imtbx_1:
         """
@@ -109,7 +109,7 @@ else:
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         script:
-            "../scripts/1_imtbx_reader.py"
+            "../scripts/hdx_limit/preprocessing/1_imtbx_reader.py"
 
 rule gzip_mzmls_2:
     """
@@ -122,7 +122,7 @@ rule gzip_mzmls_2:
     benchmark:
         "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/2_gzip_mzml.py {input} --delete_source --out_path {output}"
+        "python workflow/scripts/hdx_limit/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}"
 
 
 rule make_ims_mz_tics_3:
@@ -138,7 +138,7 @@ rule make_ims_mz_tics_3:
     benchmark:
         "results/benchmarks/3_make_ims_mz_tics.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
+        "python workflow/scripts/hdx_limit/preprocessing/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
 
 
 rule make_library_master_list_4:
@@ -166,4 +166,4 @@ rule make_library_master_list_4:
     benchmark:
         "results/benchmarks/4_make_library_master_list.benchmark.txt"
     script:
-        "../scripts/4_make_library_master_list.py"
+        "../scripts/hdx_limit/preprocessing/4_make_library_master_list.py"
