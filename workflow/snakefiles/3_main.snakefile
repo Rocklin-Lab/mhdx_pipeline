@@ -46,7 +46,7 @@ import shutil
 import pandas as pd
 from collections import OrderedDict
 
-# Read post idotp_check library_info. 
+# Reads post idotp_check library_info. 
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
@@ -72,7 +72,8 @@ rule all:
     Defines final outputs desired by pipeline run.
     """
     input:
-        expand("resources/10_ic_time_series/{name}/{name}_winner.cpickle.zlib", name=names)
+        expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
+        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names)
 
 
 def optimize_paths_inputs(name, library_info): 
