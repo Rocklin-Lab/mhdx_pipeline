@@ -242,7 +242,7 @@ def main(library_info_path,
         limit_write(p1.prefiltered_ics, prefiltered_ics_out_path)
     
     # Checks if arguments require monobody scoring run.
-    if (any(arg is not None in monobody_path_arguments)) or (monobody_return_flag is not False):
+    if (any(arg is not None for arg in monobody_path_arguments)) or (monobody_return_flag is not False):
 
         p1.optimize_paths_mono()
 
@@ -274,7 +274,7 @@ def main(library_info_path,
             limit_write([p1.rt_com_cv, p1.dt_com_cv], mono_rtdt_com_cvs_out_path)
 
     # Checks if arguments require multibody scoring run.
-    if (any(arg is not None in multibody_path_arguments)) or (multibody_return_flag is not False):
+    if (any(arg is not None for arg in multibody_path_arguments)) or (multibody_return_flag is not False):
        
         p1.optimize_paths_multi()
 
