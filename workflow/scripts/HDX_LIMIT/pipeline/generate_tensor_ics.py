@@ -212,7 +212,12 @@ def main(library_info_path,
                                      baseline_threshold=ic_rel_height_filter_baseline,
                                      rel_height_threshold=ic_rel_height_threshold)
         else:
-            factor.find_isotope_clusters(prominence=ic_peak_prominence,
+            # factor.find_isotope_clusters(prominence=ic_peak_prominence,
+            #                              width_val=ic_peak_width,
+            #                              rel_height_filter=ic_rel_height_filter,
+            #                              baseline_threshold=ic_rel_height_filter_baseline,
+            #                              rel_height_threshold=ic_rel_height_threshold)
+            factor.find_isotope_clusters_from_gaussian(prominence=ic_peak_prominence,
                                          width_val=ic_peak_width,
                                          rel_height_filter=ic_rel_height_filter,
                                          baseline_threshold=ic_rel_height_filter_baseline,

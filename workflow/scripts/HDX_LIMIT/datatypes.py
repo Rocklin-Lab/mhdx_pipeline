@@ -15,6 +15,7 @@ from scipy.optimize import curve_fit
 from sklearn.metrics import mean_squared_error
 from scipy.stats import norm
 from scipy.stats import linregress
+from HDX_LIMIT import gaussians
 
 
 class DataTensor:
@@ -558,6 +559,69 @@ class Factor:
                 #print("ic index out of bounds: " + str(integrated_indices))
         return
 
+    def find_isotope_clusters_from_gaussian(self, prominence=0.15, width_val=3):
+        """
+        find isotope clusters by finding peaks in integrated mz distribution and choosing indices to include in mz data for ic clusters
+        :param prominence: prominence value for choosing peaks.
+        :param width_val: minimum width for choosing peaks
+        :param rel_height_filter: within peaks, whether or not
+        :param baseline_threshold: baseline for rel height filtering
+        :param rel_height_threshold: rel height threhold for rel height filtering
+        :return:
+        """
+
+        self.isotope_clusters = []
+
+        integrated_mz_gaussian, cluster_mz_gaussian = gaussians.fit_gaussians(
+            self.baseline_subtracted_integrated_mz, self.mz_data, prominence=prominence, width=width_val)
+
+        if len(integrated_mz_gaussian) == 0:
+            integrated_mz_gaussian, cluster_mz_gaussian = self.baseline_subtracted_integrated_mz, self.mz_data
+
+        cluster_idx = 0
+        for integrated_mz_gaussian, cluster_mz_gaussian in zip(integrated_mz_gaussian, cluster_mz_gaussian):
+                newIC = IsotopeCluster(
+                    charge_states=self.charge_states,
+                    factor_mz_data=copy.deepcopy(self.mz_data),
+                    cluster_mz_data=cluster_mz_gaussian,
+                    source_file=self.source_file,
+                    tensor_idx=self.tensor_idx,
+                    timepoint_idx=self.timepoint_idx,
+                    n_factors=self.n_factors,
+                    factor_idx=self.factor_idx,
+                    cluster_idx=cluster_idx,
+                    rts=self.rts,
+                    dts=self.dts,
+                    rt_mean=self.rt_mean,
+                    dt_mean=self.dt_mean,
+                    rt_gauss_fit_success=self.rt_gauss_fit_success,
+                    dt_gauss_fit_success=self.dt_gauss_fit_success,
+                    rt_gaussian_rmse=self.rt_gaussian_rmse,
+                    dt_gaussian_rmse=self.dt_gaussian_rmse,
+                    rt_com=self.rt_com,
+                    dt_coms=self.dt_com,
+                    rt_auc=self.rt_auc,
+                    dt_auc=self.dt_auc,
+                    retention_labels=self.retention_labels,
+                    drift_labels=self.drift_labels,
+                    mz_labels=self.mz_labels,
+                    bins_per_isotope_peak=self.bins_per_isotope_peak,
+                    max_rtdt=self.max_rtdt,
+                    outer_rtdt=self.outer_rtdt,
+                    max_rtdt_old=self.max_rtdt_old,
+                    outer_rtdt_old=self.outer_rtdt_old,
+                    n_concatenated=self.n_concatenated,
+                    concat_dt_idxs=self.concat_dt_idxs,
+                    normalization_factor=self.normalization_factor
+                )
+                if (newIC.baseline_peak_error / newIC.baseline_auc <
+                        0.2):  # TODO: HARDCODE
+                    self.isotope_clusters.append(newIC)
+                    cluster_idx += 1
+        return
+
+
+
     # heuristically identifies 'things that look like acceptable isotope clusters' in integrated mz dimension, roughly gaussian allowing some inflection points from noise
     def find_window(self, array, peak_idx, width):
         rflag = True
@@ -678,17 +742,15 @@ class IsotopeCluster:
 
     def __init__(
         self,
-        integrated_mz_peak_width,
         charge_states,
         factor_mz_data,
+        cluster_mz_data,
         source_file,
         tensor_idx,
         timepoint_idx,
         n_factors,
         factor_idx,
         cluster_idx,
-        low_idx,
-        high_idx,
         rts,
         dts,
         rt_mean,
@@ -715,17 +777,15 @@ class IsotopeCluster:
     ):
 
         ###Set Attributes###
-        self.integrated_mz_peak_width = integrated_mz_peak_width
         self.charge_states = charge_states
         self.factor_mz_data = factor_mz_data
+        self.cluster_mz_data = cluster_mz_data
         self.source_file = source_file
         self.tensor_idx = tensor_idx
         self.timepoint_idx = timepoint_idx
         self.n_factors = n_factors
         self.factor_idx = factor_idx
         self.cluster_idx = cluster_idx
-        self.low_idx = low_idx
-        self.high_idx = high_idx
         self.rts = rts
         self.dts = dts
         self.rt_mean = rt_mean
@@ -752,32 +812,6 @@ class IsotopeCluster:
 
         ###Calculate Scoring Requirements###
 
-        # prune factor_mz to get window around cluster that is consistent between charge-states
-        self.cluster_mz_data = copy.deepcopy(self.factor_mz_data)
-        self.cluster_mz_data[0:self.low_idx] = 0
-        self.cluster_mz_data[self.high_idx:] = 0
-
-        #####################################################################################################
-        #########################################################################################################
-        ### the following block of code is just for comparison with self.auc
-        # integrate area of IC and normalize according the TIC counts
-        # self.auc_no_rt_dt_norm = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
-        #
-        # self.auc_old = sum(self.cluster_mz_data) * self.outer_rtdt_old / self.normalization_factor
-        # # normalize auc with rt and dt auc
-        # if self.rt_auc > 0:
-        #     auc_after_rt = self.auc_old * (1/self.rt_auc)
-        # else:
-        #     auc_after_rt = self.auc_old
-        #
-        # if self.dt_auc > 0:
-        #     auc_after_rt_dt = auc_after_rt * (1/self.dt_auc)
-        # else:
-        #     auc_after_rt_dt = auc_after_rt
-        #
-        # self.auc_old = auc_after_rt_dt
-        #########################################################################################################
-        #########################################################################################################
 
         # integrate area of IC and normalize according the TIC counts
         self.auc = sum(self.cluster_mz_data) * self.outer_rtdt / self.normalization_factor
@@ -883,8 +917,6 @@ class IsotopeCluster:
             self.charge_states,  # List of charge states in IC
             self.
             n_concatenated,  # number of source tensors IC parent-DataTensor was made from
-            self.low_idx,  # Low bin index corresponding to Factor-level bins
-            self.high_idx,  # High bin index corresponding to Factor-level bins
             self.baseline_auc,  # Baseline-subtracted AUC (BAUC)
             self.baseline_auc,  # Baseline-subtracted grate area sum (BGS) #gabe 210507: duplicating baseline_auc for now bc we got rid of grate sum
             self.
