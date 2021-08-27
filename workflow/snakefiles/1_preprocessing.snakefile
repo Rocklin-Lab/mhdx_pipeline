@@ -132,7 +132,7 @@ rule make_ims_mz_tics_3:
     Calculates total ionic current of an MS run at each LC retention timepoint, to be used by make_master_list.py
     """
     input:
-        "resources/0_mzml/{mzml}", #THIS WILL CHANGE TO 2_mzml_gz/
+        "resources/2_mzml_gz/{mzml}.gz",
     output:
         "resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib",
         "resources/3_tics/{mzml}_sum.txt"
