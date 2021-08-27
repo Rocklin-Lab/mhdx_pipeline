@@ -119,6 +119,8 @@ rule gzip_mzmls_2:
         "resources/0_mzml/{mzml}",
     output:
         "resources/2_mzml_gz/{mzml}.gz",
+    conda: 
+        "../envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
     shell:
@@ -135,6 +137,8 @@ rule make_ims_mz_tics_3:
         "resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib",
         "resources/3_tics/{mzml}_sum.txt"
     priority: 1
+    conda: 
+            "../envs/full_hdx_env.yml"
     benchmark:
         "results/benchmarks/3_make_ims_mz_tics.{mzml}.benchmark.txt"
     shell:
