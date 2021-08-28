@@ -74,80 +74,111 @@ def Gauss_10(xdata, H1, A1, mean1, std1, A2, mean2, std2, A3, mean3, std3, A4, m
 
 
 def get_popt(f, prominence, width):
+    std_guess = 3
+    std_min = 1
+    std_max = 15
+    tol_min = 0.99
+    tol_max = 1.01
+
     means = find_peaks(f, prominence=prominence, width=width)[0]
+
     if len(means) == 0:
         return []
     elif len(means) == 1:
         popt, pcov = curve_fit(Gauss_1, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], 1],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], 20]))
     elif len(means) == 2:
         popt, pcov = curve_fit(Gauss_2, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                   f[means[1]], means[1], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1],
-                                        10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], 1, tol_min * f[means[1]],
+                                        tol_min * means[1], 1],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1],
+                                        20]))
     elif len(means) == 3:
         popt, pcov = curve_fit(Gauss_3, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                   f[means[1]], means[1], 3,
                                                                   f[means[2]], means[2], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0,
-                                        0.9 * f[means[2]], 0.9 * means[2], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1], 10,
-                                        1.1 * f[means[2]], 1.1 * means[2], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], 1, tol_min * f[means[1]],
+                                        tol_min * means[1], 1,
+                                        tol_min * f[means[2]], tol_min * means[2], 1],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1], std_max,
+                                        tol_max * f[means[2]], tol_max * means[2], 20]))
 
     elif len(means) == 4:
         popt, pcov = curve_fit(Gauss_4, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                   f[means[1]], means[1], 3,
                                                                   f[means[2]], means[2], 3,
                                                                   f[means[3]], means[3], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0,
-                                        0.9 * f[means[2]], 0.9 * means[2], 0, 0.9 * f[means[3]], 0.9 * means[3], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1], 10,
-                                        1.1 * f[means[2]], 1.1 * means[2], 10, 1.1 * f[means[3]], 1.1 * means[3], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], 1, tol_min * f[means[1]],
+                                        tol_min * means[1], 1,
+                                        tol_min * f[means[2]], tol_min * means[2], 1, tol_min * f[means[3]],
+                                        tol_min * means[3], 1],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1], std_max,
+                                        tol_max * f[means[2]], tol_max * means[2], std_max, tol_max * f[means[3]],
+                                        tol_max * means[3], 20]))
     elif len(means) == 5:
         popt, pcov = curve_fit(Gauss_5, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                   f[means[1]], means[1], 3,
                                                                   f[means[2]], means[2], 3,
                                                                   f[means[3]], means[3], 3, f[means[4]], means[4], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0,
-                                        0.9 * f[means[2]], 0.9 * means[2], 0, 0.9 * f[means[3]], 0.9 * means[3], 0,
-                                        0.9 * f[means[4]], 0.9 * means[4], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1], 10,
-                                        1.1 * f[means[2]], 1.1 * means[2], 10, 1.1 * f[means[3]], 1.1 * means[3], 10,
-                                        1.1 * f[means[4]], 1.1 * means[4], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], 1, tol_min * f[means[1]],
+                                        tol_min * means[1], 1,
+                                        tol_min * f[means[2]], tol_min * means[2], 1, tol_min * f[means[3]],
+                                        tol_min * means[3], 1,
+                                        tol_min * f[means[4]], tol_min * means[4], 1],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1], std_max,
+                                        tol_max * f[means[2]], tol_max * means[2], std_max, tol_max * f[means[3]],
+                                        tol_max * means[3], std_max,
+                                        tol_max * f[means[4]], tol_max * means[4], std_max]))
     elif len(means) == 6:
         popt, pcov = curve_fit(Gauss_6, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                   f[means[1]], means[1], 3,
                                                                   f[means[2]], means[2], 3,
                                                                   f[means[3]], means[3], 3, f[means[4]], means[4], 3,
                                                                   f[means[5]], means[5], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0,
-                                        0.9 * f[means[2]], 0.9 * means[2], 0, 0.9 * f[means[3]], 0.9 * means[3], 0,
-                                        0.9 * f[means[4]], 0.9 * means[4], 0, 0.9 * f[means[5]], 0.9 * means[5], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1], 10,
-                                        1.1 * f[means[2]], 1.1 * means[2], 10, 1.1 * f[means[3]], 1.1 * means[3], 10,
-                                        1.1 * f[means[4]], 1.1 * means[4], 10, 1.1 * f[means[5]], 1.1 * means[5], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], std_min, tol_min * f[means[1]],
+                                        tol_min * means[1], std_min,
+                                        tol_min * f[means[2]], tol_min * means[2], std_min, tol_min * f[means[3]],
+                                        tol_min * means[3], std_min,
+                                        tol_min * f[means[4]], tol_min * means[4], std_min, tol_min * f[means[5]],
+                                        tol_min * means[5], std_min],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1], std_max,
+                                        tol_max * f[means[2]], tol_max * means[2], std_max, tol_max * f[means[3]],
+                                        tol_max * means[3], std_max,
+                                        tol_max * f[means[4]], tol_max * means[4], std_max, tol_max * f[means[5]],
+                                        tol_max * means[5], std_max]))
     elif len(means) == 7:
         popt, pcov = curve_fit(Gauss_7, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                   f[means[1]], means[1], 3,
                                                                   f[means[2]], means[2], 3,
                                                                   f[means[3]], means[3], 3, f[means[4]], means[4], 3,
                                                                   f[means[5]], means[5], 3, f[means[6]], means[6], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0,
-                                        0.9 * f[means[2]], 0.9 * means[2], 0, 0.9 * f[means[3]], 0.9 * means[3], 0,
-                                        0.9 * f[means[4]], 0.9 * means[4], 0, 0.9 * f[means[5]], 0.9 * means[5], 0,
-                                        0.9 * f[means[6]], 0.9 * means[6], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1], 10,
-                                        1.1 * f[means[2]], 1.1 * means[2], 10, 1.1 * f[means[3]], 1.1 * means[3], 10,
-                                        1.1 * f[means[4]], 1.1 * means[4], 10, 1.1 * f[means[5]], 1.1 * means[5], 10,
-                                        1.1 * f[means[6]], 1.1 * means[6], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], std_min, tol_min * f[means[1]],
+                                        tol_min * means[1], std_min,
+                                        tol_min * f[means[2]], tol_min * means[2], std_min, tol_min * f[means[3]],
+                                        tol_min * means[3], std_min,
+                                        tol_min * f[means[4]], tol_min * means[4], std_min, tol_min * f[means[5]],
+                                        tol_min * means[5], std_min,
+                                        tol_min * f[means[6]], tol_min * means[6], std_min],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1], std_max,
+                                        tol_max * f[means[2]], tol_max * means[2], std_max, tol_max * f[means[3]],
+                                        tol_max * means[3], std_max,
+                                        tol_max * f[means[4]], tol_max * means[4], std_max, tol_max * f[means[5]],
+                                        tol_max * means[5], std_max,
+                                        tol_max * f[means[6]], tol_max * means[6], std_max]))
     elif len(means) == 8:
         popt, pcov = curve_fit(Gauss_8, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                   f[means[1]], means[1], 3,
@@ -155,15 +186,23 @@ def get_popt(f, prominence, width):
                                                                   f[means[3]], means[3], 3, f[means[4]], means[4], 3,
                                                                   f[means[5]], means[5], 3, f[means[6]], means[6], 3,
                                                                   f[means[7]], means[7], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0,
-                                        0.9 * f[means[2]], 0.9 * means[2], 0, 0.9 * f[means[3]], 0.9 * means[3], 0,
-                                        0.9 * f[means[4]], 0.9 * means[4], 0, 0.9 * f[means[5]], 0.9 * means[5], 0,
-                                        0.9 * f[means[6]], 0.9 * means[6], 0, 0.9 * f[means[7]], 0.9 * means[7], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1], 10,
-                                        1.1 * f[means[2]], 1.1 * means[2], 10, 1.1 * f[means[3]], 1.1 * means[3], 10,
-                                        1.1 * f[means[4]], 1.1 * means[4], 10, 1.1 * f[means[5]], 1.1 * means[5], 10,
-                                        1.1 * f[means[6]], 1.1 * means[6], 10, 1.1 * f[means[7]], 1.1 * means[7], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], std_min, tol_min * f[means[1]],
+                                        tol_min * means[1], std_min,
+                                        tol_min * f[means[2]], tol_min * means[2], std_min, tol_min * f[means[3]],
+                                        tol_min * means[3], std_min,
+                                        tol_min * f[means[4]], tol_min * means[4], std_min, tol_min * f[means[5]],
+                                        tol_min * means[5], std_min,
+                                        tol_min * f[means[6]], tol_min * means[6], std_min, tol_min * f[means[7]],
+                                        tol_min * means[7], std_min],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1], std_max,
+                                        tol_max * f[means[2]], tol_max * means[2], std_max, tol_max * f[means[3]],
+                                        tol_max * means[3], std_max,
+                                        tol_max * f[means[4]], tol_max * means[4], std_max, tol_max * f[means[5]],
+                                        tol_max * means[5], std_max,
+                                        tol_max * f[means[6]], tol_max * means[6], std_max, tol_max * f[means[7]],
+                                        tol_max * means[7], std_max]))
     elif len(means) == 9:
         popt, pcov = curve_fit(Gauss_9, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                   f[means[1]], means[1], 3,
@@ -171,17 +210,25 @@ def get_popt(f, prominence, width):
                                                                   f[means[3]], means[3], 3, f[means[4]], means[4], 3,
                                                                   f[means[5]], means[5], 3, f[means[6]], means[6], 3,
                                                                   f[means[7]], means[7], 3, f[means[8]], means[8], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0,
-                                        0.9 * f[means[2]], 0.9 * means[2], 0, 0.9 * f[means[3]], 0.9 * means[3], 0,
-                                        0.9 * f[means[4]], 0.9 * means[4], 0, 0.9 * f[means[5]], 0.9 * means[5], 0,
-                                        0.9 * f[means[6]], 0.9 * means[6], 0, 0.9 * f[means[7]], 0.9 * means[7], 0,
-                                        0.9 * f[means[8]], 0.9 * means[8], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1], 10,
-                                        1.1 * f[means[2]], 1.1 * means[2], 10, 1.1 * f[means[3]], 1.1 * means[3], 10,
-                                        1.1 * f[means[4]], 1.1 * means[4], 10, 1.1 * f[means[5]], 1.1 * means[5], 10,
-                                        1.1 * f[means[6]], 1.1 * means[6], 10, 1.1 * f[means[7]], 1.1 * means[7], 10,
-                                        1.1 * f[means[8]], 1.1 * means[8], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], std_min, tol_min * f[means[1]],
+                                        tol_min * means[1], std_min,
+                                        tol_min * f[means[2]], tol_min * means[2], std_min, tol_min * f[means[3]],
+                                        tol_min * means[3], std_min,
+                                        tol_min * f[means[4]], tol_min * means[4], std_min, tol_min * f[means[5]],
+                                        tol_min * means[5], std_min,
+                                        tol_min * f[means[6]], tol_min * means[6], std_min, tol_min * f[means[7]],
+                                        tol_min * means[7], std_min,
+                                        tol_min * f[means[8]], tol_min * means[8], std_min],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1], std_max,
+                                        tol_max * f[means[2]], tol_max * means[2], std_max, tol_max * f[means[3]],
+                                        tol_max * means[3], std_max,
+                                        tol_max * f[means[4]], tol_max * means[4], std_max, tol_max * f[means[5]],
+                                        tol_max * means[5], std_max,
+                                        tol_max * f[means[6]], tol_max * means[6], std_max, tol_max * f[means[7]],
+                                        tol_max * means[7], std_max,
+                                        tol_max * f[means[8]], tol_max * means[8], std_max]))
     else:
         popt, pcov = curve_fit(Gauss_10, np.arange(len(f)), f, p0=[0, f[means[0]], means[0], 3,
                                                                    f[means[1]], means[1], 3,
@@ -190,21 +237,31 @@ def get_popt(f, prominence, width):
                                                                    f[means[5]], means[5], 3, f[means[6]], means[6], 3,
                                                                    f[means[7]], means[7], 3, f[means[8]], means[8], 3,
                                                                    f[means[9]], means[9], 3],
-                               bounds=([0, 0.9 * f[means[0]], 0.9 * means[0], 0, 0.9 * f[means[1]], 0.9 * means[1], 0,
-                                        0.9 * f[means[2]], 0.9 * means[2], 0, 0.9 * f[means[3]], 0.9 * means[3], 0,
-                                        0.9 * f[means[4]], 0.9 * means[4], 0, 0.9 * f[means[5]], 0.9 * means[5], 0,
-                                        0.9 * f[means[6]], 0.9 * means[6], 0, 0.9 * f[means[7]], 0.9 * means[7], 0,
-                                        0.9 * f[means[8]], 0.9 * means[8], 0, 0.9 * f[means[9]], 0.9 * means[9], 0],
-                                       [0.0005, 1.1 * f[means[0]], 1.1 * means[0], 10, 1.1 * f[means[1]],
-                                        1.1 * means[1], 10,
-                                        1.1 * f[means[2]], 1.1 * means[2], 10, 1.1 * f[means[3]], 1.1 * means[3], 10,
-                                        1.1 * f[means[4]], 1.1 * means[4], 10, 1.1 * f[means[5]], 1.1 * means[5], 10,
-                                        1.1 * f[means[6]], 1.1 * means[6], 10, 1.1 * f[means[7]], 1.1 * means[7], 10,
-                                        1.1 * f[means[8]], 1.1 * means[8], 10, 1.1 * f[means[9]], 1.1 * means[9], 10]))
+                               bounds=([0, tol_min * f[means[0]], tol_min * means[0], std_min, tol_min * f[means[1]],
+                                        tol_min * means[1], std_min,
+                                        tol_min * f[means[2]], tol_min * means[2], std_min, tol_min * f[means[3]],
+                                        tol_min * means[3], std_min,
+                                        tol_min * f[means[4]], tol_min * means[4], std_min, tol_min * f[means[5]],
+                                        tol_min * means[5], std_min,
+                                        tol_min * f[means[6]], tol_min * means[6], std_min, tol_min * f[means[7]],
+                                        tol_min * means[7], std_min,
+                                        tol_min * f[means[8]], tol_min * means[8], std_min, tol_min * f[means[9]],
+                                        tol_min * means[9], std_min],
+                                       [0.0005, tol_max * f[means[0]], tol_max * means[0], std_max,
+                                        tol_max * f[means[1]],
+                                        tol_max * means[1], std_max,
+                                        tol_max * f[means[2]], tol_max * means[2], std_max, tol_max * f[means[3]],
+                                        tol_max * means[3], std_max,
+                                        tol_max * f[means[4]], tol_max * means[4], std_max, tol_max * f[means[5]],
+                                        tol_max * means[5], std_max,
+                                        tol_max * f[means[6]], tol_max * means[6], std_max, tol_max * f[means[7]],
+                                        tol_max * means[7], std_max,
+                                        tol_max * f[means[8]], tol_max * means[8], std_max, tol_max * f[means[9]],
+                                        tol_max * means[9], std_max]))
     return popt
 
 
-def fit_gaussians(factor, mz_data, prominence=0.15, width=3):
+def fit_gaussians(factor, mz_data, prominence=0.001, width=0.5):
     factor_max = max(factor)
     mz_data_max = max(mz_data)
 
@@ -223,16 +280,16 @@ def fit_gaussians(factor, mz_data, prominence=0.15, width=3):
         for idx, param in enumerate(params):
             # Generated filtered IC from factor
             mask = Gauss_1(np.arange(len(factor)), *param)
-            factor_filtered = np.sqrt((mask * (factor / factor_max))) * factor_max
-            integrated_mz_gaussian.append(factor_filtered)
-            factor = factor - factor_filtered
-            factor = np.where(factor < 0, 0, factor)
+            factor_filtered = (mask * (factor / factor_max) / max(mask * (factor / factor_max))) * factor[
+                np.argmax(mask)]
+            if sum(factor_filtered) > 5:
+                integrated_mz_gaussian.append(factor_filtered)
 
-            # Generate filtered mz data
-            mask = np.repeat(mask, 7)
-            mz_data_filtered = np.sqrt((mask * (mz_data / mz_data_max))) * mz_data_max
-            mz_data_gaussian.append(mz_data_filtered)
-            mz_data = mz_data_max - mz_data_filtered
-            mz_data = np.where(mz_data < 0, 0, mz_data)
+                # Generate filtered mz data
+                mask = np.repeat(mask, 7)
+                mz_data_filtered = (mask * (mz_data / mz_data_max) / max(mask * (mz_data / mz_data_max))) * mz_data[
+                    np.argmax(mask)]
+                mz_data_gaussian.append(mz_data_filtered)
+
 
         return integrated_mz_gaussian, mz_data_gaussian
