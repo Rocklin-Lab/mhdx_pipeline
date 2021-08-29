@@ -178,7 +178,6 @@ rule idotp_filter_7:
             charge=zippable_charges
         )
     output:
-        "resources/7_idotp_filter/filter_passing_indices.csv",
         "resources/7_idotp_filter/checked_library_info.json",
         "results/plots/idotp_distribution.png"
     conda: 
