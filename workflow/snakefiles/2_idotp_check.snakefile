@@ -89,7 +89,6 @@ rule all:
     Defines final outputs desired by pipeline run.
     """
     input:
-        "resources/7_idotp_filter/filter_passing_indices.csv",
         "resources/7_idotp_filter/checked_library_info.json"
 
 
