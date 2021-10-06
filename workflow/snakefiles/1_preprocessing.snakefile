@@ -74,6 +74,8 @@ if config['lockmass']:
         benckmark:
             "results/benchmarks/calibration_from_lockmass.{mzml}.benchmark.txt"
         priority: 2
+        conda:
+            "../envs/full_hdx_env.yml"
         shell:
             "../scripts/hdx_limit/hdx_limit/preprocessing/0_calibration.py"
 
