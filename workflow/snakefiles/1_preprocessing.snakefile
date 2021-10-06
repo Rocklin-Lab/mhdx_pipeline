@@ -65,7 +65,7 @@ rule all:
         "resources/4_library_info/library_info.json"
 
 if config['lockmass']:
-    rule calibration_from_lockmass:
+    rule calibration_from_lockmass_0:
         input:
             "resources/0_mzml/{mzml}",
             "config/config.yaml"
@@ -73,6 +73,7 @@ if config['lockmass']:
             "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
         benckmark:
             "results/benchmarks/calibration_from_lockmass.{mzml}.benchmark.txt"
+        priority: 2
         shell:
             "../scripts/hdx_limit/hdx_limit/preprocessing/0_calibration.py"
 
