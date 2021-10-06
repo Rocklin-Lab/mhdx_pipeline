@@ -113,7 +113,7 @@ elif config['lockmass']:
             config["names_and_seqs"],
             "resources/1_imtbx/{undeut_fn}_mz_calib_dict.pk",
         output:
-            "resources/imtbx/{undeut_fn}_intermediate.csv",
+            "resources/1_imtbx/{undeut_fn}_intermediate.csv",
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
         params:
