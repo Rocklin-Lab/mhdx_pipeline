@@ -182,15 +182,15 @@ timepoints:
 
 # Set calibration from MZML file
 "lockmass": True
-"lockmass_compound": SodiumFormate # Choose from SodiumFormate, GluFibPrecursor, GluFibFragments
-"time_bins":5
+"lockmass_compound": "SodiumFormate" # Choose from SodiumFormate, GluFibPrecursor, GluFibFragments
+"time_bins": 5
 "polyfit_deg": 3
-"ms_resolution":12500
-"m0":300
-"m1":1600
+"ms_resolution": 12500
+"m0": 300
+"m1": 1600
 "ppm_lockmass_radius": 50
-"bins_per_isotopic_peak":100
-"runtime":25
+"bins_per_isotopic_peak": 100
+"runtime": 25
 
 ### Main Snakefile ###
 
