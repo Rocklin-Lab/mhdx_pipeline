@@ -68,7 +68,7 @@ if config['lockmass']:
     rule calibration_from_lockmass:
         input:
             "resources/mzml/{mzml}.gz",
-            configfile
+            "config/config.yaml"
         output:
             "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
         benckmark:
@@ -117,7 +117,7 @@ elif config['lockmass']:
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
         params:
-            runtime=configfile["runtime"]
+            runtime=config["runtime"]
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
