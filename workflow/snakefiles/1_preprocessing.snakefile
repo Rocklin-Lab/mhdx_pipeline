@@ -67,7 +67,7 @@ rule all:
 if config['lockmass']:
     rule calibration_from_lockmass:
         input:
-            "resources/mzml/{mzml}.gz",
+            "resources/0_mzml/{mzml}",
             "config/config.yaml"
         output:
             "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
@@ -109,7 +109,7 @@ elif config['lockmass']:
         """
         input:
             # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
-            "resources/isotopes/{undeut_fn}.peaks.isotopes",
+            "resources/0_isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
             "resources/1_imtbx/{undeut_fn}_mz_calib_dict.pk",
         output:
