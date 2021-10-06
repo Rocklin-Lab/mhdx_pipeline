@@ -70,7 +70,7 @@ if config['lockmass']:
             "resources/0_mzml/{mzml}",
             "config/config.yaml"
         output:
-            "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
+            "resources/1_calibration/{mzml}_mz_calib_dict.pk"
         benckmark:
             "results/benchmarks/calibration_from_lockmass.{mzml}.benchmark.txt"
         priority: 2
@@ -114,7 +114,7 @@ elif config['lockmass']:
             # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
             "resources/0_isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
-            "resources/1_imtbx/{undeut_fn}_mz_calib_dict.pk",
+            "resources/1_calibration/{undeut_fn}_mz_calib_dict.pk",
         output:
             "resources/1_imtbx/{undeut_fn}_intermediate.csv",
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
