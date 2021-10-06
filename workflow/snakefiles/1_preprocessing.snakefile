@@ -76,7 +76,7 @@ if config['lockmass']:
         priority: 2
         conda:
             "../envs/full_hdx_env.yml"
-        shell:
+        script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/0_calibration.py"
 
 if config['polyfit_calibration']:
@@ -125,7 +125,7 @@ elif config['lockmass']:
             "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
-        shell:
+        script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
 else:
     rule read_imtbx_1:
