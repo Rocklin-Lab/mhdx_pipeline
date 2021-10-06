@@ -172,6 +172,25 @@ timepoints:
 #Sets bounds on how far away a peak can be in LC from others like it and still be processed in a single DataTensor, default is 0.2 mins
 "rt_group_cutoff": 0.2 
 
+#mz calibration polyfit parameters
+"polyfit_calibration": False
+"polyfit_deg": 2
+"ppm_tolerance": 50
+"intensity_tolerance": 10000
+"cluster_corr_tolerance": 0.99
+"ppm_refilter": 10
+
+# Set calibration from MZML file
+"lockmass": True
+"lockmass_compound": SodiumFormate # Choose from SodiumFormate, GluFibPrecursor, GluFibFragments
+"time_bins":5
+"polyfit_deg": 3
+"ms_resolution":12500
+"m0":300
+"m1":1600
+"ppm_lockmass_radius": 50
+"bins_per_isotopic_peak":100
+"runtime":25
 
 ### Main Snakefile ###
 
@@ -236,10 +255,3 @@ timepoints:
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
 
-#mz calibration polyfit parameters
-"polyfit_calibration": True
-"polyfit_deg": 2
-"ppm_tolerance": 50
-"intensity_tolerance": 10000
-"cluster_corr_tolerance": 0.99
-"ppm_refilter": 10

@@ -64,6 +64,17 @@ rule all:
     input:
         "resources/4_library_info/library_info.json"
 
+if config['lockmass']:
+    rule calibration_from_lockmass:
+        input:
+            "resources/mzml/{mzml}.gz",
+            configfile
+        output:
+            "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
+        benckmark:
+            "results/benchmarks/calibration_from_lockmass.{mzml}.benchmark.txt"
+        shell:
+            "../scripts/hdx_limit/hdx_limit/preprocessing/0_calibration.py"
 
 if config['polyfit_calibration']:
     rule read_imtbx_1:
@@ -89,7 +100,31 @@ if config['polyfit_calibration']:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
-else: 
+elif config['lockmass']:
+    rule read_imtbx:
+        """
+        Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files.
+        Determines associations between identified peaks and expected masses of library proteins.
+        Feeds forward identified peaks with mass suffuciently similar to some library protein for further consideration.
+        """
+        input:
+            # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
+            "resources/isotopes/{undeut_fn}.peaks.isotopes",
+            config["names_and_seqs"],
+            "resources/1_imtbx/{undeut_fn}_mz_calib_dict.pk",
+        output:
+            "resources/imtbx/{undeut_fn}_intermediate.csv",
+            "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
+            "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
+        params:
+            runtime=configfile["runtime"]
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
+        shell:
+            "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
+else:
     rule read_imtbx_1:
         """
         Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
