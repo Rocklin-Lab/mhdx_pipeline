@@ -71,7 +71,7 @@ if config['lockmass']:
             "config/config.yaml"
         output:
             "resources/1_calibration/{mzml}_mz_calib_dict.pk",
-            "results/plots/preprocessing/1_calibration_{mzml}_degrees.pk"
+            "results/plots/preprocessing/1_calibration_{mzml}_degrees.pdf"
         benchmark:
             "results/benchmarks/calibration_from_lockmass.{mzml}.benchmark.txt"
         priority: 2
