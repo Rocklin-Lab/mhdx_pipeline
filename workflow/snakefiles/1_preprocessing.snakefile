@@ -72,7 +72,7 @@ if config['lockmass']:
         output:
             "resources/1_calibration/{mzml}_mz_calib_dict.pk",
             "results/plots/preprocessing/1_calibration_{mzml}_degrees.pk"
-        benckmark:
+        benchmark:
             "results/benchmarks/calibration_from_lockmass.{mzml}.benchmark.txt"
         priority: 2
         conda:
