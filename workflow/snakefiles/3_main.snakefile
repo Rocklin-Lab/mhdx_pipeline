@@ -174,11 +174,39 @@ if config['polyfit_calibration']:
                 name=zippable_names,
                 charge=zippable_charges
             )
+        params:
+            lockmass_calibration=False,
+            polyfit_calibration=True
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
-        
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+elif config['lockmass']:
+    rule extract_tensors_9:
+        """
+        Extract all identified tensors from each .mzML.gz.
+        """
+        input:
+            library_info_fn,
+            "resources/2_mzml_gz/{mzml}.gz",
+            "config/config.yaml",
+            "resources/1_calibration/{mzml}_mz_calib_dict.pk"
+        output:
+            expand(
+                "resources/5_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
+            )
+        params:
+            lockmass_calibration=True,
+            polyfit_calibration=False
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
             "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
 else:
