@@ -225,6 +225,9 @@ else:
                 name=zippable_names,
                 charge=zippable_charges
             )
+        params:
+            lockmass_calibration=False,
+            polyfit_calibration=False
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
