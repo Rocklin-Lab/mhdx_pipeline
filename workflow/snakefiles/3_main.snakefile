@@ -142,8 +142,8 @@ rule mv_passing_tensors_8:
             expand(
                 "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
                 zip,
-                name=zippable_names,
-                charge=zippable_charges,
+                name=mv_passing_tensors_zippable_names,
+                charge=mv_passing_tensors_zippable_charges,
                 mzml=mv_passing_tensors_zippable_undeut_mzmls
             )
         )
@@ -195,7 +195,7 @@ elif config['lockmass']:
             "resources/1_calibration/{mzml}_mz_calib_dict.pk"
         output:
             expand(
-                "resources/5_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
