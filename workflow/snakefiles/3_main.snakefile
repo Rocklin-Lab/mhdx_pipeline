@@ -267,7 +267,7 @@ rule optimize_paths_11:
         lambda wildcards: optimize_paths_inputs(wildcards.name, library_info) 
     output:
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/{name}_prefiltered_ics",
+        "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
         "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
         "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_runners_monobody.cpickle.zlib",
