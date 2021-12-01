@@ -260,6 +260,17 @@ timepoints:
 "ic_rel_height_filter_baseline": 0.10
 "ic_rel_height_threshold": 0.10
 
+# User defined thresholds to filter ics before weak_pareto_filter and optimize paths
+"user_filter": True
+"thresholds":
+  "baseline_peak_error": 20.
+  "dt_ground_err": 20.
+  "dt_ground_fit": 0.9
+  "rt_ground_err": 20
+  "rt_ground_fit": 0.9
+  "baseline_integrated_rmse": 0.10
+  "baseline_integrated_FWHM": 1.
+  "nearest_neighbor_correlation": 0.
 
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
