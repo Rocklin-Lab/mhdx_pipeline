@@ -50,6 +50,8 @@ rule raw_to_mzml:
         [sbc538@quser24 973060]$ WINEPREFIX=/projects/b1095/sbc538/NUIT/973060/.wine singularity exec pwiz-skyline-i-agree-to-the-vendor-licenses_latest.sif wine /wineprefix64/drive_c/pwiz/msconvert --help
 """
 
+import glob as glob
+
 # Make flat list of all MS datafiles.
 all_timepoint_files = []
 for key in config["timepoints"]:
@@ -62,7 +64,9 @@ rule all:
     Defines final outputs desired by pipeline run.
     """
     input:
-        "resources/4_library_info/library_info.json"
+        "resources/4_library_info/library_info.json",
+        expand("resources/1_calibration/{mzml}_mz_calib_dict.pk", mzml=all_timepoint_files),
+        expand("resources/2_mzml_gz/{mzml}.gz", mzml=all_timepoint_files)
 
 if config['lockmass']:
     rule calibration_from_lockmass_0:
@@ -163,7 +167,7 @@ rule gzip_mzmls_2:
     benchmark:
         "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/hdx_limit/hdx_limit/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}"
+        "python workflow/scripts/hdx_limit/hdx_limit/preprocessing/2_gzip_mzml.py {input} --out_path {output}" # --delete_source
 
 
 rule make_ims_mz_tics_3:

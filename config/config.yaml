@@ -22,7 +22,7 @@
 "run_name": "2021_lib15_ph6"
 
 #Path to .csv file where each row is a library protein name followed by its sequence
-"names_and_seqs": "resources/0_names_seqs_masses/lib_info.csv"
+"names_and_seqs": "resources/0_names_seqs_masses/lib_9_name_seq_mass.csv"
 
 ########################################
 ###############TIMEPOINTS###############
@@ -44,27 +44,18 @@
 
 #in seconds, in ascending order, including 0
 timepoints:
-  - 0
-  - 15
-  - 23
-  - 37
-  - 59
-  - 93
-  - 147
-  - 233
-  - 368
-  - 582
-  - 920
-  - 1454
-  - 2297
-  - 3630
-  - 5736
-  - 9063
-  - 14320
-  - 22625
-  - 35748
-  - 56483
-  - 89243
+   - 0
+   - 25
+   - 38
+   - 58
+   - 90
+   - 138
+   - 211
+   - 324
+   - 498
+   - 763
+   - 1171
+   - 1795
 
 
 
@@ -92,71 +83,31 @@ timepoints:
 
 #If you provide .mzML or .mzML.gz files the pipeline will recognize this and skip upstream jobs to start as far downstream as possible.
 
-
-0: 
-  - "20210323_lib15_ph6_0sec_01.mzML"
-  - "20210323_lib15_ph6_0sec_02.mzML"
-15:
-  - "20210323_lib15_ph6_15sec_01.mzML"
-  - "20210323_lib15_ph6_15sec_02.mzML"
-23:
-  - "20210323_lib15_ph6_23sec_01.mzML"
-  - "20210323_lib15_ph6_23sec_02.mzML"
-37:
-  - "20210323_lib15_ph6_37sec_01.mzML"
-  - "20210323_lib15_ph6_37sec_02.mzML"
-59:
-  - "20210323_lib15_ph6_59sec_01.mzML"
-  - "20210323_lib15_ph6_59sec_02.mzML"
-93:
-  - "20210323_lib15_ph6_93sec_01.mzML"
-  - "20210323_lib15_ph6_93sec_02.mzML"
-147:
-  - "20210323_lib15_ph6_147sec_01.mzML"
-  - "20210323_lib15_ph6_147sec_02.mzML"
-233:
-  - "20210323_lib15_ph6_233sec_01.mzML"
-  - "20210323_lib15_ph6_233sec_02.mzML"
-368:
-  - "20210323_lib15_ph6_368sec_01.mzML"
-  - "20210323_lib15_ph6_368sec_02.mzML"
-582:
-  - "20210323_lib15_ph6_582sec_01.mzML"
-  - "20210323_lib15_ph6_582sec_02.mzML"
-920:
-  - "20210323_lib15_ph6_920sec_01.mzML"
-  - "20210323_lib15_ph6_920sec_02.mzML"
-1454:
-  - "20210323_lib15_ph6_1454sec_01.mzML"
-  - "20210323_lib15_ph6_1454sec_02.mzML"
-2297:
-  - "20210323_lib15_ph6_2297sec_01.mzML"
-  - "20210323_lib15_ph6_2297sec_02.mzML"
-3630:
-  - "20210323_lib15_ph6_3630sec_01.mzML"
-  - "20210323_lib15_ph6_3630sec_02.mzML"
-5736:
-  - "20210323_lib15_ph6_5736sec_01.mzML"
-  - "20210323_lib15_ph6_5736sec_02.mzML"
-9063:
-  - "20210323_lib15_ph6_9063sec_01.mzML"
-  - "20210323_lib15_ph6_9063sec_02.mzML"
-14320:
-  - "20210323_lib15_ph6_14320sec_01.mzML"
-  - "20210323_lib15_ph6_14320sec_02.mzML"
-22625:
-  - "20210323_lib15_ph6_22625sec_01.mzML"
-  - "20210323_lib15_ph6_22625sec_02.mzML"
-35748:
-  - "20210323_lib15_ph6_35748sec_01.mzML"
-  - "20210323_lib15_ph6_35748sec_02.mzML"
-56483:
-  - "20210323_lib15_ph6_56483sec_01.mzML"
-  - "20210323_lib15_ph6_56483sec_02.mzML"
-89243:
-  - "20210323_lib15_ph6_89243sec_01.mzML"
-  - "20210323_lib15_ph6_89243sec_02.mzML"
-
+0:
+  - "20211012_Lib09_pH6_0s_0.mzML"
+  - "20211012_Lib09_pH6_0s_1.mzML"
+25:
+  - "20211012_Lib09_pH6_25s.mzML"
+38:
+  - "20211012_Lib09_pH6_38s.mzML"
+58:
+  - "20211012_Lib09_pH6_58s.mzML"
+90:
+  - "20211012_Lib09_pH6_90s.mzML"
+138:
+  - "20211012_Lib09_pH6_138s.mzML"
+211:
+  - "20211012_Lib09_pH6_211s.mzML"
+324:
+  - "20211012_Lib09_pH6_324s.mzML"
+498:
+  - "20211012_Lib09_pH6_498s.mzML"
+763:
+  - "20211012_Lib09_pH6_763s.mzML"
+1171:
+  - "20211012_Lib09_pH6_1171s.mzML"
+1795:
+  - "20211012_Lib09_pH6_1795s.mzML"
 
 
 ########################################
@@ -194,11 +145,11 @@ timepoints:
 "lockmass_compound": "SodiumFormate"
 "polyfit_deg": 3
 "ms_resolution": 12500
-"m0": 300
+"m0": 280
 "m1": 1600
 "ppm_lockmass_radius": 50
 "bins_per_isotopic_peak": 100
-"runtime": 25
+"runtime": 30
 "time_bins": 5
 
 ### Main Snakefile ###
@@ -261,7 +212,7 @@ timepoints:
 "ic_rel_height_threshold": 0.10
 
 # User defined thresholds to filter ics before weak_pareto_filter and optimize paths
-"user_filter": True
+"user_filter": False
 "thresholds":
   "baseline_peak_error": 20.
   "dt_ground_err": 20.
@@ -270,8 +221,11 @@ timepoints:
   "rt_ground_fit": 0.9
   "baseline_integrated_rmse": 0.10
   "baseline_integrated_FWHM": 1.
-  "nearest_neighbor_correlation": 0.
-
+  "nearest_neighbor_correlation": 0.     
+    
+     
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
-
+     
+     
+     
