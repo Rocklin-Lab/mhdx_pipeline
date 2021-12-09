@@ -58,14 +58,21 @@ for key in config["timepoints"]:
         all_timepoint_files.append(file)
         
 
-rule all:
-    """
-    Defines final outputs desired by pipeline run.
-    """
-    input:
-        "resources/4_library_info/library_info.json",
-        expand("resources/1_calibration/{mzml}_mz_calib_dict.pk", mzml=all_timepoint_files),
-        expand("resources/2_mzml_gz/{mzml}.gz", mzml=all_timepoint_files)
+if config['lockmass']:
+    rule all:
+        """
+        Defines final outputs desired by pipeline run.
+        """
+        input:
+            "resources/4_library_info/library_info.json",
+            expand("resources/1_calibration/{mzml}_mz_calib_dict.pk", mzml=all_timepoint_files),
+else:
+    rule all:
+            """
+            Defines final outputs desired by pipeline run.
+            """
+            input:
+                "resources/4_library_info/library_info.json",
 
 if config['lockmass']:
     rule calibration_from_lockmass_0:
@@ -74,9 +81,9 @@ if config['lockmass']:
             "config/config.yaml"
         output:
             "resources/1_calibration/{mzml}_mz_calib_dict.pk",
-            "results/plots/preprocessing/1_calibration_{mzml}_degrees.pdf"
+            "results/plots/preprocessing/0_calibration_{mzml}_degrees.pdf"
         benchmark:
-            "results/benchmarks/calibration_from_lockmass.{mzml}.benchmark.txt"
+            "results/benchmarks/0_calibration_from_lockmass.{mzml}.benchmark.txt"
         priority: 2
         conda:
             "../envs/full_hdx_env.yml"
@@ -166,7 +173,7 @@ rule gzip_mzmls_2:
     benchmark:
         "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
     shell:
-        "python workflow/scripts/hdx_limit/hdx_limit/preprocessing/2_gzip_mzml.py {input} --out_path {output}" # --delete_source
+        "python workflow/scripts/hdx_limit/hdx_limit/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}" 
 
 
 rule make_ims_mz_tics_3:
