@@ -212,7 +212,7 @@ timepoints:
 "ic_rel_height_threshold": 0.10
 
 # User defined thresholds to filter ics before weak_pareto_filter and optimize paths
-"user_filter": False
+"user_prefilter": False
 "thresholds":
   "baseline_peak_error": 20.
   "dt_ground_err": 20.
