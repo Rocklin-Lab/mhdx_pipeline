@@ -109,7 +109,7 @@ if config['polyfit_calibration']:
         script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
 elif config['lockmass']:
-    rule read_imtbx:
+    rule read_imtbx_1:
         """
         Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files.
         Determines associations between identified peaks and expected masses of library proteins.
