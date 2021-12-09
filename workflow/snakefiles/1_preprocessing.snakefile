@@ -50,7 +50,6 @@ rule raw_to_mzml:
         [sbc538@quser24 973060]$ WINEPREFIX=/projects/b1095/sbc538/NUIT/973060/.wine singularity exec pwiz-skyline-i-agree-to-the-vendor-licenses_latest.sif wine /wineprefix64/drive_c/pwiz/msconvert --help
 """
 
-import glob as glob
 
 # Make flat list of all MS datafiles.
 all_timepoint_files = []
