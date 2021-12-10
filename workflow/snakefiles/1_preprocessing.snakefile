@@ -77,7 +77,7 @@ else:
 if config['lockmass']:
     rule calibration_from_lockmass_0:
         input:
-            "resources/0_mzml/{mzml}",
+            "resources/2_mzml_gz/{mzml}.gz",
             "config/config.yaml"
         output:
             "resources/0_calibration/{mzml}_mz_calib_dict.pk",
