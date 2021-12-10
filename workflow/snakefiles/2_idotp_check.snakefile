@@ -130,7 +130,7 @@ elif config['lockmass']:
             library_info_fn,
             "resources/2_mzml_gz/{mzml}.gz",
             "config/config.yaml",
-            "resources/1_calibration/{mzml}_mz_calib_dict.pk"
+            "resources/0_calibration/{mzml}_mz_calib_dict.pk"
         output:
             expand(
                 "resources/5_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",

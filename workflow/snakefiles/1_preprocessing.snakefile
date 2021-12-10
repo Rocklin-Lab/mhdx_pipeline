@@ -65,7 +65,7 @@ if config['lockmass']:
         """
         input:
             "resources/4_library_info/library_info.json",
-            expand("resources/1_calibration/{mzml}_mz_calib_dict.pk", mzml=all_timepoint_files),
+            expand("resources/0_calibration/{mzml}_mz_calib_dict.pk", mzml=all_timepoint_files),
 else:
     rule all:
             """
@@ -125,7 +125,7 @@ elif config['lockmass']:
             # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
             "resources/0_isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
-            "resources/1_calibration/{undeut_fn}_mz_calib_dict.pk",
+            "resources/0_calibration/{undeut_fn}_mz_calib_dict.pk",
         output:
             "resources/1_imtbx/{undeut_fn}_intermediate.csv",
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
@@ -135,7 +135,7 @@ elif config['lockmass']:
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
-            "results/benchmarks/read_imtbx.{undeut_fn}.benchmark.txt"
+            "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
 else:
