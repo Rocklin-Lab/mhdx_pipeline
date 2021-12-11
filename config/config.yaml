@@ -211,8 +211,11 @@ timepoints:
 "ic_rel_height_filter_baseline": 0.10
 "ic_rel_height_threshold": 0.10
 
+# User weak pareto filter to retain only ics that are best in at least one criterion
+"pareto_prefilter": True
+
 # User defined thresholds to filter ics before weak_pareto_filter and optimize paths
-"user_prefilter": False
+"user_prefilter": True
 "thresholds":
   "baseline_peak_error": 20.
   "dt_ground_err": 20.
