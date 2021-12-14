@@ -274,7 +274,7 @@ rule optimize_paths_11:
         "resources/10_ic_time_series/{name}/monobody/{name}_undeut_grounds_monobody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_winner_scores_monobody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_rtdt_com_cvs_monobody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib.csv"
+        "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib.csv",
         "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path_multibody.pdf",
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_runners_multibody.cpickle.zlib",
