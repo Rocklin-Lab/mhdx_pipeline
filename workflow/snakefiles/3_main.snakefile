@@ -50,7 +50,7 @@ from collections import OrderedDict
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
-names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+names = list(OrderedDict.fromkeys(library_info["name"].values).keys())[:10] # This is the Python-native version of an ordered set operation.
 
 # Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
 zippable_names = list(library_info["name"].values)
