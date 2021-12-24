@@ -4,13 +4,18 @@
 
 ## Installing hdx_limit
 
-Step 1: Configure snakemake environment. Skip this step if already configured.
+Step 1: Install anaconda. 
+
+Download the linux installer from this link: https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh
+Installation instructions: https://docs.anaconda.com/anaconda/install/linux/
+
+Step 2: Configure snakemake environment. Skip this step if already configured.
 
 `conda install -n base -c conda-forge mamba` <br /> 
 `conda activate base` <br /> 
 `mamba create -c conda-forge -c bioconda -n snakemake snakemake=6.7.0`<br /> 
 
-Step 2: Activate snamake environment and clone repository
+Step 3: Activate snamake environment and clone repository
 
 `source activate snakemake` <br />
 `git clone https://github.com/Rocklin-Lab/hdx_limit-pipeline.git ` <br /> 
