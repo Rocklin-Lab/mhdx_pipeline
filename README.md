@@ -6,7 +6,7 @@
 
 Step 1: Install anaconda. 
 
-Download the linux installer from this link: https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh
+Download the linux installer from this link: https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh <br />
 Installation instructions: https://docs.anaconda.com/anaconda/install/linux/
 
 Step 2: Configure snakemake environment. Skip this step if already configured.
