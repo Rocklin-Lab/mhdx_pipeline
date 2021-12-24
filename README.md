@@ -1,4 +1,4 @@
-### version 0.21.357
+### version 0.21.358
 
 # The hdx_limit pipeline with Snakemake
 
@@ -28,15 +28,15 @@ Step 3: Activate snamake environment and clone repository
 The pipeline expects three input files:
 
 1) a csv file contaning protein name, protein sequence, and monoisotopic mass. This file should be stored at resources/0_names_seqs_masses <br />
-e.g. <br />
+e.g. names_and_seqs.csv <br />
 `name,sequence,mono_mass` <br />
 `PDB2PJV,HMAVGIGALFLGFLGAAGSTVGAASGGGKKKKK,3085.722267` <br />
 `PDB2N92,HMSWLSKTAKKLENSAKKRISEGIAIAIQGGPR,3604.9987800000013` <br />
 `PDB2LZP,HMDTEIIGGLTIPPVVALVVMSRFGFFAHLLPR,3632.972752` <br />
 
-2) mzML files from HX-MS data. These files should be stored at resources/0_mzml. Alternatively, the user can provide already gziped versions of the mzML files. In this case, mzML.gz files should be stored at 2_mzml_gz.
+2) mzML files from HX-MS experiment. These files should be stored at resources/0_mzml. Alternatively, the user can provide already gziped versions of the mzML files. In this case, mzML.gz files should be stored at resources/2_mzml_gz.
 
-3) isotope file for each HX-MS 0 timepoint. This file is generated from IMTBX. More information can be found at https://dmtavt.com/IMTBX.
+3) isotope file for each HX-MS 0 timepoint. This file is generated with IMTBX. More information can be found at https://dmtavt.com/IMTBX.
 
 
 4) edit config/config.yaml to contain the specific paths to those files along with the set of timepoints for your experiment. 
