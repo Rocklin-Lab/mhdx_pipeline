@@ -66,14 +66,28 @@ for name, charge in zip(zippable_names, zippable_charges):
         mv_passing_tensors_zippable_charges.append(charge)
         mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
 
+if config['rerun-path-optimizer']:
+    folders_to_delete = glob.glob('resources/10_ic_time_series/*/monobody/') + glob.glob('resources/10_ic_time_series/*/multibody/')
+    for folder in folders_to_delete:
+        shutil.rmtree(folder)
 
-rule all:
-    """
-    Defines final outputs desired by pipeline run.
-    """
-    input:
-        expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
-        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names)
+if config["delete-files"]:
+    rule all:
+        """
+        Defines final outputs desired by pipeline run.
+        """
+        input:
+            expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
+            expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
+            'NON-ESSENTIAL-FILES-DELETED'
+else:
+    rule all:
+        """
+        Defines final outputs desired by pipeline run.
+        """
+        input:
+            expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
+            expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names)
 
 
 def optimize_paths_inputs(name, library_info): 
@@ -256,40 +270,103 @@ rule generate_tensor_ics_10:
     shell:
         "python workflow/scripts/hdx_limit/hdx_limit/pipeline/9_generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
 
+if config['rerun-path-optimizer']:
+    rule optimize_paths_11:
+        """
+        Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
+        """
+        input:
+            library_info_fn,
+            "config/config.yaml",
+            lambda wildcards: optimize_paths_inputs(wildcards.name, library_info)
+        output:
+            "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
+            "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_runners_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_undeut_grounds_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_scores_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_rtdt_com_cvs_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib.csv",
+            "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path_multibody.pdf",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_runners_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_undeut_grounds_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib.csv"
+        params:
+            rt_group_name = "{name}"
+        benchmark:
+            "results/benchmarks/11_optimize_paths.{name}.benchmark.txt"
+        conda:
+            "../envs/full_hdx_env.yml"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/10_optimize_paths.py"
+else:
+    rule optimize_paths_11:
+        """
+        Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
+        """
+        input:
+            library_info_fn,
+            "config/config.yaml",
+            lambda wildcards: optimize_paths_inputs(wildcards.name, library_info)
+        output:
+            "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
+            "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_runners_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_undeut_grounds_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_scores_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_rtdt_com_cvs_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib.csv",
+            "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path_multibody.pdf",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_runners_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_undeut_grounds_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib.csv"
+        params:
+            rt_group_name = "{name}"
+        benchmark:
+            "results/benchmarks/11_optimize_paths.{name}.benchmark.txt"
+        conda:
+            "../envs/full_hdx_env.yml"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/10_optimize_paths.py"
 
-rule optimize_paths_11:
-    """
-    Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
-    """
-    input:
-        library_info_fn,
-        "config/config.yaml",
-        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info) 
-    output:
-        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
-        "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
-        "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/monobody/{name}_runners_monobody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/monobody/{name}_undeut_grounds_monobody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/monobody/{name}_winner_scores_monobody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/monobody/{name}_rtdt_com_cvs_monobody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib.csv",
-        "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path_multibody.pdf",
-        "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/multibody/{name}_runners_multibody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/multibody/{name}_undeut_grounds_multibody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib",
-        "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib.csv"
-    params:
-        rt_group_name = "{name}"
-    benchmark:
-        "results/benchmarks/11_optimize_paths.{name}.benchmark.txt"
-    conda:
-        "../envs/full_hdx_env.yml"
-    script:
-        "../scripts/hdx_limit/hdx_limit/pipeline/10_optimize_paths.py"
+if config["delete-files"]:
+    rule delete_non_essential_files_12:
+        input:
+            "config/config.yaml",
+            "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
+            "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_runners_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_undeut_grounds_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_scores_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_rtdt_com_cvs_monobody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib.csv",
+            "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path_multibody.pdf",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_runners_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_undeut_grounds_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib",
+            "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib.csv"
+        output:
+             "NON-ESSENTIAL-FILES-DELETED"
+        benchmark:
+            "results/benchmarks/12_delete_non_essential_files.benchmark.txt"
+        conda:
+            "../envs/full_hdx_env.yml"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/12_delete_non_essential_files.py"
 
 """
 #REVIEW FUNCTIONALITY

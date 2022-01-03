@@ -217,6 +217,7 @@ timepoints:
 # User defined thresholds to filter ics before weak_pareto_filter and optimize paths
 "user_prefilter": True
 "thresholds":
+  "idotp_cutoff" : 0.99
   "baseline_peak_error": 20.
   "dt_ground_err": 20.
   "dt_ground_fit": 0.9
@@ -229,6 +230,13 @@ timepoints:
      
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
-     
+
+# Run path optimizer again. This option will delete all ic_time_series pdfs.
+"rerun-path-optimizer" : False
+
+# Delete unnecessary files. This option will keep just essential files to rerun pathOptimizer.
+"delete-files" : False
+"keep_gz_mzml": True
+
      
      
