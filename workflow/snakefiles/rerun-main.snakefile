@@ -84,7 +84,7 @@ rule optimize_paths_12:
 rule delete_non_essential_files_13:
     input:
         "config/config.yaml",
-        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+        expand("resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib", name=names)
     output:
          "NON-ESSENTIAL-FILES-DELETED"
     benchmark:
