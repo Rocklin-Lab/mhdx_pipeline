@@ -321,14 +321,14 @@ rule optimize_paths_12:
         "../scripts/hdx_limit/hdx_limit/pipeline/11_optimize_paths.py"
 
 
-rule delete_non_essential_files_12:
+rule delete_non_essential_files_13:
     input:
         "config/config.yaml",
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
     output:
          "NON-ESSENTIAL-FILES-DELETED"
     benchmark:
-        "results/benchmarks/12_delete_non_essential_files.benchmark.txt"
+        "results/benchmarks/13_delete_non_essential_files.benchmark.txt"
     conda:
         "../envs/full_hdx_env.yml"
     script:
