@@ -226,17 +226,10 @@ timepoints:
   "baseline_integrated_rmse": 0.10
   "baseline_integrated_FWHM": 1.
   "nearest_neighbor_correlation": 0.     
-    
+  "min_timepoints": 5
      
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
-
-# Run path optimizer again. This option will delete all ic_time_series pdfs.
-"rerun-path-optimizer" : False
-
-# Delete unnecessary files. This option will keep just essential files to rerun pathOptimizer.
-"delete-files" : False
-"keep_gz_mzml": True
 
      
      

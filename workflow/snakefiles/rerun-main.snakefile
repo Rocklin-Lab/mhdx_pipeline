@@ -24,28 +24,13 @@ for name, charge in zip(zippable_names, zippable_charges):
         mv_passing_tensors_zippable_charges.append(charge)
         mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
 
-if config['rerun-path-optimizer']:
-    folders_to_delete = glob.glob('resources/10_ic_time_series/*/monobody/') + glob.glob('resources/10_ic_time_series/*/multibody/')
-    for folder in folders_to_delete:
-        shutil.rmtree(folder)
-
-if config["delete-files"]:
-    rule all:
-        """
-        Defines final outputs desired by pipeline run.
-        """
-        input:
-            expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
-            expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
-            'NON-ESSENTIAL-FILES-DELETED'
-else:
-    rule all:
-        """
-        Defines final outputs desired by pipeline run.
-        """
-        input:
-            expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
-            expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names)
+rule all:
+    """
+    Defines final outputs desired by pipeline run.
+    """
+    input:
+        expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
+        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names)
 
 rule optimize_paths_12:
     """
@@ -79,17 +64,3 @@ rule optimize_paths_12:
         "../envs/full_hdx_env.yml"
     script:
         "../scripts/hdx_limit/hdx_limit/pipeline/11_optimize_paths.py"
-
-
-rule delete_non_essential_files_13:
-    input:
-        "config/config.yaml",
-        expand("resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib", name=names)
-    output:
-         "NON-ESSENTIAL-FILES-DELETED"
-    benchmark:
-        "results/benchmarks/13_delete_non_essential_files.benchmark.txt"
-    conda:
-        "../envs/full_hdx_env.yml"
-    script:
-        "../scripts/hdx_limit/hdx_limit/pipeline/12_delete_non_essential_files.py"
