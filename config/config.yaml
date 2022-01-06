@@ -219,7 +219,7 @@ timepoints:
 "thresholds":
   "idotp_cutoff" : 0.99
   "baseline_peak_error": 10.
-  "dt_ground_err": 20.
+  "dt_ground_err": 5.
   "dt_ground_fit": 0.9
   "rt_ground_err": 25
   "rt_ground_fit": 0.9
