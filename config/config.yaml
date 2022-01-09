@@ -109,6 +109,9 @@ timepoints:
 1795:
   - "20211012_Lib09_pH6_1795s.mzML"
 
+validation:
+   - "20211012_Lib09_pH6_90s.mzML"
+
 
 ########################################
 ###############PARAMETERS###############
@@ -125,8 +128,8 @@ timepoints:
 
 #mz calibration polyfit parameters
 "polyfit_calibration": False
-"polyfit_deg": 2
 "ppm_tolerance": 50
+#"polyfit_deg": 3
 "intensity_tolerance": 10000
 "cluster_corr_tolerance": 0.99
 "ppm_refilter": 10
