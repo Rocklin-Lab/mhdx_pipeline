@@ -42,14 +42,14 @@ rule optimize_paths_12:
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib"
     output:
         "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
-        "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
+        "results/plots/10_ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
         "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_runners_monobody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_undeut_grounds_monobody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_winner_scores_monobody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_rtdt_com_cvs_monobody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib.csv",
-        "results/plots/ic_time_series/winner_plots/multibody/{name}_winner_path_multibody.pdf",
+        "results/plots/10_ic_time_series/winner_plots/multibody/{name}_winner_path_multibody.pdf",
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_runners_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_undeut_grounds_multibody.cpickle.zlib",
