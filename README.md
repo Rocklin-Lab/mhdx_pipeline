@@ -1,4 +1,4 @@
-### version 0.21.358
+### version 0.22.015
 
 # The hdx_limit pipeline with Snakemake
 
@@ -38,20 +38,19 @@ e.g. names_and_seqs.csv <br />
 
 3) isotope file for each HX-MS 0 timepoint. This file is generated with IMTBX. More information can be found at https://dmtavt.com/IMTBX.
 
-
 4) edit config/config.yaml to contain the specific paths to those files along with the set of timepoints for your experiment. 
 
-A number of additional parameters are available in config/config.yaml. Default parameters were found to best perform in our experiments. 
+A number of additional parameters is available in config/config.yaml. Default parameters were found to best perform in our experiments. 
 
 ## Running hdx_limit with Snakemake
 
 Our pipeline consists of three sequential steps. Edit the string after `--cluster` to match the cluster scheduler syntax from your cluster.
 
-`snakemake -s workflow/snakefiles/1_preprocessing.snakefile --use-conda -j 4000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 03:00:00' --max-jobs-per-second 5`
+`snakemake -s workflow/snakefiles/1_preprocessing.snakefile --use-conda -j 4000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 04:00:00' --max-jobs-per-second 5`
  
-`snakemake -s workflow/snakefiles/2_idotp_check.snakefile --use-conda -j 4000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 03:00:00' --max-jobs-per-second 5`
+`snakemake -s workflow/snakefiles/2_idotp_check.snakefile --use-conda -j 4000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 04:00:00' --max-jobs-per-second 5`
 
-`snakemake -s workflow/snakefiles/3_main.snakefile --use-conda -j 4000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 03:00:00' --max-jobs-per-second 5`
+`snakemake -s workflow/snakefiles/3_main.snakefile --use-conda -j 4000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 04:00:00' --max-jobs-per-second 5`
 
 ## Authors
 
