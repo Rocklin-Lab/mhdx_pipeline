@@ -125,8 +125,8 @@ timepoints:
 
 #mz calibration polyfit parameters
 "polyfit_calibration": False
-"polyfit_deg": 2
 "ppm_tolerance": 50
+#"polyfit_deg": 3
 "intensity_tolerance": 10000
 "cluster_corr_tolerance": 0.99
 "ppm_refilter": 10
@@ -211,24 +211,25 @@ timepoints:
 "ic_rel_height_filter_baseline": 0.10
 "ic_rel_height_threshold": 0.10
 
-# User weak pareto filter to retain only ics that are best in at least one criterion
+# User weak pareto filter to remove ics that are worse than every other ics in all criteria
 "pareto_prefilter": True
 
 # User defined thresholds to filter ics before weak_pareto_filter and optimize paths
 "user_prefilter": True
 "thresholds":
-  "baseline_peak_error": 20.
-  "dt_ground_err": 20.
+  "idotp_cutoff" : 0.99
+  "baseline_peak_error": 10.
+  "dt_ground_err": 5.
   "dt_ground_fit": 0.9
-  "rt_ground_err": 20
+  "rt_ground_err": 25
   "rt_ground_fit": 0.9
   "baseline_integrated_rmse": 0.10
   "baseline_integrated_FWHM": 1.
   "nearest_neighbor_correlation": 0.     
-    
+  "min_timepoints": 5
      
 #Limits number of plotted runner ICs in bokeh_plot
 "n_runners": 5
-     
+
      
      

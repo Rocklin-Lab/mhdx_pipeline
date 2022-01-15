@@ -256,17 +256,32 @@ rule generate_tensor_ics_10:
     shell:
         "python workflow/scripts/hdx_limit/hdx_limit/pipeline/9_generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
 
+rule generate_atcs_11:
+    """
+    Generate all timepoints cluster files
+    """
+    input:
+        "config/config.yaml",
+        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info)
+    output:
+        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib"
+    benchmark:
+        "results/benchmarks/11_generate_atcs.{name}.benchmark.txt"
+    conda:
+        "../envs/full_hdx_env.yml"
+    script:
+        "../scripts/hdx_limit/hdx_limit/pipeline/10_generate_atcs.py"
 
-rule optimize_paths_11:
+
+rule optimize_paths_12:
     """
     Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
     """
     input:
         library_info_fn,
         "config/config.yaml",
-        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info) 
+        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib"
     output:
-        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
         "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
         "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
         "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib",
@@ -285,11 +300,12 @@ rule optimize_paths_11:
     params:
         rt_group_name = "{name}"
     benchmark:
-        "results/benchmarks/11_optimize_paths.{name}.benchmark.txt"
+        "results/benchmarks/12_optimize_paths.{name}.benchmark.txt"
     conda:
         "../envs/full_hdx_env.yml"
     script:
-        "../scripts/hdx_limit/hdx_limit/pipeline/10_optimize_paths.py"
+        "../scripts/hdx_limit/hdx_limit/pipeline/11_optimize_paths.py"
+
 
 """
 #REVIEW FUNCTIONALITY
