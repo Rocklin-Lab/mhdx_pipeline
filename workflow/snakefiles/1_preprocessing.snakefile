@@ -213,7 +213,8 @@ rule make_library_master_list_4:
         "resources/4_library_info/library_info.json",
         "results/plots/preprocessing/stretched_times_plots.png",
         "resources/4_library_info/normalization_factors.csv",
-        "results/plots/normalization_factors_plot.png"
+        "results/plots/normalization_factors_plot.png",
+        "results/plots/rt_correlation_plot.pdf"
     conda: 
         "../envs/full_hdx_env.yml"
     benchmark:
