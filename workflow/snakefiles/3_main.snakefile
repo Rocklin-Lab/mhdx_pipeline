@@ -128,7 +128,7 @@ rule mv_passing_tensors_8:
     Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
     """
     input:
-        configfile,
+        "config/config.yaml",
         library_info_fn,
         sorted(
             expand(
