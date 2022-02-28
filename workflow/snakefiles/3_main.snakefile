@@ -128,9 +128,11 @@ rule mv_passing_tensors_8:
     Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
     """
     input:
+        "config/config.yaml",
+        library_info_fn,
         sorted(
             expand(
-                "resources/5_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
+                "resources/5_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
                 zip,
                 name=mv_passing_tensors_zippable_names,
                 charge=mv_passing_tensors_zippable_charges,
