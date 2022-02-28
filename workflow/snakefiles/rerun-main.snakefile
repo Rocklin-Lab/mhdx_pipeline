@@ -24,6 +24,8 @@ for name, charge in zip(zippable_names, zippable_charges):
         mv_passing_tensors_zippable_charges.append(charge)
         mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
 
+names = [name for name in names if name in [i.split('/')[-1] for i in glob.glob('resources/10_ic_time_series/*')] ]
+
 rule all:
     """
     Defines final outputs desired by pipeline run.
