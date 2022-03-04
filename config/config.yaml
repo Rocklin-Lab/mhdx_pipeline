@@ -175,13 +175,10 @@ validation:
 "lockmass": True
 "lockmass_compound": "SodiumFormate"
 "polyfit_deg": 3
-"ms_resolution": 12500
-"m0": 350
-"m1": 1600
 "ppm_lockmass_radius": 100
-"bins_per_isotopic_peak": 100
 "runtime": 30
 "time_bins": 5
+"min_intensity": 5e2
 
 ### Main Snakefile ###
 
