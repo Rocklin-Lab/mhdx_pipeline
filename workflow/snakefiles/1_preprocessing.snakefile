@@ -82,7 +82,8 @@ if config['lockmass']:
         output:
             "resources/0_calibration/{mzml}_mz_calib_dict.pk",
             "results/plots/preprocessing/0_calibration/{mzml}_extracted_signals.pdf",
-            "results/plots/preprocessing/0_calibration/{mzml}_degrees.pdf"
+            "results/plots/preprocessing/0_calibration/{mzml}_degrees.pdf",
+            "results/plots/preprocessing/0_calibration/{mzml}_kdes.pdf"
         benchmark:
             "results/benchmarks/0_calibration_from_lockmass.{mzml}.benchmark.txt"
         priority: 2
