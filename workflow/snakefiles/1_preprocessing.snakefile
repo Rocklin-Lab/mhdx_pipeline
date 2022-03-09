@@ -92,7 +92,7 @@ if config['lockmass']:
         script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/0_calibration.py"
 
-if config['polyfit_calibration']:
+if config['lockmass']:
     rule read_imtbx_1:
         """
         Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
@@ -101,8 +101,10 @@ if config['polyfit_calibration']:
         """
         input:
             # The .peaks.isotopes files must be made in windows, but only for undeuterated MS runs.
+            "config/config.yaml",
             "resources/0_isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
+            "resources/0_calibration/{undeut_fn}_mz_calib_dict.pk",
         output:
             "resources/1_imtbx/{undeut_fn}_intermediate.csv",
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
@@ -116,7 +118,7 @@ if config['polyfit_calibration']:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
         script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
-elif config['lockmass']:
+else:
     rule read_imtbx_1:
         """
         Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files.
@@ -124,38 +126,16 @@ elif config['lockmass']:
         Feeds forward identified peaks with mass suffuciently similar to some library protein for further consideration.
         """
         input:
-            # .peaks.isotopes files must be made in windows, but only need to be made for undeuterated MS runs
-            "resources/0_isotopes/{undeut_fn}.peaks.isotopes",
-            config["names_and_seqs"],
-            "resources/0_calibration/{undeut_fn}_mz_calib_dict.pk",
-        output:
-            "resources/1_imtbx/{undeut_fn}_intermediate.csv",
-            "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
-            "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
-        params:
-            runtime=config["runtime"]
-        conda:
-            "../envs/full_hdx_env.yml"
-        benchmark:
-            "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
-        script:
-            "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
-else:
-    rule read_imtbx_1:
-        """
-        Reads the identified peaks from the IMTBX .peaks.isotopes files made from undeuterated .mzML files. 
-        Determines associations between identified peaks and expected masses of library proteins. 
-        Feeds forward identified peaks with mass suffuciently similar to some library protein for further consideration. 
-        """
-        input:
             # The .peaks.isotopes files must be made in windows, but only for undeuterated MS runs.
+            "config/config.yaml",
             "resources/0_isotopes/{undeut_fn}.peaks.isotopes",
             config["names_and_seqs"],
         output:
             "resources/1_imtbx/{undeut_fn}_intermediate.csv",
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
-            "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf"
-        conda: 
+            "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
+            "results/1_imtbx/{undeut_fn}_mz_calib_dict.pk"
+        conda:
             "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
