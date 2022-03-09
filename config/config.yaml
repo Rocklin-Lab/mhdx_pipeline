@@ -149,19 +149,6 @@ validation:
 #Control parameters for various important functional values in the pipeline, format is <(str) name_of_param>: <value>; value datatype is specific to use within pipeline.
 
 ### PREPROCESSING ###
-# Determines percentage of max LC peak an LC peak must reach to be included in creation of consensus RT bounds 
-"lc_peak_prominence_cutoff": 0.15 
-#Sets bounds on how far away a peak can be in LC from others like it and still be processed in a single DataTensor, default is 0.2 mins
-"rt_group_cutoff": 0.2 
-
-#mz calibration polyfit parameters
-"polyfit_calibration": False
-#"polyfit_deg": 2
-"ppm_tolerance": 50
-"intensity_tolerance": 10000
-"cluster_corr_tolerance": 0.99
-"ppm_refilter": 10
-
 # Set calibration from MZML file
 # lockmass: (bool) True if calibration should be performed from mzml function 2
 # lockmass compound: (str) which compound was used for lockmass. Choose from: SodiumFormate, GluFibPrecursor, GluFibFragments
@@ -174,11 +161,26 @@ validation:
 # time_bins: (int) how many parts should the chromatography be divided to extract calibration curves from lockmass
 "lockmass": True
 "lockmass_compound": "SodiumFormate"
-"polyfit_deg": 3
+"polyfit_deg": 1
 "ppm_lockmass_radius": 100
 "runtime": 30
 "time_bins": 5
 "min_intensity": 5e2
+
+#protein polyfit mz calibration parameters
+"protein_polyfit": False
+"ppm_tolerance": 50
+"intensity_tolerance": 10000
+"cluster_corr_tolerance": 0.99
+"ppm_refilter": 10
+
+# Determines percentage of max LC peak an LC peak must reach to be included in creation of consensus RT bounds 
+"lc_peak_prominence_cutoff": 0.15 
+#Sets bounds on how far away a peak can be in LC from others like it and still be processed in a single DataTensor, default is 0.2 mins
+"rt_group_cutoff": 0.2 
+
+# Use time warping to define tensor boundaries
+"use_time_warping" : False
 
 ### Main Snakefile ###
 
