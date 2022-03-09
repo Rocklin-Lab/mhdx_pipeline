@@ -92,7 +92,7 @@ rule all:
         "resources/7_idotp_filter/checked_library_info.json"
 
 
-if config['polyfit_calibration']:
+if config['protein_polyfit']:
     rule extract_tensors_5:
         """
         Extract all identified tensors from each .mzML.gz. 
@@ -102,7 +102,7 @@ if config['polyfit_calibration']:
             "resources/2_mzml_gz/{mzml}.gz",
             "config/config.yaml",
             expand(
-                "results/1_imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
+                "resources/1_imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
             )
         output:
             expand(
