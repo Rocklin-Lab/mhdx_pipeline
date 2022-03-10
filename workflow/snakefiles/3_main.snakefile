@@ -156,36 +156,7 @@ rule mv_passing_tensors_8:
     script:
         "../scripts/hdx_limit/hdx_limit/pipeline/8_mv_passing_tensors.py"
 
-
-if config['polyfit_calibration']:
-    """
-    Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
-    """
-    rule extract_tensors_9:
-        input:
-            library_info_fn,
-            "resources/2_mzml_gz/{mzml}.gz",
-            "config/config.yaml",
-            expand(
-                "results/1_imtbx/{undeut_fn}_mz_calib_dict.pk", undeut_fn=config[0][0]
-            )
-        output:
-            expand(
-                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
-                zip,
-                name=zippable_names,
-                charge=zippable_charges
-            )
-        params:
-            lockmass_calibration=False,
-            polyfit_calibration=True
-        conda:
-            "../envs/full_hdx_env.yml"
-        benchmark:
-            "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
-        script:
-            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
-elif config['lockmass']:
+if config['lockmass']:
     rule extract_tensors_9:
         """
         Extract all identified tensors from each .mzML.gz.
@@ -202,9 +173,6 @@ elif config['lockmass']:
                 name=zippable_names,
                 charge=zippable_charges
             )
-        params:
-            lockmass_calibration=True,
-            polyfit_calibration=False
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
