@@ -91,8 +91,33 @@ rule all:
     input:
         "resources/7_idotp_filter/checked_library_info.json"
 
-
-if config['protein_polyfit']:
+if config['lockmass']:
+    rule extract_tensors_5:
+        """
+        Extract all identified tensors from each .mzML.gz.
+        """
+        input:
+            library_info_fn,
+            "resources/2_mzml_gz/{mzml}.gz",
+            "config/config.yaml",
+            "resources/0_calibration/{mzml}_mz_calib_dict.pk"
+        output:
+            expand(
+                "resources/5_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
+            )
+        params:
+            lockmass_calibration=True,
+            polyfit_calibration=False
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+elif config['protein_polyfit']:
     rule extract_tensors_5:
         """
         Extract all identified tensors from each .mzML.gz. 
@@ -119,32 +144,6 @@ if config['protein_polyfit']:
         benchmark:
             "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
 
-        script:
-            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
-elif config['lockmass']:
-    rule extract_tensors_5:
-        """
-        Extract all identified tensors from each .mzML.gz.
-        """
-        input:
-            library_info_fn,
-            "resources/2_mzml_gz/{mzml}.gz",
-            "config/config.yaml",
-            "resources/0_calibration/{mzml}_mz_calib_dict.pk"
-        output:
-            expand(
-                "resources/5_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
-                zip,
-                name=zippable_names,
-                charge=zippable_charges
-            )
-        params:
-            lockmass_calibration=True,
-            polyfit_calibration=False
-        conda:
-            "../envs/full_hdx_env.yml"
-        benchmark:
-            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
             "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
 else:
