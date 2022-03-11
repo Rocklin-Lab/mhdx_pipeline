@@ -32,7 +32,8 @@ rule all:
     """
     input:
         expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
-        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names)
+        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
+        expand("results/plots/ic_time_series/ajf_plots/{name}.pdf", names=names)
 
 rule optimize_paths_12:
     """
@@ -58,8 +59,7 @@ rule optimize_paths_12:
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib.csv",
-#         "results/plots/ic_time_series/ajf_plots/{name}_atc.pdf",
-        "results/plots/ic_time_series/ajf_plots/{name}_prefiltered.pdf",
+        "results/plots/ic_time_series/ajf_plots/{name}.pdf",
     params:
         rt_group_name = "{name}"
     benchmark:
@@ -68,3 +68,14 @@ rule optimize_paths_12:
         "../envs/full_hdx_env.yml"
     script:
         "../scripts/hdx_limit/hdx_limit/pipeline/11_optimize_paths.py"
+
+rule ajf_plot_13:
+    input:
+        "config/config.yaml",
+        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
+    output:
+        "results/plots/ic_time_series/ajf_plots/{name}.pdf"
+    script:
+         "python ../scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}
