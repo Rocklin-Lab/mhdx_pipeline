@@ -267,8 +267,7 @@ rule optimize_paths_12:
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib.csv",
-#         "results/plots/ic_time_series/ajf_plots/{name}_atc.pdf",
-        "results/plots/ic_time_series/ajf_plots/{name}_prefiltered.pdf",
+        "results/plots/ic_time_series/ajf_plots/{name}.pdf",
     params:
         rt_group_name = "{name}"
     benchmark:
