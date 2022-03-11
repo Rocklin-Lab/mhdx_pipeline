@@ -33,7 +33,7 @@ rule all:
     input:
         expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
         expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
-        expand("results/plots/ic_time_series/ajf_plots/{name}.pdf", names=names)
+        expand("results/plots/ic_time_series/ajf_plots/{name}.pdf", name=names)
 
 rule optimize_paths_12:
     """
@@ -59,7 +59,6 @@ rule optimize_paths_12:
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib.csv",
-        "results/plots/ic_time_series/ajf_plots/{name}.pdf",
     params:
         rt_group_name = "{name}"
     benchmark:
@@ -78,4 +77,4 @@ rule ajf_plot_13:
     output:
         "results/plots/ic_time_series/ajf_plots/{name}.pdf"
     script:
-         "python ../scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}
+         "python ../scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}"
