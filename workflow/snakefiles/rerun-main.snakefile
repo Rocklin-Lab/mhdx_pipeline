@@ -77,4 +77,4 @@ rule ajf_plot_13:
     output:
         "results/plots/ic_time_series/ajf_plots/{name}.pdf"
     script:
-         "python ../scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}"
+         "python workflow/scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}"
