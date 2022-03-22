@@ -196,7 +196,7 @@ rule idotp_check_6:
         lambda wildcards: idotp_check_inputs(config,wildcards.name, wildcards.charge),
     output:
         "resources/6_idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
-
+        "resources/6_idotp_check/{name}/{name}_charge{charge}.cpickle.zlib",
     conda: 
         "../envs/full_hdx_env.yml"
     benchmark:
