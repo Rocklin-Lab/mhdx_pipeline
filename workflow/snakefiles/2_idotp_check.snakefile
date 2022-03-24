@@ -83,7 +83,7 @@ def idotp_check_inputs(config, rt_group_name, charge):
         )
     return inputs
 
-if configfile["use_rtdt_recenter"]:
+if config["use_rtdt_recenter"]:
     rule all:
         """
         Defines final outputs desired by pipeline run.
