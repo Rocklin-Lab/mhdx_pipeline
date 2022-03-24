@@ -50,7 +50,7 @@ from collections import OrderedDict
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
-if configfile["use_rtdt_recenter"]:
+if config["use_rtdt_recenter"]:
     names = list(OrderedDict.fromkeys(library_info["name_recentered"].values).keys())
     zippable_names = list(library_info["name_recentered"].values)
     zippable_charges = list(library_info["charge"].values)
@@ -125,7 +125,7 @@ def optimize_paths_inputs(name, library_info):
 
     return name_inputs
 
-if not configfile["use_rtdt_recenter"]:
+if not config["use_rtdt_recenter"]:
     rule mv_passing_tensors_8:
         """
         Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
@@ -159,7 +159,33 @@ if not configfile["use_rtdt_recenter"]:
         script:
             "../scripts/hdx_limit/hdx_limit/pipeline/8_mv_passing_tensors.py"
 
-if config['lockmass']:
+if config['lockmass'] and config['protein_polyfit']:
+    rule extract_tensors_5:
+        """
+        Extract all identified tensors from each .mzML.gz.
+        """
+        input:
+            library_info_fn,
+            "resources/2_mzml_gz/{mzml}.gz",
+            "config/config.yaml",
+            "resources/0_calibration/{mzml}_mz_calib_dict.pk",
+            "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
+        output:
+            expand(
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
+            )
+        params:
+            use_rtdt_corr=config["use_rtdt_recenter"]
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+elif config['lockmass']:
     rule extract_tensors_9:
         """
         Extract all identified tensors from each .mzML.gz.
@@ -177,7 +203,7 @@ if config['lockmass']:
                 charge=zippable_charges
             )
         params:
-            use_rtdt_recenter=configfile["use_rtdt_recenter"]
+            use_rtdt_recenter=config["use_rtdt_recenter"]
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
@@ -201,7 +227,7 @@ else:
                 charge=zippable_charges
             )
         params:
-            use_rtdt_recenter=configfile["use_rtdt_recenter"]
+            use_rtdt_recenter=config["use_rtdt_recenter"]
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
