@@ -110,7 +110,7 @@ if config['lockmass'] and config['protein_polyfit']:
                 charge=zippable_charges
             )
         params:
-            use_rtdt_corr=False
+            use_rtdt_recenter=False
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
