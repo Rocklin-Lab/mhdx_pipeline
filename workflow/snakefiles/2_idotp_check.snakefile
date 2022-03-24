@@ -210,10 +210,17 @@ rule idotp_filter_7:
     Read results of idotp_check for all undeuterated tensors and apply a high-pass filter. 
     Produces a list of passing indices and and edited version of library_info. 
     """
-    input: 
+    input:
+        "config/config.yaml",
         library_info_fn,
         expand(
             "resources/6_idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
+            zip,
+            name=zippable_names,
+            charge=zippable_charges
+        ),
+        expand(
+            "resources/6_idotp_check/{name}/{name}_charge{charge}.cpickle.zlib",
             zip,
             name=zippable_names,
             charge=zippable_charges
