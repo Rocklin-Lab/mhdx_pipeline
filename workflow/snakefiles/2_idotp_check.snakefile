@@ -82,14 +82,22 @@ def idotp_check_inputs(config, rt_group_name, charge):
             "resources/5_tensors/" + rt_group_name + "/" + rt_group_name + "_" + "charge" + str(charge) + "_" + undeut_fn + ".gz.cpickle.zlib"
         )
     return inputs
-    
 
-rule all:
-    """
-    Defines final outputs desired by pipeline run.
-    """
-    input:
-        "resources/7_idotp_filter/checked_library_info.json"
+if configfile["use_rtdt_recenter"]:
+    rule all:
+        """
+        Defines final outputs desired by pipeline run.
+        """
+        input:
+            "resources/7_idotp_filter/checked_library_info.json",
+             "results/tensors_reextracted.log"
+else:
+    rule all:
+        """
+        Defines final outputs desired by pipeline run.
+        """
+        input:
+            "resources/7_idotp_filter/checked_library_info.json"
 
 if config['lockmass'] and config['protein_polyfit']:
     rule extract_tensors_5:
@@ -109,6 +117,8 @@ if config['lockmass'] and config['protein_polyfit']:
                 name=zippable_names,
                 charge=zippable_charges
             )
+        params:
+            use_rtdt_corr=False
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
@@ -131,13 +141,16 @@ elif config['lockmass']:
                 zip,
                 name=zippable_names,
                 charge=zippable_charges
-            )
+            ),
+        params:
+            use_rtdt_recenter=False
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
         script:
             "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+
 elif config['protein_polyfit']:
     rule extract_tensors_5:
         """
@@ -155,6 +168,8 @@ elif config['protein_polyfit']:
                 name=zippable_names,
                 charge=zippable_charges
             )
+        params:
+            use_rtdt_recenter=False
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
@@ -177,6 +192,8 @@ else:
                 name=zippable_names,
                 charge=zippable_charges
             )
+        params:
+            use_rtdt_recenter=False
         conda: 
             "../envs/full_hdx_env.yml"
         benchmark:
@@ -234,4 +251,113 @@ rule idotp_filter_7:
         "results/benchmarks/7_idotp_filter.benchmark.txt"
     script:
         "../scripts/hdx_limit/hdx_limit/pipeline/7_idotp_filter.py"
+
+# This block of rules are only activated if use_rtdt_recenter is set to True
+# It looks at checked_library_info produced previously and rerun extract_tensors
+# using new RT/DT centers saving them in resources/8_passing_tensors
+if config['lockmass'] and config['protein_polyfit']:
+    rule extract_tensors_8:
+        """
+        Extract all identified tensors from each .mzML.gz.
+        """
+        input:
+            "resources/7_idotp_filter/checked_library_info.json",
+            "resources/2_mzml_gz/{mzml}.gz",
+            "config/config.yaml",
+            "resources/0_calibration/{mzml}_mz_calib_dict.pk",
+            "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
+        output:
+            expand(
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
+            ),
+            "results/tensors_reextracted.log"
+        params:
+            use_rtdt_corr=True
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+elif config['lockmass']:
+    rule extract_tensors_8:
+        """
+        Extract all identified tensors from each .mzML.gz.
+        """
+        input:
+            "resources/7_idotp_filter/checked_library_info.json",
+            "resources/2_mzml_gz/{mzml}.gz",
+            "config/config.yaml",
+            "resources/0_calibration/{mzml}_mz_calib_dict.pk",
+        output:
+            expand(
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
+            ),
+            "results/tensors_reextracted.log"
+        params:
+            use_rtdt_recenter=True
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+elif config['protein_polyfit']:
+    rule extract_tensors_8:
+        """
+        Extract all identified tensors from each .mzML.gz.
+        """
+        input:
+            "resources/7_idotp_filter/checked_library_info.json",
+            "resources/2_mzml_gz/{mzml}.gz",
+            "config/config.yaml",
+            "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
+        output:
+            expand(
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
+            ),
+            "results/tensors_reextracted.log"
+        params:
+            use_rtdt_recenter=True
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+else:
+    rule extract_tensors_8:
+        """
+        Extract all identified tensors from each .mzML.gz.
+        """
+        input:
+            "resources/7_idotp_filter/checked_library_info.json",
+            "resources/2_mzml_gz/{mzml}.gz",
+            "config/config.yaml"
+        output:
+            expand(
+                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+                zip,
+                name=zippable_names,
+                charge=zippable_charges
+            ),
+            "results/tensors_reextracted.log"
+        params:
+            use_rtdt_recenter=True
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+
 
