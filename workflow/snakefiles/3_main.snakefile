@@ -50,22 +50,25 @@ from collections import OrderedDict
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
-names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+if configfile["use_rtdt_recenter"]:
+    names = list(OrderedDict.fromkeys(library_info["name_recentered"].values).keys())
+    zippable_names = list(library_info["name_recentered"].values)
+    zippable_charges = list(library_info["charge"].values)
+else:
+    names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+    # Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
+    zippable_names = list(library_info["name"].values)
+    zippable_charges = list(library_info["charge"].values)
 
-# Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
-zippable_names = list(library_info["name"].values)
-zippable_charges = list(library_info["charge"].values)
-
-# Creates three zippable lists that are used for mv_passing_tensors: rt-group names, charges, and undeut_mzmls.
-mv_passing_tensors_zippable_names = []
-mv_passing_tensors_zippable_charges = []
-mv_passing_tensors_zippable_undeut_mzmls = []
-for name, charge in zip(zippable_names, zippable_charges):
-    for undeut_mzml in config[0]:
-        mv_passing_tensors_zippable_names.append(name)
-        mv_passing_tensors_zippable_charges.append(charge)
-        mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
-
+    # Creates three zippable lists that are used for mv_passing_tensors: rt-group names, charges, and undeut_mzmls.
+    mv_passing_tensors_zippable_names = []
+    mv_passing_tensors_zippable_charges = []
+    mv_passing_tensors_zippable_undeut_mzmls = []
+    for name, charge in zip(zippable_names, zippable_charges):
+        for undeut_mzml in config[0]:
+            mv_passing_tensors_zippable_names.append(name)
+            mv_passing_tensors_zippable_charges.append(charge)
+            mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
 
 rule all:
     """
@@ -122,39 +125,39 @@ def optimize_paths_inputs(name, library_info):
 
     return name_inputs
 
-
-rule mv_passing_tensors_8:
-    """
-    Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
-    """
-    input:
-        "config/config.yaml",
-        library_info_fn,
-        sorted(
-            expand(
-                "resources/5_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
-                zip,
-                name=mv_passing_tensors_zippable_names,
-                charge=mv_passing_tensors_zippable_charges,
-                mzml=mv_passing_tensors_zippable_undeut_mzmls
+if not configfile["use_rtdt_recenter"]:
+    rule mv_passing_tensors_8:
+        """
+        Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
+        """
+        input:
+            "config/config.yaml",
+            library_info_fn,
+            sorted(
+                expand(
+                    "resources/5_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
+                    zip,
+                    name=mv_passing_tensors_zippable_names,
+                    charge=mv_passing_tensors_zippable_charges,
+                    mzml=mv_passing_tensors_zippable_undeut_mzmls
+                )
             )
-        )
-    output:
-        sorted(
-            expand(
-                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib", 
-                zip,
-                name=mv_passing_tensors_zippable_names,
-                charge=mv_passing_tensors_zippable_charges,
-                mzml=mv_passing_tensors_zippable_undeut_mzmls
+        output:
+            sorted(
+                expand(
+                    "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
+                    zip,
+                    name=mv_passing_tensors_zippable_names,
+                    charge=mv_passing_tensors_zippable_charges,
+                    mzml=mv_passing_tensors_zippable_undeut_mzmls
+                )
             )
-        )
-    conda:
-        "../envs/full_hdx_env.yml"
-    benchmark:
-        "results/benchmarks/8_mv_passing_tensors.benchmark.txt"
-    script:
-        "../scripts/hdx_limit/hdx_limit/pipeline/8_mv_passing_tensors.py"
+        conda:
+            "../envs/full_hdx_env.yml"
+        benchmark:
+            "results/benchmarks/8_mv_passing_tensors.benchmark.txt"
+        script:
+            "../scripts/hdx_limit/hdx_limit/pipeline/8_mv_passing_tensors.py"
 
 if config['lockmass']:
     rule extract_tensors_9:
@@ -173,6 +176,8 @@ if config['lockmass']:
                 name=zippable_names,
                 charge=zippable_charges
             )
+        params:
+            use_rtdt_recenter=configfile["use_rtdt_recenter"]
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
@@ -196,8 +201,7 @@ else:
                 charge=zippable_charges
             )
         params:
-            lockmass_calibration=False,
-            polyfit_calibration=False
+            use_rtdt_recenter=configfile["use_rtdt_recenter"]
         conda:
             "../envs/full_hdx_env.yml"
         benchmark:
