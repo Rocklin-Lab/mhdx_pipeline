@@ -182,6 +182,10 @@ validation:
 # Use time warping to define tensor boundaries
 "use_time_warping" : False
 
+# Use ics derived from first tensor extraction to compute new RT/DT centers based the weighted average value from
+# all ics passing idotp thresholds
+"use_rtdt_recenter" : True
+
 ### Main Snakefile ###
 
 #path to old data for comparison, !!!set to null to make None in python!!! this will be default or removed from full release, requires ending '/' for dir
