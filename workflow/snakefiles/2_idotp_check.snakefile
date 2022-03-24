@@ -270,8 +270,8 @@ if config['lockmass'] and config['protein_polyfit']:
             expand(
                 "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
-                name=list(pd.read_json("resources/7_checked_library_info")["name_recentered"].values),
-                charge=list(pd.read_json("resources/7_checked_library_info")["charge"].values)
+                name=list(pd.read_json("resources/7_idotp_filter/checked_library_info.json")["name_recentered"].values),
+                charge=list(pd.read_json("resources/7_idotp_filter/checked_library_info.json")["charge"].values)
             ),
             "results/tensors_reextracted.log"
         params:
@@ -296,8 +296,8 @@ elif config['lockmass']:
             expand(
                 "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
-                name=list(pd.read_json("resources/7_checked_library_info")["name_recentered"].values),
-                charge=list(pd.read_json("resources/7_checked_library_info")["charge"].values)
+                name=list(pd.read_json("resources/7_idotp_filter/checked_library_info.json")["name_recentered"].values),
+                charge=list(pd.read_json("resources/7_idotp_filter/checked_library_info.json")["charge"].values)
             ),
             "results/tensors_reextracted.log"
         params:
@@ -322,8 +322,8 @@ elif config['protein_polyfit']:
             expand(
                 "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
-                name=list(pd.read_json("resources/7_checked_library_info")["name_recentered"].values),
-                charge=list(pd.read_json("resources/7_checked_library_info")["charge"].values)
+                name=list(pd.read_json("resources/7_idotp_filter/checked_library_info.json")["name_recentered"].values),
+                charge=list(pd.read_json("resources/7_idotp_filter/checked_library_info.json")["charge"].values)
             ),
             "results/tensors_reextracted.log"
         params:
@@ -347,8 +347,8 @@ else:
             expand(
                 "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
                 zip,
-                name=list(pd.read_json("resources/7_checked_library_info")["name_recentered"].values),
-                charge=list(pd.read_json("resources/7_checked_library_info")["charge"].values)
+                name=list(pd.read_json("resources/7_idotp_filter/checked_library_info.json")["name_recentered"].values),
+                charge=list(pd.read_json("resources/7_idotp_filter/checked_library_info.json")["charge"].values)
             ),
             "results/tensors_reextracted.log"
         params:
