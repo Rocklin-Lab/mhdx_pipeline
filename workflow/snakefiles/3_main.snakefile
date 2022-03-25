@@ -176,7 +176,7 @@ rule extract_tensors_9:
             charge=zippable_charges
         )
     params:
-        use_rtdt_corr=config["use_rtdt_recenter"]
+        use_rtdt_recenter=config["use_rtdt_recenter"]
     conda:
         "../envs/full_hdx_env.yml"
     benchmark:
