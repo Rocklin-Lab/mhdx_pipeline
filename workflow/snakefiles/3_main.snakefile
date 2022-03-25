@@ -159,81 +159,30 @@ if not config["use_rtdt_recenter"]:
         script:
             "../scripts/hdx_limit/hdx_limit/pipeline/8_mv_passing_tensors.py"
 
-if config['lockmass'] and config['protein_polyfit']:
-    rule extract_tensors_5:
-        """
-        Extract all identified tensors from each .mzML.gz.
-        """
-        input:
-            library_info_fn,
-            "resources/2_mzml_gz/{mzml}.gz",
-            "config/config.yaml",
-            "resources/0_calibration/{mzml}_mz_calib_dict.pk",
-            "resources/1_imtbx/{mzml}_mz_calib_dict.pk"
-        output:
-            expand(
-                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
-                zip,
-                name=zippable_names,
-                charge=zippable_charges
-            )
-        params:
-            use_rtdt_corr=config["use_rtdt_recenter"]
-        conda:
-            "../envs/full_hdx_env.yml"
-        benchmark:
-            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
-        script:
-            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
-elif config['lockmass']:
-    rule extract_tensors_9:
-        """
-        Extract all identified tensors from each .mzML.gz.
-        """
-        input:
-            library_info_fn,
-            "resources/2_mzml_gz/{mzml}.gz",
-            "config/config.yaml",
-            "resources/0_calibration/{mzml}_mz_calib_dict.pk"
-        output:
-            expand(
-                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
-                zip,
-                name=zippable_names,
-                charge=zippable_charges
-            )
-        params:
-            use_rtdt_recenter=config["use_rtdt_recenter"]
-        conda:
-            "../envs/full_hdx_env.yml"
-        benchmark:
-            "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
-        script:
-            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
-else:
+
+rule extract_tensors_9:
     """
-    Extracts tensors from deuterated timepoints for idotp_check passing charge-states.
+    Extract all identified tensors from each .mzML.gz.
     """
-    rule extract_tensors_9:
-        input:
-            library_info_fn,
-            "resources/2_mzml_gz/{mzml}.gz",
-            "config/config.yaml"
-        output:
-            expand(
-                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
-                zip,
-                name=zippable_names,
-                charge=zippable_charges
-            )
-        params:
-            use_rtdt_recenter=config["use_rtdt_recenter"]
-        conda:
-            "../envs/full_hdx_env.yml"
-        benchmark:
-            "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
-        script:
-            "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+    input:
+        library_info_fn,
+        "resources/2_mzml_gz/{mzml}.gz",
+        "config/config.yaml",
+    output:
+        expand(
+            "resources/8_passing_tensors/{name}/{name}_charge{charge}_{{mzml}}.gz.cpickle.zlib",
+            zip,
+            name=zippable_names,
+            charge=zippable_charges
+        )
+    params:
+        use_rtdt_corr=config["use_rtdt_recenter"]
+    conda:
+        "../envs/full_hdx_env.yml"
+    benchmark:
+        "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
+    script:
+        "../scripts/hdx_limit/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
 
 
 rule generate_tensor_ics_10:
