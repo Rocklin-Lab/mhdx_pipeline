@@ -78,24 +78,39 @@ rule all:
         expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
         expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
 
+if config["use_rtdt_recenter"]:
+    def optimize_paths_inputs(name, library_info):
+        """Generate inputs to optimize_paths rule with rt-group name wildcard
 
-def optimize_paths_inputs(name, library_info): 
-    """Generate inputs to optimize_paths rule with rt-group name wildcard
+            Args:
+                name (str): The rt-group name passed as a wildcard.
+                library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
 
-        Args:
-            name (str): The rt-group name passed as a wildcard.
-            library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
+            Returns:
+                name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
 
-        Returns:
-            name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
-
-    """
-    name_inputs = []
-    for key in config["timepoints"]:
-        if len(config[key]) > 1:
-            for charge in library_info.loc[library_info["name"]==name]['charge'].values:
-                for file in config[key]:
-                    name_inputs.append(
+        """
+        name_inputs = []
+        for key in config["timepoints"]:
+            if len(config[key]) > 1:
+                for charge in library_info.loc[library_info["name_recentered"]==name]['charge'].values:
+                    for file in config[key]:
+                        name_inputs.append(
+                            "resources/9_subtensor_ics/"
+                            + name
+                            + "/"
+                            + name
+                            + "_"
+                            + "charge"
+                            + str(charge)
+                            + "_"
+                            + file
+                            + ".cpickle.zlib"
+                        )
+            else:
+                file = config[key][0]
+                for charge in library_info.loc[library_info["name_recentered"]==name]['charge'].values:
+                        name_inputs.append(
                         "resources/9_subtensor_ics/"
                         + name
                         + "/"
@@ -106,24 +121,55 @@ def optimize_paths_inputs(name, library_info):
                         + "_"
                         + file
                         + ".cpickle.zlib"
-                    )  
-        else:
-            file = config[key][0]
-            for charge in library_info.loc[library_info["name"]==name]['charge'].values:
-                    name_inputs.append(
-                    "resources/9_subtensor_ics/"
-                    + name
-                    + "/"
-                    + name
-                    + "_"
-                    + "charge"
-                    + str(charge)
-                    + "_"
-                    + file
-                    + ".cpickle.zlib"
-                )
+                    )
 
-    return name_inputs
+        return name_inputs
+else:
+    def optimize_paths_inputs(name, library_info):
+        """Generate inputs to optimize_paths rule with rt-group name wildcard
+
+            Args:
+                name (str): The rt-group name passed as a wildcard.
+                library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
+
+            Returns:
+                name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
+
+        """
+        name_inputs = []
+        for key in config["timepoints"]:
+            if len(config[key]) > 1:
+                for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+                    for file in config[key]:
+                        name_inputs.append(
+                            "resources/9_subtensor_ics/"
+                            + name
+                            + "/"
+                            + name
+                            + "_"
+                            + "charge"
+                            + str(charge)
+                            + "_"
+                            + file
+                            + ".cpickle.zlib"
+                        )
+            else:
+                file = config[key][0]
+                for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+                        name_inputs.append(
+                        "resources/9_subtensor_ics/"
+                        + name
+                        + "/"
+                        + name
+                        + "_"
+                        + "charge"
+                        + str(charge)
+                        + "_"
+                        + file
+                        + ".cpickle.zlib"
+                    )
+
+        return name_inputs
 
 if not config["use_rtdt_recenter"]:
     rule mv_passing_tensors_8:
