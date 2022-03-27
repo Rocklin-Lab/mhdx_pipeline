@@ -151,14 +151,12 @@ validation:
 ### PREPROCESSING ###
 # Set calibration from MZML file
 # lockmass: (bool) True if calibration should be performed from mzml function 2
-# lockmass compound: (str) which compound was used for lockmass. Choose from: SodiumFormate, GluFibPrecursor, GluFibFragments
+# lockmass compound: (str) which compound was used for lockmass. Choose from: SodiumFormate, GluFibPrecursor, GluFibFragments or LeuEnkPrecursor
 # polyfit degree: (int) degree to use to polynomial fitting when generating calibration curves
 # ms_resolution: (int) proxy for peak resolution on the ms instrument which is used when reprofiling peaks
-# m0: (float) lower bound of the mz range acquired on the MS experiment
-# m1: (float) upper bound of the mz range acquired on the MS experiment
 # ppm_lockmass_radius: (float) window to consider when reprofiling peaks
-# bins_per_isotopic_peak: (int) number of points to define the peak distribution. These points are linearly spaced on the ppm window range
 # time_bins: (int) how many parts should the chromatography be divided to extract calibration curves from lockmass
+# min_intensity (float) min accumulated intensity for a signals to be considered when doing calibration
 "lockmass": True
 "lockmass_compound": "SodiumFormate"
 "polyfit_deg": 1
