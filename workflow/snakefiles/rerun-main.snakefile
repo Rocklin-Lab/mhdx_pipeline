@@ -8,21 +8,19 @@ from collections import OrderedDict
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
-names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+if config["use_rtdt_recenter"]:
+    names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+    # Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
+    zippable_names = list(library_info["name_recentered"].values)
+    zippable_charges = list(library_info["charge"].values)
+else:
 
-# Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
-zippable_names = list(library_info["name"].values)
-zippable_charges = list(library_info["charge"].values)
+    names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
 
-# Creates three zippable lists that are used for mv_passing_tensors: rt-group names, charges, and undeut_mzmls.
-mv_passing_tensors_zippable_names = []
-mv_passing_tensors_zippable_charges = []
-mv_passing_tensors_zippable_undeut_mzmls = []
-for name, charge in zip(zippable_names, zippable_charges):
-    for undeut_mzml in config[0]:
-        mv_passing_tensors_zippable_names.append(name)
-        mv_passing_tensors_zippable_charges.append(charge)
-        mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
+    # Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
+    zippable_names = list(library_info["name_recentered"].values)
+    zippable_charges = list(library_info["charge"].values)
+
 
 names = [name for name in names if name in [i.split('/')[-1] for i in glob.glob('resources/10_ic_time_series/*')] ]
 
