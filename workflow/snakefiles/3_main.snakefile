@@ -77,6 +77,7 @@ rule all:
     input:
         expand("resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib", name=names),
         expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
+        expand("results/plots/ic_time_series/ajf_plots/{name}.pdf", name=names)
 
 if config["use_rtdt_recenter"]:
     def optimize_paths_inputs(name, library_info):
@@ -301,6 +302,18 @@ rule optimize_paths_12:
         "../envs/full_hdx_env.yml"
     script:
         "../scripts/hdx_limit/hdx_limit/pipeline/11_optimize_paths.py"
+
+rule ajf_plot_13:
+    input:
+        "config/config.yaml",
+        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
+    output:
+        "results/plots/ic_time_series/ajf_plots/{name}.pdf"
+    shell:
+         "python workflow/scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}"
+
 
 
 """
