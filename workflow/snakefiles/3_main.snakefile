@@ -309,10 +309,12 @@ rule ajf_plot_13:
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
         "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
+        "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib"
     output:
-        "results/plots/ic_time_series/ajf_plots/{name}.pdf"
+        "results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf"
+        "results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf"
     shell:
-         "python workflow/scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}"
+         "python workflow/scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}; python workflow/scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[4]} -o {output[1]}"
 
 
 
