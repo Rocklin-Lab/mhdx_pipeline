@@ -84,4 +84,3 @@ rule ajf_plot_13:
         "../envs/full_hdx_env.yml"
     script:
          "../scripts/hdx_limit/hdx_limit/pipeline/12_ajf_plot.py"
-# TEST

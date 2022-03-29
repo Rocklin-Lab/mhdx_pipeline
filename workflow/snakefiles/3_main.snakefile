@@ -314,6 +314,10 @@ rule ajf_plot_13:
     output:
         "results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf",
         "results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf"
+    benchmark:
+        "results/benchmarks/13_ajf_plots.{name}.benchmark.txt"
+    conda:
+        "../envs/full_hdx_env.yml"
     script:
          "../scripts/hdx_limit/hdx_limit/pipeline/12_ajf_plot.py"
 
