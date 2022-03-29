@@ -9,7 +9,7 @@ library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
 if config["use_rtdt_recenter"]:
-    names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+    names = list(OrderedDict.fromkeys(library_info["name_recentered"].values).keys()) # This is the Python-native version of an ordered set operation.
     # Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
     zippable_names = list(library_info["name_recentered"].values)
     zippable_charges = list(library_info["charge"].values)
@@ -78,7 +78,6 @@ rule ajf_plot_13:
     output:
         "results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf"
         "results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf"
-    shell:
-         "python workflow/scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[3]} -o {output[0]}; python workflow/scripts/hdx_limit/hdx_limit/core/ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w {input[4]} -o {output[1]}"
-
+    script:
+         "python workflow/scripts/hdx_limit/hdx_limit/pipeline/12_ajf_plot.py"
 # TEST
