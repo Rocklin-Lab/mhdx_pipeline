@@ -312,7 +312,7 @@ rule ajf_plot_13:
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/monobody/{name}_winner_monobody.cpickle.zlib"
     output:
-        "results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf"
+        "results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf",
         "results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf"
     script:
          "python workflow/scripts/hdx_limit/hdx_limit/pipeline/12_ajf_plot.py"
