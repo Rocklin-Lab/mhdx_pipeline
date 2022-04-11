@@ -226,6 +226,13 @@ validation:
 #idotp < cutoff will not be considered for rt_groups
 "idotp_cutoff": 0.99
 
+# factor generation options
+"max_num_factors": 15
+"init_method": "nndsvd"
+"n_iter_max": 100000
+"tolerance": 0.00000001
+"factor_corr_threshold": 0.17
+
 #factor filter option. bool (True or False)
 # set the r2 cutoff values for rt and dt data of the factors
 "filter_factor": False
