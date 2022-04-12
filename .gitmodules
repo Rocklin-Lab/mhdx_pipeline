@@ -1,3 +1,4 @@
 [submodule "workflow/scripts/hdx_limit"]
+	branch = datatype_attributes
 	path = workflow/scripts/hdx_limit
 	url = https://github.com/Rocklin-Lab/hdx_limit
