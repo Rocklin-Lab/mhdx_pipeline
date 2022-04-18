@@ -152,7 +152,11 @@ validation:
 # Determines percentage of max LC peak an LC peak must reach to be included in creation of consensus RT bounds 
 "lc_peak_prominence_cutoff": 0.15 
 #Sets bounds on how far away a peak can be in LC from others like it and still be processed in a single DataTensor, default is 0.2 mins
-"rt_group_cutoff": 0.2 
+"rt_group_cutoff": 0.2
+
+# dt upper bound (in milliseconds); dt max can change as a function of traveling wave IM settings so make sure to put
+# correct dt max value for accurate dt values
+"dt_max": 13.781163434903
 
 #mz calibration polyfit parameters
 "protein_polyfit": True
