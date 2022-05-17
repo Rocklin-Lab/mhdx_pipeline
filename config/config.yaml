@@ -184,6 +184,11 @@ validation:
 # all ics passing idotp thresholds
 "use_rtdt_recenter" : True
 
+# Remove duplicates from checked_library_info
+# default values: delta_rt <= 0.2 min, delta_dt <= 0.05 * dt
+# Use this option with use_rtdt_recenter = True
+"remove_duplicates" : True
+
 ### Main Snakefile ###
 
 #path to old data for comparison, !!!set to null to make None in python!!! this will be default or removed from full release, requires ending '/' for dir
