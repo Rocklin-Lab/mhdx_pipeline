@@ -19,10 +19,10 @@
 
 
 #Name for pipeline run:
-"run_name": "lib13_pH6"
+"run_name": "Mix1_pH9"
 
 #Path to .csv file where each row is a library protein name followed by its sequence
-"names_and_seqs": "resources/0_names_seqs_masses/lib_13_name_seq_mass.csv"
+"names_and_seqs": "resources/0_names_seqs_masses/2018_HX_Mix1.csv"
 
 ########################################
 ###############TIMEPOINTS###############
@@ -40,7 +40,6 @@ timepoints:
    - 179
    - 237
    - 314
-   - 314.1
    - 416
    - 552
    - 732
@@ -67,74 +66,73 @@ timepoints:
 ###############FILE PATHS###############
 ########################################
 0:
-  - "20220110_Lib13_pH6_0s_01.mzML"
-  - "20220110_Lib13_pH6_0s_02.mzML"
-  - "20220110_Lib13_pH6_0s_03.mzML"
-  - "20220225_Lib13_pH9_0s_01.mzML"
-  - "20220225_Lib13_pH9_0s_02.mzML"
-  - "20220225_Lib13_pH9_0s_03.mzML"
+  - "20220121_Mix1_pH6_0s_01.mzML"
+  - "20220121_Mix1_pH6_0s_02.mzML"
+  - "20220121_Mix1_pH6_0s_03.mzML"
+  - "20220123_Mix1_pH9_0s_01.mzML"
+  - "20220123_Mix1_pH9_0s_02.mzML"
+  - "20220123_Mix1_pH9_0s_03.mzML"
 25:
-  - "20220110_Lib13_pH6_25s_01.mzML"
+  - "20220123_Mix1_pH9_25s_01.mzML"
 33:
-  - "20220110_Lib13_pH6_33s_01.mzML"
+  - "20220123_Mix1_pH9_33s_01.mzML"
 43:
-  - "20220110_Lib13_pH6_43s_01.mzML"
+  - "20220123_Mix1_pH9_43s_01.mzML"
 58:
-  - "20220110_Lib13_pH6_58s_01.mzML"
+  - "20220123_Mix1_pH9_58s_01.mzML"
 77:
-  - "20220110_Lib13_pH6_77s_01.mzML"
+  - "20220123_Mix1_pH9_77s_01.mzML"
 102:
-  - "20220110_Lib13_pH6_102s_01.mzML"
+  - "20220123_Mix1_pH9_102s_01.mzML"
 135:
-  - "20220110_Lib13_pH6_135s_01.mzML"
+  - "20220123_Mix1_pH9_135s_01.mzML"
 179:
-  - "20220110_Lib13_pH6_179s_01.mzML"
+  - "20220123_Mix1_pH9_179s_01.mzML"
 237:
-  - "20220110_Lib13_pH6_237s_01.mzML"
+  - "20220123_Mix1_pH9_237s_01.mzML"
 314:
-  - "20220110_Lib13_pH6_314s_01.mzML"
-314.1:
-  - "20220110_Lib13_pH6_314s_02.mzML"
+  - "20220123_Mix1_pH9_314s_01.mzML"
+  - "20220123_Mix1_pH9_314s_02.mzML"
 416:
-  - "20220110_Lib13_pH6_416s_01.mzML"
+  - "20220123_Mix1_pH9_416s_01.mzML"
 552:
-  - "20220110_Lib13_pH6_552s_01.mzML"
+  - "20220123_Mix1_pH9_552s_01.mzML"
 732:
-  - "20220110_Lib13_pH6_732s_01.mzML"
+  - "20220123_Mix1_pH9_732s_01.mzML"
 969:
-  - "20220110_Lib13_pH6_969s_01.mzML"
+  - "20220123_Mix1_pH9_969s_01.mzML"
 1285:
-  - "20220110_Lib13_pH6_1285s_01.mzML"
+  - "20220123_Mix1_pH9_1285s_01.mzML"
 1702:
-  - "20220110_Lib13_pH6_1702s_01.mzML"
+  - "20220123_Mix1_pH9_1702s_01.mzML"
 2256:
-  - "20220110_Lib13_pH6_2256s_01.mzML"
+  - "20220123_Mix1_pH9_2256s_01.mzML"
 2989:
-  - "20220110_Lib13_pH6_2989s_01.mzML"
+  - "20220123_Mix1_pH9_2989s_01.mzML"
 3961:
-  - "20220110_Lib13_pH6_3961s_01.mzML"
+  - "20220123_Mix1_pH9_3961s_01.mzML"
 5248:
-  - "20220110_Lib13_pH6_5248s_01.mzML"
+  - "20220123_Mix1_pH9_5248s_01.mzML"
 6954:
-  - "20220110_Lib13_pH6_6954s_01.mzML"
+  - "20220123_Mix1_pH9_6954s_01.mzML"
 9214:
-  - "20220110_Lib13_pH6_9214s_01.mzML"
+  - "20220123_Mix1_pH9_9214s_01.mzML"
 12209:
-  - "20220110_Lib13_pH6_12209s_01.mzML"
+  - "20220123_Mix1_pH9_12209s_01.mzML"
 16177:
-  - "20220110_Lib13_pH6_16177s_01.mzML"
+  - "20220123_Mix1_pH9_16177s_01.mzML"
 21434:
-  - "20220110_Lib13_pH6_21434s_01.mzML"
+  - "20220123_Mix1_pH9_21434s_01.mzML"
 28401:
-  - "20220110_Lib13_pH6_28401s_01.mzML"
+  - "20220123_Mix1_pH9_28401s_01.mzML"
 37631:
-  - "20220110_Lib13_pH6_37631s_01.mzML"
+  - "20220123_Mix1_pH9_37631s_01.mzML"
 49861:
-  - "20220110_Lib13_pH6_49861s_01.mzML"
+  - "20220123_Mix1_pH9_49861s_01.mzML"
 66067:
-  - "20220110_Lib13_pH6_66067s_01.mzML"
+  - "20220123_Mix1_pH9_66067s_01.mzML"
 87538:
-  - "20220110_Lib13_pH6_87538s_01.mzML"
+  - "20220123_Mix1_pH9_87538s_01.mzML"
 
 
 validation:
@@ -149,14 +147,33 @@ validation:
 #Control parameters for various important functional values in the pipeline, format is <(str) name_of_param>: <value>; value datatype is specific to use within pipeline.
 
 ### PREPROCESSING ###
+# Determines percentage of max LC peak an LC peak must reach to be included in creation of consensus RT bounds 
+"lc_peak_prominence_cutoff": 0.15 
+#Sets bounds on how far away a peak can be in LC from others like it and still be processed in a single DataTensor, default is 0.2 mins
+"rt_group_cutoff": 0.2
+
+# dt upper bound (in milliseconds); dt max can change as a function of traveling wave IM settings so make sure to put
+# correct dt max value for accurate dt values
+"dt_max": 13.781163434903
+"rt_max": 29.0
+
+#mz calibration polyfit parameters
+"protein_polyfit": True
+"ppm_tolerance": 50
+"intensity_tolerance": 10000
+"cluster_corr_tolerance": 0.99
+"ppm_refilter": 10
+
 # Set calibration from MZML file
 # lockmass: (bool) True if calibration should be performed from mzml function 2
-# lockmass compound: (str) which compound was used for lockmass. Choose from: SodiumFormate, GluFibPrecursor, GluFibFragments or LeuEnkPrecursor
+# lockmass compound: (str) which compound was used for lockmass. Choose from: SodiumFormate, GluFibPrecursor, GluFibFragments
 # polyfit degree: (int) degree to use to polynomial fitting when generating calibration curves
 # ms_resolution: (int) proxy for peak resolution on the ms instrument which is used when reprofiling peaks
+# m0: (float) lower bound of the mz range acquired on the MS experiment
+# m1: (float) upper bound of the mz range acquired on the MS experiment
 # ppm_lockmass_radius: (float) window to consider when reprofiling peaks
+# bins_per_isotopic_peak: (int) number of points to define the peak distribution. These points are linearly spaced on the ppm window range
 # time_bins: (int) how many parts should the chromatography be divided to extract calibration curves from lockmass
-# min_intensity (float) min accumulated intensity for a signals to be considered when doing calibration
 "lockmass": True
 "lockmass_compound": "SodiumFormate"
 "polyfit_deg": 1
@@ -165,23 +182,11 @@ validation:
 "time_bins": 5
 "min_intensity": 5e2
 
-#protein polyfit mz calibration parameters
-"protein_polyfit": False
-"ppm_tolerance": 50
-"intensity_tolerance": 10000
-"cluster_corr_tolerance": 0.99
-"ppm_refilter": 10
 
-# Determines percentage of max LC peak an LC peak must reach to be included in creation of consensus RT bounds 
-"lc_peak_prominence_cutoff": 0.15 
-#Sets bounds on how far away a peak can be in LC from others like it and still be processed in a single DataTensor, default is 0.2 mins
-"rt_group_cutoff": 0.2 
-
-# Use time warping to define tensor boundaries
+# Use time warping
 "use_time_warping" : False
 
-# Use ics derived from first tensor extraction to compute new RT/DT centers based the weighted average value from
-# all ics passing idotp thresholds
+# Use RTDT recenter
 "use_rtdt_recenter" : True
 
 # Remove duplicates from checked_library_info
@@ -228,9 +233,22 @@ validation:
 #idotp < cutoff will not be considered for rt_groups
 "idotp_cutoff": 0.99
 
+# factor generation options
+# max_num_factors: maximum number of factors to be considered
+# init_method: options for init method are "nndsvd", "random", and "custom". For "custom", you need to supply initial
+# factors list and is applicable for optimizing/developing/debugging (not applicable to be used with the scope of snakemake pipeline)
+# n_inter_max: max iteration during factorization
+# tolerance: reconstruction error tolerance during factorization
+# factor_corr_threshold: factor similarity to determine the final number of factors
+"max_num_factors": 15
+"init_method": "nndsvd"
+"n_iter_max": 100000
+"tolerance": 0.00000001
+"factor_corr_threshold": 0.17
+
 #factor filter option. bool (True or False)
 # set the r2 cutoff values for rt and dt data of the factors
-"filter_factor": True
+"filter_factor": False
 "factor_rt_r2_cutoff": 0.91
 "factor_dt_r2_cutoff": 0.91
 
