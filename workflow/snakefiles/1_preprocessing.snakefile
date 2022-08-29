@@ -37,19 +37,10 @@ The first snakefile of the HDX_LIMIT pipeline.
 Determines signals to analyze by similarity to library protein expected values.
 """
 
+def get_mem_mb(wildcards, attempt):
+    return attempt * 2000
+
 configfile: "config/config.yaml"
-
-""" Eventual implementation of wine/docker use of convert.exe
-rule raw_to_mzml:
-    input:
-        "data/raw/{timepoint}.RAW"
-    output:
-        "data/mzml/{timepoint}.mzML"
-    shell:
-        # This command only displays help, needs in/out args.
-        [sbc538@quser24 973060]$ WINEPREFIX=/projects/b1095/sbc538/NUIT/973060/.wine singularity exec pwiz-skyline-i-agree-to-the-vendor-licenses_latest.sif wine /wineprefix64/drive_c/pwiz/msconvert --help
-"""
-
 
 # Make flat list of all MS datafiles.
 all_timepoint_files = []
@@ -86,9 +77,8 @@ if config['lockmass']:
             "results/plots/preprocessing/0_calibration/{mzml}_kdes.pdf"
         benchmark:
             "results/benchmarks/0_calibration_from_lockmass.{mzml}.benchmark.txt"
+        resources: mem_mb=get_mem_mb
         priority: 2
-        conda:
-            "../envs/full_hdx_env.yml"
         script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/0_calibration.py"
 
@@ -107,15 +97,12 @@ if config['lockmass']:
             "resources/0_calibration/{undeut_fn}_mz_calib_dict.pk",
         output:
             "resources/1_imtbx/{undeut_fn}_intermediate.csv",
-            "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
-            "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
+            "results/plots/preprocessing/1_imtbx/{undeut_fn}_original_mz.pdf",
+            "results/plots/preprocessing/1_imtbx/{undeut_fn}_adjusted_mz.pdf",
             "resources/1_imtbx/{undeut_fn}_mz_calib_dict.pk"
-        params:
-            polyfit_deg=config["polyfit_deg"]
-        conda: 
-            "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
+        resources: mem_mb=get_mem_mb
         script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
 else:
@@ -135,10 +122,9 @@ else:
             "results/plots/preprocessing/{undeut_fn}_original_mz.pdf",
             "results/plots/preprocessing/{undeut_fn}_adjusted_mz.pdf",
             "resources/1_imtbx/{undeut_fn}_mz_calib_dict.pk"
-        conda:
-            "../envs/full_hdx_env.yml"
         benchmark:
             "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
+        resources: mem_mb=get_mem_mb
         script:
             "../scripts/hdx_limit/hdx_limit/preprocessing/1_imtbx_reader.py"
 
@@ -150,10 +136,7 @@ rule gzip_mzmls_2:
         "resources/0_mzml/{mzml}",
     output:
         "resources/2_mzml_gz/{mzml}.gz",
-    conda: 
-        "../envs/full_hdx_env.yml"
-    benchmark:
-        "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
+    resources: mem_mb=get_mem_mb
     shell:
         "python workflow/scripts/hdx_limit/hdx_limit/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}" 
 
@@ -168,10 +151,7 @@ rule make_ims_mz_tics_3:
         "resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib",
         "resources/3_tics/{mzml}_sum.txt"
     priority: 1
-    conda: 
-            "../envs/full_hdx_env.yml"
-    benchmark:
-        "results/benchmarks/3_make_ims_mz_tics.{mzml}.benchmark.txt"
+    resources: mem_mb=get_mem_mb
     shell:
         "python workflow/scripts/hdx_limit/hdx_limit/preprocessing/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
 
@@ -193,12 +173,11 @@ rule make_library_master_list_4:
         expand("resources/3_tics/{mzml}_sum.txt", mzml=all_timepoint_files)
     output:
         "resources/4_library_info/library_info.json",
-        "results/plots/preprocessing/stretched_times_plots.png",
+        "results/plots/preprocessing/4_make_library_master_list/stretched_times_plots.png",
         "resources/4_library_info/normalization_factors.csv",
-        "results/plots/preprocessing/normalization_factors_plot.png",
-        "results/plots/preprocessing/rt_correlation_plot.pdf"
-    conda: 
-        "../envs/full_hdx_env.yml"
+        "results/plots/preprocessing/4_make_library_master_list/normalization_factors_plot.png",
+        "results/plots/preprocessing/4_make_library_master_list/rt_correlation_plot.pdf"
+    resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/4_make_library_master_list.benchmark.txt"
     script:
