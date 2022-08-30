@@ -38,6 +38,9 @@ Checks quality of identified signals in undeuterated data
 and removes signals below user-defined quality thresholds from consideration. 
 """
 
+def get_mem_mb(wildcards, attempt):
+    return attempt * 2000
+
 configfile: "config/config.yaml" # Sets 'config' global object.
 import glob
 import pandas as pd
@@ -111,8 +114,7 @@ rule extract_tensors_5:
         )
     params:
         use_rtdt_recenter=False
-    conda:
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
     script:
@@ -131,8 +133,7 @@ rule idotp_check_6:
     output:
         "resources/6_idotp_check/{name}/{name}_charge{charge}_idotp_check.json",
         "resources/6_idotp_check/{name}/{name}_charge{charge}.cpickle.zlib",
-    conda: 
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/6_idotp_check.{name}_charge{charge}.benchmark.txt"
     script:
@@ -162,8 +163,7 @@ rule idotp_filter_7:
     output:
         "resources/7_idotp_filter/checked_library_info.json",
         "results/plots/idotp_distribution.png"
-    conda: 
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/7_idotp_filter.benchmark.txt"
     script:
