@@ -38,36 +38,20 @@ Checks quality of identified signals in undeuterated data
 and removes signals below user-defined quality thresholds from consideration. 
 """
 
-def get_mem_mb(wildcards, attempt):
-    return attempt * 2000
-
 configfile: "config/config.yaml" # Sets 'config' global object.
 import glob
 import pandas as pd
 from collections import OrderedDict
 
-# Read list of candidate POI charge states produced by preprocessing snakefile
-library_info_fn = "resources/4_library_info/library_info.json"
-library_info = pd.read_json(library_info_fn)
-names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
-
-# Makes two zippable lists: repeated rt_group_names and their corresponding charges in order, 
-# used for extract_tensors and idotp_filter rules.
-zippable_names = list(library_info["name"].values)
-zippable_charges = list(library_info["charge"].values)
-
-# Make flat list of replicate .mzML files in timepoint order.
-mzml_list = []
-for timepoint in config["timepoints"]:
-    for fn in config[timepoint]:
-        mzml_list.append(fn)
+def get_mem_mb(wildcards, attempt):
+    return attempt * 2000
 
 def idotp_check_inputs(config, rt_group_name, charge):
     """Wildcard-based input-file-path generator for idotp_check rule, writes based on rt_group and charge.
 
     Args:
         rt_group_name (str): Value in 'name' field of library_info.json, shared by groups of mass-agreeing signals close in rt.
-        charge (int): Net charge of signal, unique for each member of an rt-group.  
+        charge (int): Net charge of signal, unique for each member of an rt-group.
 
     Returns:
         inputs (list of strs): List of paths to extracted tensors from undeuterated timepoints for a given rt-group charge state.
@@ -86,6 +70,21 @@ def idotp_check_inputs(config, rt_group_name, charge):
         )
     return inputs
 
+# Read list of candidate POI charge states produced by preprocessing snakefile
+library_info_fn = "resources/4_library_info/library_info.json"
+library_info = pd.read_json(library_info_fn)
+names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+
+# Makes two zippable lists: repeated rt_group_names and their corresponding charges in order, 
+# used for extract_tensors and idotp_filter rules.
+zippable_names = list(library_info["name"].values)
+zippable_charges = list(library_info["charge"].values)
+
+# Make flat list of replicate .mzML files in timepoint order.
+mzml_list = []
+for timepoint in config["timepoints"]:
+    for fn in config[timepoint]:
+        mzml_list.append(fn)
 
 rule all:
     """
@@ -162,7 +161,7 @@ rule idotp_filter_7:
         )
     output:
         "resources/7_idotp_filter/checked_library_info.json",
-        "results/plots/idotp_distribution.png"
+        "results/plots/7_idotp_filter/idotp_distribution.png"
     resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/7_idotp_filter.benchmark.txt"

@@ -4,6 +4,103 @@ import shutil
 import pandas as pd
 from collections import OrderedDict
 
+def get_mem_mb(wildcards, attempt):
+    return attempt * 2000
+
+if config["use_rtdt_recenter"]:
+    def optimize_paths_inputs(name, library_info):
+        """Generate inputs to optimize_paths rule with rt-group name wildcard
+
+            Args:
+                name (str): The rt-group name passed as a wildcard.
+                library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
+
+            Returns:
+                name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
+
+        """
+        name_inputs = []
+        for key in config["timepoints"]:
+            if len(config[key]) > 1:
+                for charge in library_info.loc[library_info["name_recentered"]==name]['charge'].values:
+                    for file in config[key]:
+                        name_inputs.append(
+                            "resources/9_subtensor_ics/"
+                            + name
+                            + "/"
+                            + name
+                            + "_"
+                            + "charge"
+                            + str(charge)
+                            + "_"
+                            + file
+                            + ".cpickle.zlib"
+                        )
+            else:
+                file = config[key][0]
+                for charge in library_info.loc[library_info["name_recentered"]==name]['charge'].values:
+                        name_inputs.append(
+                        "resources/9_subtensor_ics/"
+                        + name
+                        + "/"
+                        + name
+                        + "_"
+                        + "charge"
+                        + str(charge)
+                        + "_"
+                        + file
+                        + ".cpickle.zlib"
+                    )
+
+        return name_inputs
+else:
+    def optimize_paths_inputs(name, library_info):
+        """Generate inputs to optimize_paths rule with rt-group name wildcard
+
+            Args:
+                name (str): The rt-group name passed as a wildcard.
+                library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
+
+            Returns:
+                name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
+
+        """
+        name_inputs = []
+        for key in config["timepoints"]:
+            if len(config[key]) > 1:
+                for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+                    for file in config[key]:
+                        name_inputs.append(
+                            "resources/9_subtensor_ics/"
+                            + name
+                            + "/"
+                            + name
+                            + "_"
+                            + "charge"
+                            + str(charge)
+                            + "_"
+                            + file
+                            + ".cpickle.zlib"
+                        )
+            else:
+                file = config[key][0]
+                for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+                        name_inputs.append(
+                        "resources/9_subtensor_ics/"
+                        + name
+                        + "/"
+                        + name
+                        + "_"
+                        + "charge"
+                        + str(charge)
+                        + "_"
+                        + file
+                        + ".cpickle.zlib"
+                    )
+
+        return name_inputs
+
+
 # Reads post idotp_check library_info.
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
@@ -34,6 +131,21 @@ rule all:
         expand("results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf", name=names),
         expand("results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf", name=names)
 
+rule generate_atcs_11:
+    """
+    Generate all timepoints cluster files
+    """
+    input:
+        "config/config.yaml",
+        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info)
+    output:
+        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib"
+    benchmark:
+        "results/benchmarks/11_generate_atcs.{name}.benchmark.txt"
+    resources: mem_mb=get_mem_mb
+    script:
+        "../scripts/hdx_limit/hdx_limit/pipeline/10_generate_atcs.py"
+
 rule optimize_paths_12:
     """
     Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
@@ -63,8 +175,7 @@ rule optimize_paths_12:
         rt_group_name = "{name}"
     benchmark:
         "results/benchmarks/12_optimize_paths.{name}.benchmark.txt"
-    conda:
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     script:
         "../scripts/hdx_limit/hdx_limit/pipeline/11_optimize_paths.py"
 
@@ -80,7 +191,6 @@ rule ajf_plot_13:
         "results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf"
     benchmark:
         "results/benchmarks/13_ajf_plot.{name}.benchmark.txt"
-    conda:
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     script:
          "../scripts/hdx_limit/hdx_limit/pipeline/12_ajf_plot.py"

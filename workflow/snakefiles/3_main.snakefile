@@ -46,6 +46,103 @@ import shutil
 import pandas as pd
 from collections import OrderedDict
 
+def get_mem_mb(wildcards, attempt):
+    return attempt * 2000
+
+if config["use_rtdt_recenter"]:
+    def optimize_paths_inputs(name, library_info):
+        """Generate inputs to optimize_paths rule with rt-group name wildcard
+
+            Args:
+                name (str): The rt-group name passed as a wildcard.
+                library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
+
+            Returns:
+                name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
+
+        """
+        name_inputs = []
+        for key in config["timepoints"]:
+            if len(config[key]) > 1:
+                for charge in library_info.loc[library_info["name_recentered"]==name]['charge'].values:
+                    for file in config[key]:
+                        name_inputs.append(
+                            "resources/9_subtensor_ics/"
+                            + name
+                            + "/"
+                            + name
+                            + "_"
+                            + "charge"
+                            + str(charge)
+                            + "_"
+                            + file
+                            + ".cpickle.zlib"
+                        )
+            else:
+                file = config[key][0]
+                for charge in library_info.loc[library_info["name_recentered"]==name]['charge'].values:
+                        name_inputs.append(
+                        "resources/9_subtensor_ics/"
+                        + name
+                        + "/"
+                        + name
+                        + "_"
+                        + "charge"
+                        + str(charge)
+                        + "_"
+                        + file
+                        + ".cpickle.zlib"
+                    )
+
+        return name_inputs
+else:
+    def optimize_paths_inputs(name, library_info):
+        """Generate inputs to optimize_paths rule with rt-group name wildcard
+
+            Args:
+                name (str): The rt-group name passed as a wildcard.
+                library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
+
+            Returns:
+                name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
+
+        """
+        name_inputs = []
+        for key in config["timepoints"]:
+            if len(config[key]) > 1:
+                for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+                    for file in config[key]:
+                        name_inputs.append(
+                            "resources/9_subtensor_ics/"
+                            + name
+                            + "/"
+                            + name
+                            + "_"
+                            + "charge"
+                            + str(charge)
+                            + "_"
+                            + file
+                            + ".cpickle.zlib"
+                        )
+            else:
+                file = config[key][0]
+                for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+                        name_inputs.append(
+                        "resources/9_subtensor_ics/"
+                        + name
+                        + "/"
+                        + name
+                        + "_"
+                        + "charge"
+                        + str(charge)
+                        + "_"
+                        + file
+                        + ".cpickle.zlib"
+                    )
+
+        return name_inputs
+
+
 # Reads post idotp_check library_info. 
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
@@ -80,98 +177,7 @@ rule all:
         expand("results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf", name=names),
         expand("results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf", name=names)
 
-if config["use_rtdt_recenter"]:
-    def optimize_paths_inputs(name, library_info):
-        """Generate inputs to optimize_paths rule with rt-group name wildcard
 
-            Args:
-                name (str): The rt-group name passed as a wildcard.
-                library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
-
-            Returns:
-                name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
-
-        """
-        name_inputs = []
-        for key in config["timepoints"]:
-            if len(config[key]) > 1:
-                for charge in library_info.loc[library_info["name_recentered"]==name]['charge'].values:
-                    for file in config[key]:
-                        name_inputs.append(
-                            "resources/9_subtensor_ics/"
-                            + name
-                            + "/"
-                            + name
-                            + "_"
-                            + "charge"
-                            + str(charge)
-                            + "_"
-                            + file
-                            + ".cpickle.zlib"
-                        )
-            else:
-                file = config[key][0]
-                for charge in library_info.loc[library_info["name_recentered"]==name]['charge'].values:
-                        name_inputs.append(
-                        "resources/9_subtensor_ics/"
-                        + name
-                        + "/"
-                        + name
-                        + "_"
-                        + "charge"
-                        + str(charge)
-                        + "_"
-                        + file
-                        + ".cpickle.zlib"
-                    )
-
-        return name_inputs
-else:
-    def optimize_paths_inputs(name, library_info):
-        """Generate inputs to optimize_paths rule with rt-group name wildcard
-
-            Args:
-                name (str): The rt-group name passed as a wildcard.
-                library_info (Pandas DataFrame): checked_library_info.json opened into a Pandas DF.
-
-            Returns:
-                name_inputs (list of strings): List of paths/to/input/files needed in optimize_paths.
-
-        """
-        name_inputs = []
-        for key in config["timepoints"]:
-            if len(config[key]) > 1:
-                for charge in library_info.loc[library_info["name"]==name]['charge'].values:
-                    for file in config[key]:
-                        name_inputs.append(
-                            "resources/9_subtensor_ics/"
-                            + name
-                            + "/"
-                            + name
-                            + "_"
-                            + "charge"
-                            + str(charge)
-                            + "_"
-                            + file
-                            + ".cpickle.zlib"
-                        )
-            else:
-                file = config[key][0]
-                for charge in library_info.loc[library_info["name"]==name]['charge'].values:
-                        name_inputs.append(
-                        "resources/9_subtensor_ics/"
-                        + name
-                        + "/"
-                        + name
-                        + "_"
-                        + "charge"
-                        + str(charge)
-                        + "_"
-                        + file
-                        + ".cpickle.zlib"
-                    )
-
-        return name_inputs
 
 if not config["use_rtdt_recenter"]:
     rule mv_passing_tensors_8:
@@ -200,8 +206,7 @@ if not config["use_rtdt_recenter"]:
                     mzml=mv_passing_tensors_zippable_undeut_mzmls
                 )
             )
-        conda:
-            "../envs/full_hdx_env.yml"
+        resources: mem_mb=get_mem_mb
         benchmark:
             "results/benchmarks/8_mv_passing_tensors.benchmark.txt"
         script:
@@ -225,8 +230,7 @@ rule extract_tensors_9:
         )
     params:
         use_rtdt_recenter=config["use_rtdt_recenter"]
-    conda:
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
     script:
@@ -246,8 +250,7 @@ rule generate_tensor_ics_10:
         "resources/9_subtensor_ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib",
         "results/plots/factors/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.factor.pdf",
         "results/plots/ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.ics.pdf"
-    conda:
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/10_generate_tensor_ics.{name}/{name}_charge{charge}_{mzml}.benchmark.txt"
     shell:
@@ -264,8 +267,7 @@ rule generate_atcs_11:
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib"
     benchmark:
         "results/benchmarks/11_generate_atcs.{name}.benchmark.txt"
-    conda:
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     script:
         "../scripts/hdx_limit/hdx_limit/pipeline/10_generate_atcs.py"
 
@@ -299,8 +301,7 @@ rule optimize_paths_12:
         rt_group_name = "{name}"
     benchmark:
         "results/benchmarks/12_optimize_paths.{name}.benchmark.txt"
-    conda:
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     script:
         "../scripts/hdx_limit/hdx_limit/pipeline/11_optimize_paths.py"
 
@@ -316,65 +317,6 @@ rule ajf_plot_13:
         "results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf"
     benchmark:
         "results/benchmarks/13_ajf_plots.{name}.benchmark.txt"
-    conda:
-        "../envs/full_hdx_env.yml"
+    resources: mem_mb=get_mem_mb
     script:
          "../scripts/hdx_limit/hdx_limit/pipeline/12_ajf_plot.py"
-
-
-# TEST
-"""
-#REVIEW FUNCTIONALITY
-rule make_overview_plot:
-    input:
-        expand("resources/ic_time_series/{name}_winner.cpickle.zlib", name=names),  #subset_names),
-        expand(
-            "resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib", name=names
-        ),
-        #subset_names),
-        expand("resources/ic_time_series/{name}_winner_scores.cpickle.zlib", name=names),  #subset_names),
-        expand("resources/ic_time_series/{name}_rtdt_com_cvs.cpickle.zlib", name=names)  #subset_names)
-    output:
-        "results/plots/" + config["run_name"] + "_overview.html",
-    benchmark:
-        "results/benchmarks/make_overview_plot.benchmark.txt"
-    shell:
-        "python scripts/main/overview_plotter.py"
-
-
-#TO BE REMOVED WHEN gjr_plot is included in PO
-rule gjr_plots:
-    input:
-        "resources/ic_time_series/{name}_winner.cpickle.zlib",
-        "resources/ic_time_series/{name}_runners.cpickle.zlib",
-        "resources/ic_time_series/{name}_undeut_grounds.cpickle.zlib",
-    output:
-        "results/plots/ic_time_series/gjr_plots/{name}_gjr_plot.pdf",
-    benchmark:
-        "results/benchmarks/gjr_plot_{name}.benchmark.txt"
-    script:
-        "scripts/main/gjr_plot.py"
-
-#TO BE REVIEWED FOR FUNCTION
-rule make_plot_linker:
-    input:
-        "results/plots/" + config["run_name"] + "_overview.html",
-        expand("results/plots/ic_time_series/html/{name}_time_series.html", name=names),  #subset_names)
-    output:
-        config["run_name"] + "_plot_linker.html",
-    benchmark:
-        "results/benchmarks/make_plot_linker.benchmark.txt"
-    script:
-        "scripts/main/plot_linker.py"
-
-#PLACEHOLDER
-rule calculate_hdx_rates:
-    input:
-        "resources/ic_time_series/{name}_winner.cpickle.zlib",
-    output:
-        "resources/rates/{name}_rates.ext",  #idk ext atm
-    benchmark:
-        "results/benchmarks/calculate_hdx_rates.{name}.benchmark.txt"
-    script:
-        "scripts/main/hxrates.py"
-"""
