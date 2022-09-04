@@ -16,7 +16,9 @@
 #2: Filenames corresponding to each timepoint (.RAW, .mzML, or .mzML.gz depending on what you're starting with)
 #3: Important parameters which will constrain different functions within the pipeline
 
-
+##########################
+########INPUTS############
+##########################
 
 #Name for pipeline run:
 "run_name": "Mix1_pH9"
@@ -24,9 +26,8 @@
 #Path to .csv file where each row is a library protein name followed by its sequence
 "names_and_seqs": "resources/0_names_seqs_masses/2018_HX_Mix1.csv"
 
-########################################
+
 ###############TIMEPOINTS###############
-########################################
 
 timepoints:
    - 0
@@ -61,10 +62,8 @@ timepoints:
    - 66067
    - 87538
 
-
-########################################
 ###############FILE PATHS###############
-########################################
+
 0:
   - "20220121_Mix1_pH6_0s_01.mzML"
   - "20220121_Mix1_pH6_0s_02.mzML"
@@ -135,16 +134,55 @@ timepoints:
   - "20220123_Mix1_pH9_87538s_01.mzML"
 
 
-validation:
-  - ""
-
-
 ########################################
 ###############PARAMETERS###############
 ########################################
 
+#Control parameters for various important functional values in the pipeline, format is <(str) name_of_param>: <value>;
+# value datatype is specific to use within pipeline.
 
-#Control parameters for various important functional values in the pipeline, format is <(str) name_of_param>: <value>; value datatype is specific to use within pipeline.
+
+#############PREPROCESSING##############
+
+# polyfit degree: (int) degree to use to polynomial fitting when generating calibration curves
+# Used for lockmass fitting and protein polyfit if these are set to True
+
+"polyfit_deg": 1
+
+# Set calibration from MZML file
+# lockmass: (bool) True if calibration should be performed from mzml function 2
+# lockmass compound: (str) which compound was used for lockmass. Choose from: SodiumFormate, GluFibPrecursor, GluFibFragments
+# ms_resolution: (int) proxy for peak resolution on the ms instrument which is used when reprofiling peaks
+# m0: (float) lower bound of the mz range acquired on the MS experiment
+# m1: (float) upper bound of the mz range acquired on the MS experiment
+# ppm_lockmass_radius: (float) window to consider when reprofiling peaks
+# bins_per_isotopic_peak: (int) number of points to define the peak distribution. These points are linearly spaced on the ppm window range
+# time_bins: (int) how many parts should the chromatography be divided to extract calibration curves from lockmass
+"lockmass": True
+"lockmass_compound": "SodiumFormate"
+"ppm_lockmass_radius": 100
+"runtime": 30
+"time_bins": 5
+"min_intensity": 5e2
+
+# Set calibration from identified proteins at ppm_tolerance level
+# protein_polyfit (bool) True if calibration based on identified proteins should be performed
+# ppm_tolerance (float) first ppm threshold to identify proteins which will be used for protein polyfit
+# cluster_corr_tolerance (float) correlation used by DBSCan to group signals coming from IMTBX
+# intensity_tolerance (float) minimum intensity for signal to be considered for calibration purposes
+"protein_polyfit": True
+"ppm_tolerance": 50
+"cluster_corr_tolerance": 0.99
+"intensity_tolerance": 10000
+
+# Protein Identification
+# ppm_refilter (float) ppm threshold used for final identifications
+"ppm_refilter": 10
+
+# Use time warping (bool) if True, use TimeWarping to map RT from first run to predicted RT in all other LC-IMS-MS runs
+"use_time_warping" : False
+
+
 
 ### PREPROCESSING ###
 # Determines percentage of max LC peak an LC peak must reach to be included in creation of consensus RT bounds 
@@ -157,37 +195,21 @@ validation:
 "dt_max": 13.781163434903
 "rt_max": 29.0
 
-#mz calibration polyfit parameters
-"protein_polyfit": True
-"ppm_tolerance": 50
-"intensity_tolerance": 10000
-"cluster_corr_tolerance": 0.99
-"ppm_refilter": 10
 
-# Set calibration from MZML file
-# lockmass: (bool) True if calibration should be performed from mzml function 2
-# lockmass compound: (str) which compound was used for lockmass. Choose from: SodiumFormate, GluFibPrecursor, GluFibFragments
-# polyfit degree: (int) degree to use to polynomial fitting when generating calibration curves
-# ms_resolution: (int) proxy for peak resolution on the ms instrument which is used when reprofiling peaks
-# m0: (float) lower bound of the mz range acquired on the MS experiment
-# m1: (float) upper bound of the mz range acquired on the MS experiment
-# ppm_lockmass_radius: (float) window to consider when reprofiling peaks
-# bins_per_isotopic_peak: (int) number of points to define the peak distribution. These points are linearly spaced on the ppm window range
-# time_bins: (int) how many parts should the chromatography be divided to extract calibration curves from lockmass
-"lockmass": True
-"lockmass_compound": "SodiumFormate"
-"polyfit_deg": 1
-"ppm_lockmass_radius": 100
-"runtime": 30
-"time_bins": 5
-"min_intensity": 5e2
-
-
-# Use time warping
-"use_time_warping" : False
 
 # Use RTDT recenter
 "use_rtdt_recenter" : True
+# Plot RTDT recenter
+"plot_rtdt_recenter" : False
+#0 for false, 1 for true
+#Check 'isotopic dot product' of Undeuterated replicates for a charge,
+#do not include in downstream if idotp is lower than cutoff
+"idotp_filter": 1
+#idotp <= cutoff will not be considered for rt_groups
+"idotp_cutoff": 0.98
+# gaussian thresholds for RT and DT distributions
+"DT_gaussian_rmse_threshold" : 0.08
+"RT_gaussian_rmse_threshold" : 0.08
 
 # Remove duplicates from checked_library_info
 # default values: delta_rt <= 0.2 min, delta_dt <= 0.05 * dt
@@ -224,14 +246,7 @@ validation:
 #std_dev of dt dimension gaussian
 "gauss_params": 
   - 3 
-  - 1 
-
-#0 for false, 1 for true
-#Check 'isotopic dot product' of Undeuterated replicates for a charge,
-#do not include in downstream if idotp is lower than cutoff
-"idotp_filter": 1
-#idotp < cutoff will not be considered for rt_groups
-"idotp_cutoff": 0.99
+  - 1
 
 # factor generation options
 # max_num_factors: maximum number of factors to be considered
