@@ -215,6 +215,8 @@ timepoints:
 # default values: delta_rt <= 0.2 min, delta_dt <= 0.05 * dt
 # Use this option with use_rtdt_recenter = True
 "remove_duplicates" : True
+"rt_threshold" : 0.2
+"dt_threshold" : 0.05
 
 ### Main Snakefile ###
 
