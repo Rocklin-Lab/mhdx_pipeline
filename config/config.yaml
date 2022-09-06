@@ -289,7 +289,7 @@ timepoints:
 # User defined thresholds to filter ics before weak_pareto_filter and optimize paths
 "user_prefilter": True
 "thresholds":
-  "idotp_cutoff" : 0.99
+  "idotp_cutoff" : 0.98
   "baseline_peak_error": 10.
   "dt_ground_err": 5.
   "dt_ground_fit": 0.9
