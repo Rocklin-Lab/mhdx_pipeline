@@ -161,7 +161,8 @@ rule idotp_filter_7:
         )
     output:
         "resources/7_idotp_filter/checked_library_info.json",
-        "results/plots/7_idotp_filter/idotp_distribution.png"
+        "results/plots/idotp_filter/idotp_distribution.png",
+        "results/plots/idotp_filter/undeuderated_deviations.png"
     resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/7_idotp_filter.benchmark.txt"

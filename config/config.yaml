@@ -208,8 +208,8 @@ timepoints:
 #idotp <= cutoff will not be considered for rt_groups
 "idotp_cutoff": 0.98
 # gaussian thresholds for RT and DT distributions
-"DT_gaussian_rmse_threshold" : 0.08
-"RT_gaussian_rmse_threshold" : 0.08
+"DT_gaussian_rmse_threshold" : 0.1
+"RT_gaussian_rmse_threshold" : 0.1
 
 # Remove duplicates from checked_library_info
 # default values: delta_rt <= 0.2 min, delta_dt <= 0.05 * dt
