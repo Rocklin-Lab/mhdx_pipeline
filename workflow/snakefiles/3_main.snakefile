@@ -319,4 +319,4 @@ rule ajf_plot_13:
         "results/benchmarks/13_ajf_plots.{name}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     shell:
-         "python workflow/scripts/hdx_limit/hdx_limit/pipeline/12_ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w_multi {input[3]} -w_mono {input[4]} -o_multi {output[1]} -o_mono {output[2]}"
+         "python workflow/scripts/hdx_limit/hdx_limit/pipeline/12_ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w_multi {input[3]} -w_mono {input[4]} -o_multi {output[0]} -o_mono {output[1]}"
