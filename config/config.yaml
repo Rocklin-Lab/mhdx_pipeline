@@ -175,6 +175,8 @@ timepoints:
 
 #factor filter option. bool (True or False)
 # set the r2 cutoff values for rt and dt data of the factors
+"save_factor_data" : False
+"save_factor_plot" : True
 "filter_factor": False
 "factor_rt_r2_cutoff": 0.91
 "factor_dt_r2_cutoff": 0.91
@@ -186,6 +188,8 @@ timepoints:
 # ic_rel_height_filter: bool (True or False). Whether to filter indices based on relative intensity of mz values within the peak
 # ic_rel_height_filter_baseline: sets baseline threshold for relative height filtering
 # ic_rel_height_threshold: sets the relative peak height to include based on the ht of the peak center
+""
+"save_ic_plot" : True
 "ic_peak_prominence": 0.10
 "ic_peak_width": 2
 "auto_ic_peak_width": True

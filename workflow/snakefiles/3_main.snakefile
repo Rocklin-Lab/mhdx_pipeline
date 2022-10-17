@@ -66,6 +66,12 @@ for name, charge in zip(zippable_names, zippable_charges):
         mv_passing_tensors_zippable_charges.append(charge)
         mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
 
+mzmls = []
+for tp in config["timepoints"]:
+    for mzml in config[tp]:
+        mzmls.append(mzml)
+
+
 rule all:
     """
     Defines final outputs desired by pipeline run.
@@ -132,24 +138,29 @@ rule extract_tensors_9:
         f"{hdx_limit_dir}/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
 
 
-rule generate_tensor_ics_10:
+ rule generate_tensor_ics_10:
     """
     Deconvolutes tensor signal and outputs candidate IsotopeClusters for path optimization.
     """
     input:
-        library_info_fn,
-        "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
         "config/config.yaml",
+        library_info_fn,
         "resources/4_library_info/normalization_factors.csv"
+        expand(
+            "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
+            mzml=mzmls
+        )
     output:
-        "resources/9_subtensor_ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib",
-        "results/plots/factors/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.factor.pdf",
-        "results/plots/ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib.ics.pdf"
+        expand(
+            "resources/9_subtensor_ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib",
+            mzml=mzmls
+        )
     resources: mem_mb=get_mem_mb
     benchmark:
-        "results/benchmarks/10_generate_tensor_ics.{name}/{name}_charge{charge}_{mzml}.benchmark.txt"
-    shell:
-        "python {hdx_limit_dir}/hdx_limit/pipeline/9_generate_tensor_ics.py {input[0]} {input[1]} {input[2]} --isotope_clusters_out_path {output[0]} --factor_plot_out_path {output[1]} --ic_plot_out_path {output[2]} --normalization_factors_path {input[3]}"
+        "results/benchmarks/10_generate_tensor_ics.{name}/{name}_charge{charge}.benchmark.txt"
+    script:
+        f"{hdx_limit_dir}/hdx_limit/pipeline/9_generate_tensor_ics.py"
+
 
 rule generate_atcs_11:
     """
