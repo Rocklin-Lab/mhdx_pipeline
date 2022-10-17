@@ -138,7 +138,7 @@ rule extract_tensors_9:
         f"{hdx_limit_dir}/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
 
 
- rule generate_tensor_ics_10:
+rule generate_tensor_ics_10:
     """
     Deconvolutes tensor signal and outputs candidate IsotopeClusters for path optimization.
     """
