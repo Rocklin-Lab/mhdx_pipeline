@@ -145,14 +145,14 @@ rule generate_tensor_ics_10:
     input:
         "config/config.yaml",
         library_info_fn,
-        "resources/4_library_info/normalization_factors.csv"
+        "resources/4_library_info/normalization_factors.csv",
         expand(
-            "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
+            "resources/8_passing_tensors/{{name}}/{{name}}_charge{{charge}}_{mzml}.gz.cpickle.zlib",
             mzml=mzmls
         )
     output:
         expand(
-            "resources/9_subtensor_ics/{name}/{name}_charge{charge}_{mzml}.cpickle.zlib",
+            "resources/9_subtensor_ics/{{name}}/{{name}}_charge{{charge}}_{mzml}.cpickle.zlib",
             mzml=mzmls
         )
     resources: mem_mb=get_mem_mb
