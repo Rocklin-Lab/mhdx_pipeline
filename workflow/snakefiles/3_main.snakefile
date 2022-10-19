@@ -133,7 +133,7 @@ rule extract_tensors_9:
         )
     resources: mem_mb=get_mem_mb
     params:
-        use_rtdt_recenter=configfile["use_rtdt_recenter"]
+        use_rtdt_recenter=config["use_rtdt_recenter"]
     benchmark:
         "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
     script:
