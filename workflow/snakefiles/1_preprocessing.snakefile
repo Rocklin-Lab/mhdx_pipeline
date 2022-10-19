@@ -6,7 +6,7 @@ from hdx_limit.core.generate_decoy_database import main as generate_decoy_databa
 def get_mem_mb(wildcards, attempt):
     return attempt * 2000
 
-configfile: "config/config.yaml"  # Sets 'config' global object.
+configfile : "config/config.yaml"  # Sets 'config' global object.
 
 hdx_limit_dir = config["hdx_limit_dir"]
 
@@ -75,6 +75,8 @@ rule gzip_mzmls_2:
         "resources/0_mzml/{mzml}",
     output:
         "resources/2_mzml_gz/{mzml}.gz",
+    benchmark:
+        "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     shell:
         "python {hdx_limit_dir}/hdx_limit/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}"
@@ -89,6 +91,8 @@ rule make_ims_mz_tics_3:
         "resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib",
         "resources/3_tics/{mzml}_sum.txt"
     priority: 1
+    benchmark:
+        "results/benchmarks/3_make_ims_mz_tics.{mzml}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     shell:
         "python {hdx_limit_dir}/hdx_limit/preprocessing/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
