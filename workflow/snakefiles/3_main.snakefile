@@ -30,13 +30,13 @@ def optimize_paths_inputs(name, library_info):
             for charge in library_info.loc[library_info["name"]==name]['charge'].values:
                 for file in config[key]:
                     name_inputs.append(
-                    f"resources/9_subtensor_ics/{name}/{name}_charge{charge}_{file}.cpickle.zlib"
+                    f"resources/9_subtensor_ics/{name}/{name}_charge{charge}_{file}.gz.cpickle.zlib"
                     )
         else:
             file = config[key][0]
             for charge in library_info.loc[library_info["name"]==name]['charge'].values:
                     name_inputs.append(
-                    f"resources/9_subtensor_ics/{name}/{name}_charge{charge}_{file}.cpickle.zlib"
+                    f"resources/9_subtensor_ics/{name}/{name}_charge{charge}_{file}.gz.cpickle.zlib"
                 )
     return name_inputs
 
@@ -132,8 +132,10 @@ rule extract_tensors_9:
             charge=zippable_charges
         )
     resources: mem_mb=get_mem_mb
+    params:
+        use_rtdt_recenter=configfile["use_rtdt_recenter"]
     benchmark:
-        "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
+        "results/benchmarks/9_extract_tensors.{mzml}.gz.benchmark.txt"
     script:
         f"{hdx_limit_dir}/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
 
@@ -152,7 +154,7 @@ rule generate_tensor_ics_10:
         )
     output:
         expand(
-            "resources/9_subtensor_ics/{{name}}/{{name}}_charge{{charge}}_{mzml}.cpickle.zlib",
+            "resources/9_subtensor_ics/{{name}}/{{name}}_charge{{charge}}_{mzml}.gz.cpickle.zlib",
             mzml=mzmls
         )
     resources: mem_mb=get_mem_mb
