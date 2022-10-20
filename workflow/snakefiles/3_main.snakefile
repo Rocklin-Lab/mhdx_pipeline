@@ -81,7 +81,7 @@ rule all:
         expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
         expand("results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf", name=names),
         expand("results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf", name=names),
-        "results/computational_resources_summary.pdf"
+        f"results/{config["run_name"]}_computational_resources_summary.pdf"
 
 
 rule mv_passing_tensors_8:
@@ -234,7 +234,7 @@ rule computational_resources:
         "results/benchmarks"
         expand("results/benchmarks/13_ajf_plots.{name}.benchmark.txt", name=names)
     output:
-        "results/computational_resources_summary.pdf"
+        f"results/{config["run_name"]}_computational_resources_summary.pdf"
     resources: mem_mb=get_mem_mb
     shell:
         "python {hdx_limit_dir}/hdx_limit/core/generate_benchmark_plots.py -i {input[0]} -o {output[0]}"
