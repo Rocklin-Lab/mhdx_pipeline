@@ -118,7 +118,8 @@ rule make_library_master_list_4:
         "results/plots/preprocessing/4_make_library_master_list/stretched_times_plots.png",
         "resources/4_library_info/normalization_factors.csv",
         "results/plots/preprocessing/4_make_library_master_list/normalization_factors_plot.png",
-        "results/plots/preprocessing/4_make_library_master_list/rt_correlation_plot.pdf"
+        "results/plots/preprocessing/4_make_library_master_list/rt_correlation_plot.pdf",
+        "results/plots/preprocessing/4_make_library_master_list/rt_distribution_plot.pdf"
     resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/4_make_library_master_list.benchmark.txt"
