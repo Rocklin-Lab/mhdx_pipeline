@@ -11,10 +11,11 @@ configfile : "config/config.yaml"  # Sets 'config' global object.
 hdx_limit_dir = config["hdx_limit_dir"]
 
 # Generate decoy dataset
-generate_decoy_database(name_mass_seq=config["names_and_seqs"],
-                        decoy_size=config["decoy_level"],
-                        output_path=f'{os.path.dirname(config["names_and_seqs"])}/decoys.csv',
-                        )
+if not os.path.exists(f'{os.path.dirname(config["names_and_seqs"])}/decoys.csv'):
+    generate_decoy_database(name_mass_seq=config["names_and_seqs"],
+                            decoy_size=config["decoy_level"],
+                            output_path=f'{os.path.dirname(config["names_and_seqs"])}/decoys.csv',
+                            )
 
 config["names_and_seqs"] = f'{os.path.dirname(config["names_and_seqs"])}/decoys.csv'
 
