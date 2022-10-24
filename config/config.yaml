@@ -203,11 +203,11 @@ timepoints:
 "user_prefilter": True
 "thresholds":
   "idotp_cutoff" : 0.98
-  "baseline_peak_error": 10.
+  "baseline_peak_error": 20.
   "dt_ground_err": 5.
-  "dt_ground_fit": 0.9
+  "dt_ground_fit": 0.8
   "rt_ground_err": 25
-  "rt_ground_fit": 0.9
+  "rt_ground_fit": 0.8
   "baseline_integrated_rmse": 0.10
   "baseline_integrated_FWHM": 1.
   "nearest_neighbor_correlation": 0.     
