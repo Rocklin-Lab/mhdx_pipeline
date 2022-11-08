@@ -167,7 +167,7 @@ timepoints:
 # n_inter_max: max iteration during factorization
 # tolerance: reconstruction error tolerance during factorization
 # factor_corr_threshold: factor similarity to determine the final number of factors
-"max_num_factors": 15
+"num_factors_guess": 5
 "init_method": "nndsvd"
 "n_iter_max": 100000
 "tolerance": 0.00000001
