@@ -265,7 +265,7 @@ rule ajf_plot_14:
         "results/benchmarks/13_ajf_plots.{name}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     shell:
-         "python {hdx_limit_dir}/hdx_limit/pipeline/12_ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w_multi {input[3]} -w_mono {input[4]} -o_multi {output[0]} -o_mono {output[1]}"
+         "python {hdx_limit_dir}/hdx_limit/pipeline/13_ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w_multi {input[3]} -w_mono {input[4]} -o_multi {output[0]} -o_mono {output[1]}"
 
 rule computational_resources:
     input:
