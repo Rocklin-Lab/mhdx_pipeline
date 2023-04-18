@@ -181,14 +181,51 @@ rule generate_atcs_11:
         f"{hdx_limit_dir}/hdx_limit/pipeline/10_generate_atcs.py"
 
 
-rule optimize_paths_12:
+rule optimize_paths_tmp_12:
     """
     Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
     """
     input:
         library_info_fn,
         "config/config.yaml",
-        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib"
+        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+        None
+    output:
+        None, None, None, None, None, None, None, None, None, None, None, None, None,
+        "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody_tmp.cpickle.zlib.csv",
+    params:
+        rt_group_name = "{name}"
+    benchmark:
+        "results/benchmarks/12_optimize_paths.{name}.benchmark.txt"
+    resources: mem_mb=get_mem_mb
+    script:
+        f"{hdx_limit_dir}/hdx_limit/pipeline/11_optimize_paths.py"
+
+
+rule get_thresholds_13:
+    input:
+        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody_tmp.cpickle.zlib.csv", name=names)
+    output:
+        "resources/10_ic_time_series/winners_tmp_dataframe.json",
+        "resources/10_ic_time_series/thresholds.json"
+    params:
+        n_std = 2
+    benchmark:
+        "results/benchmarks/13_get_thresholds.benchmark.txt"
+    resources: mem_mb=get_mem_mb
+    script:
+        f"{hdx_limit_dir}/hdx_limit/pipeline/12_get_thresholds.py"
+
+
+rule optimize_paths_14:
+    """
+    Takes all candidate ICs for all charges and timepoints of an rt-group and determines the best-estimate HDX mass-addition time series.
+    """
+    input:
+        library_info_fn,
+        "config/config.yaml",
+        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
+        "resources/10_ic_time_series/thresholds.json",
     output:
         "resources/10_ic_time_series/{name}/{name}_prefiltered_ics.cpickle.zlib",
         "results/plots/ic_time_series/winner_plots/monobody/{name}_winner_path_monobody.pdf",
@@ -213,7 +250,8 @@ rule optimize_paths_12:
     script:
         f"{hdx_limit_dir}/hdx_limit/pipeline/11_optimize_paths.py"
 
-rule ajf_plot_13:
+
+rule ajf_plot_14:
     input:
         "config/config.yaml",
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
