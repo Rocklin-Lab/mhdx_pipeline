@@ -189,12 +189,11 @@ rule optimize_paths_tmp_12:
         library_info_fn,
         "config/config.yaml",
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
-        None
     output:
-        None, None, None, None, None, None, None, None, None, None, None, None, None,
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody_tmp.cpickle.zlib.csv",
     params:
-        rt_group_name = "{name}"
+        rt_group_name = "{name}",
+        tmp = True
     benchmark:
         "results/benchmarks/12_optimize_paths.{name}.benchmark.txt"
     resources: mem_mb=get_mem_mb
@@ -243,7 +242,8 @@ rule optimize_paths_14:
         "resources/10_ic_time_series/{name}/multibody/{name}_rtdt_com_cvs_multibody.cpickle.zlib",
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib.csv",
     params:
-        rt_group_name = "{name}"
+        rt_group_name = "{name}",
+        tmp = False
     benchmark:
         "results/benchmarks/12_optimize_paths.{name}.benchmark.txt"
     resources: mem_mb=get_mem_mb
