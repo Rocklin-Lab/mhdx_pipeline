@@ -190,7 +190,7 @@ rule optimize_paths_tmp_12:
         "config/config.yaml",
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
     output:
-        "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody_tmp.cpickle.zlib.csv",
+        "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody_tmp.cpickle.zlib",
     params:
         rt_group_name = "{name}",
         tmp = True
@@ -203,7 +203,7 @@ rule optimize_paths_tmp_12:
 
 rule get_thresholds_13:
     input:
-        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody_tmp.cpickle.zlib.csv", name=names)
+        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody_tmp.cpickle.zlib", name=names)
     output:
         "resources/10_ic_time_series/winners_tmp_dataframe.json",
         "resources/10_ic_time_series/thresholds.json"
