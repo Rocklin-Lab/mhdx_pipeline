@@ -191,6 +191,7 @@ rule optimize_paths_tmp_12:
         "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib",
     output:
         "resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody_tmp.cpickle.zlib",
+                "resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody_tmp.cpickle.zlib",
     params:
         rt_group_name = "{name}",
         tmp = True
