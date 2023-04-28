@@ -83,20 +83,20 @@ rule all:
         expand("results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf", name=names),
 
 
-rule generate_atcs_11:
-    """
-    Generate all timepoints cluster files
-    """
-    input:
-        "config/config.yaml",
-        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info)
-    output:
-        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib"
-    benchmark:
-        "results/benchmarks/11_generate_atcs.{name}.benchmark.txt"
-    resources: mem_mb=get_mem_mb
-    script:
-        f"{hdx_limit_dir}/hdx_limit/pipeline/10_generate_atcs.py"
+#rule generate_atcs_11:
+#    """
+#    Generate all timepoints cluster files
+#    """
+#    input:
+#        "config/config.yaml",
+#        lambda wildcards: optimize_paths_inputs(wildcards.name, library_info)
+#    output:
+#        "resources/10_ic_time_series/{name}/{name}_all_timepoint_clusters.cpickle.zlib"
+#    benchmark:
+#        "results/benchmarks/11_generate_atcs.{name}.benchmark.txt"
+#    resources: mem_mb=get_mem_mb
+#   script:
+#        f"{hdx_limit_dir}/hdx_limit/pipeline/10_generate_atcs.py"
 
 
 rule optimize_paths_tmp_12:
