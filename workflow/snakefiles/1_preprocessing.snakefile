@@ -105,22 +105,21 @@ rule make_library_master_list_4:
     and generates final list of signals to consider for analysis.
     """
     input:
-        config["names_and_seqs"],
         "config/config.yaml",
-        expand("resources/2_mzml_gz/{mzml}.gz", mzml=all_timepoint_files[0]), # Pick a single mzML.gz
-        expand(
-            "resources/1_imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
-        ),
-        glob.glob("resources/1_ms-unlimited/*_intermediate.csv"), # Get all intermediate files - imtbx and from unlimited
-        expand("resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib", mzml=all_timepoint_files),
+        glob.glob("resources/1_*/*_intermediate.csv"), # Get all intermediate files - imtbx and from unlimited
+#        expand("resources/2_mzml_gz/{mzml}.gz", mzml=all_timepoint_files[0]), # Pick a single mzML.gz
+#        expand(
+#            "resources/1_imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
+#        ),
+#        expand("resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib", mzml=all_timepoint_files),
         expand("resources/3_tics/{mzml}_sum.txt", mzml=all_timepoint_files)
     output:
         "resources/4_library_info/library_info.json",
-        "results/plots/preprocessing/4_make_library_master_list/stretched_times_plots.png",
         "resources/4_library_info/normalization_factors.csv",
         "results/plots/preprocessing/4_make_library_master_list/normalization_factors_plot.png",
         "results/plots/preprocessing/4_make_library_master_list/rt_correlation_plot.pdf",
-        "results/plots/preprocessing/4_make_library_master_list/rt_distribution_plot.pdf"
+        "results/plots/preprocessing/4_make_library_master_list/rt_distribution_plot.pdf",
+        #"results/plots/preprocessing/4_make_library_master_list/stretched_times_plots.png",
     resources: mem_mb=get_mem_mb
     benchmark:
         "results/benchmarks/4_make_library_master_list.benchmark.txt"
