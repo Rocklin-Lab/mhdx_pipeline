@@ -106,11 +106,12 @@ rule make_library_master_list_4:
     """
     input:
         "config/config.yaml",
+        expand(
+            "resources/1_imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
+        ),
         glob.glob("resources/1_*/*_intermediate.csv"), # Get all intermediate files - imtbx and from unlimited
 #        expand("resources/2_mzml_gz/{mzml}.gz", mzml=all_timepoint_files[0]), # Pick a single mzML.gz
-#        expand(
-#            "resources/1_imtbx/{undeut_fn}_intermediate.csv", undeut_fn=config[0]
-#        ),
+
 #        expand("resources/3_tics/{mzml}.ims.mz.tic.cpickle.zlib", mzml=all_timepoint_files),
         expand("resources/3_tics/{mzml}_sum.txt", mzml=all_timepoint_files)
     output:
