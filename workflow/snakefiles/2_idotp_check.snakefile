@@ -40,7 +40,7 @@ names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is
 
 # Makes two zippable lists: repeated rt_group_names and their corresponding charges in order, 
 # used for extract_tensors and idotp_filter rules.
-zippable_names = list(library_info["name"].values)
+zippable_names = list(library_info["name_rt-group"].values)
 zippable_charges = list(library_info["charge"].values)
 
 # Make flat list of replicate .mzML files in timepoint order.
