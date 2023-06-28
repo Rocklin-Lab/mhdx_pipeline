@@ -130,9 +130,6 @@ timepoints:
 
 ### Main Snakefile ###
 
-#path to old data for comparison, !!!set to null to make None in python!!! this will be default or removed from full release, requires ending '/' for dir
-"old_data_dir": "/projects/p30802/digs_old/HX/180604_mix2_MES/hx_fits/"
-
 #boundaries on tensor size in each dimension (LC-time in decimal minutes, IMS time in ms, M/Z by mass-units)
 "rt_radius": 0.40
 "dt_radius_scale": 0.06
