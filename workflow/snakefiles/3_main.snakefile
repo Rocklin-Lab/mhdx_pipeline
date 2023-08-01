@@ -48,12 +48,12 @@ hdx_limit_dir = config["hdx_limit_dir"]
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
-names = list(OrderedDict.fromkeys(library_info["name"].values).keys()) # This is the Python-native version of an ordered set operation.
+names = list(OrderedDict.fromkeys(library_info["name_rt-group"].values).keys()) # This is the Python-native version of an ordered set operation.
 # Remove decoys from compute intensive factorization and path generation
 if not config["decoys"]:
     names = [name for name in names if "decoy" not in name]
 # Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
-zippable_names = list(library_info["name"].values)
+zippable_names = list(library_info["name_rt-group"].values)
 zippable_charges = list(library_info["charge"].values)
 
 # Creates three zippable lists that are used for mv_passing_tensors: rt-group names, charges, and undeut_mzmls.
