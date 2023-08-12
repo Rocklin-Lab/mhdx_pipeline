@@ -51,32 +51,17 @@ library_info = pd.read_json(library_info_fn)
 # Check if library info version contains name_rt-group
 if "name_rt-group" not in library_info.keys(): library_info["name_rt-group"] = library_info["name"]
 
+# Remove decoys from compute intensive factorization and path generation
+if not config["decoys"]: library_info = library_info[~library_info["name"].str.contains("decoy")]
+
 # Get list of names_rt-group from library info
 names = list(OrderedDict.fromkeys(library_info["name_rt-group"].values).keys()) # This is the Python-native version of an ordered set operation.
-# Remove decoys from compute intensive factorization and path generation
-if not config["decoys"]:
-    names = [name for name in names if "decoy" not in name]
 
 # Makes two zippable lists that are used for extract_tensors: repeated rt_group_names and their corresponding charges in order.
-zippable_names = list(library_info["name_rt-group"].values)
-zippable_charges = list(library_info["charge"].values)
-
-# Creates three zippable lists that are used for mv_passing_tensors: rt-group names, charges, and undeut_mzmls.
-mv_passing_tensors_zippable_names = []
-mv_passing_tensors_zippable_charges = []
-mv_passing_tensors_zippable_undeut_mzmls = []
-for name, charge in zip(zippable_names, zippable_charges):
-    for undeut_mzml in config[0]:
-        mv_passing_tensors_zippable_names.append(name)
-        mv_passing_tensors_zippable_charges.append(charge)
-        mv_passing_tensors_zippable_undeut_mzmls.append(undeut_mzml)
+zippable_names, zippable_charges = list(library_info["name_rt-group"].values), list(library_info["charge"].values)
 
 # Creates list of mzml files
-mzmls = []
-for tp in config["timepoints"]:
-    for mzml in config[tp]:
-        mzmls.append(mzml)
-
+mzmls = [mzml for tp in config["timepoints"] for mzml in tp]
 
 rule all:
     """
@@ -88,39 +73,6 @@ rule all:
         expand("results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf", name=names),
         expand("results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf", name=names),
         "results/computational_resources_summary.pdf"
-
-
-rule mv_passing_tensors_8:
-    """
-    Moves extracted undeuterated tensors that passed the idotp_check into a new working directory to limit redundancy and simplify input calling.
-    """
-    input:
-        "config/config.yaml",
-        library_info_fn,
-        sorted(
-            expand(
-                "resources/5_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
-                zip,
-                name=mv_passing_tensors_zippable_names,
-                charge=mv_passing_tensors_zippable_charges,
-                mzml=mv_passing_tensors_zippable_undeut_mzmls
-            )
-        )
-    output:
-        sorted(
-            expand(
-                "resources/8_passing_tensors/{name}/{name}_charge{charge}_{mzml}.gz.cpickle.zlib",
-                zip,
-                name=mv_passing_tensors_zippable_names,
-                charge=mv_passing_tensors_zippable_charges,
-                mzml=mv_passing_tensors_zippable_undeut_mzmls
-            )
-        )
-    resources: mem_mb=get_mem_mb
-    benchmark:
-        "results/benchmarks/8_mv_passing_tensors.benchmark.txt"
-    script:
-        f"{hdx_limit_dir}/hdx_limit/pipeline/8_mv_passing_tensors.py"
 
 
 rule extract_tensors_9:
