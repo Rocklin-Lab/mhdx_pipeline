@@ -61,7 +61,7 @@ names = list(OrderedDict.fromkeys(library_info["name_rt-group"].values).keys()) 
 zippable_names, zippable_charges = list(library_info["name_rt-group"].values), list(library_info["charge"].values)
 
 # Creates list of mzml files
-mzmls = [mzml for tp in config["timepoints"] for mzml in tp]
+mzmls = [mzml for tp in config["timepoints"] for mzml in config["tp"]]
 
 rule all:
     """
