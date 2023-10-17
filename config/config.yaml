@@ -205,7 +205,7 @@ timepoints:
   "dt_ground_fit": 0.8
   "rt_ground_err": 25
   "rt_ground_fit": 0.8
-  "baseline_integrated_rmse": 0.10
+  "baseline_integrated_rmse": 0.15
   "baseline_integrated_FWHM": 1.
   "nearest_neighbor_correlation": 0.     
   "min_timepoints" : 5    
