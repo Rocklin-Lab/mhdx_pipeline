@@ -198,4 +198,16 @@ rule computational_resources:
         "results/computational_resources_summary.pdf"
     resources: mem_mb=get_mem_mb
     shell:
-        "python {hdx_limit_dir}/hdx_limit/core/generate_benchmark_plots.py -i {input[0]} -o {output[0]}"
+        "python {hdx_limit_dir}/hdx_limit/auxiliar/generate_benchmark_plots.py -i {input[0]} -o {output[0]}"
+
+
+ rule consolidate_po_results:
+    input:
+        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
+        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.df.pkl", name=names),
+        expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_scores_multibody.cpickle.zlib", name=names),
+     output:
+        "resources/10_ic_time_series/consolidated_results.json"
+    resources: mem_mb=get_mem_mb
+    script:
+        f"{hdx_limit_dir}/hdx_limit/auxiliar/consolidate_po_results.py"
