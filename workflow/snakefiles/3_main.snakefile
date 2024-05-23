@@ -27,14 +27,14 @@ def optimize_paths_inputs(name, library_info):
     name_inputs = []
     for key in config["timepoints"]:
         if len(config[key]) > 1:
-            for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+            for charge in library_info.loc[library_info["name_rt-group"]==name]['charge'].values:
                 for file in config[key]:
                     name_inputs.append(
                     f"resources/9_subtensor_ics/{name}/{name}_charge{charge}_{file}.gz.cpickle.zlib"
                     )
         else:
             file = config[key][0]
-            for charge in library_info.loc[library_info["name"]==name]['charge'].values:
+            for charge in library_info.loc[library_info["name_rt-group"]==name]['charge'].values:
                     name_inputs.append(
                     f"resources/9_subtensor_ics/{name}/{name}_charge{charge}_{file}.gz.cpickle.zlib"
                 )

@@ -48,8 +48,10 @@ hdx_limit_dir = config["hdx_limit_dir"]
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
 library_info = pd.read_json(library_info_fn)
 
-# Check if library info version contains name_rt-group
-if "name_rt-group" not in library_info.keys(): library_info["name_rt-group"] = library_info["name"]
+
+## This step is not needed if pipeline is running properly.
+## Check if library info version contains name_rt-group
+#if "name_rt-group" not in library_info.keys(): library_info["name_rt-group"] = library_info["name"]
 
 # Remove decoys from compute intensive factorization and path generation
 if not config["decoys"]: library_info = library_info[~library_info["name"].str.contains("decoy")]
