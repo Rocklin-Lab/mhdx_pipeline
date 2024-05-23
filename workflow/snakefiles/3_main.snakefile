@@ -276,4 +276,4 @@ rule computational_resources:
         "results/computational_resources_summary.pdf"
     resources: mem_mb=get_mem_mb
     shell:
-        "python {hdx_limit_dir}/hdx_limit/core/generate_benchmark_plots.py -i {input[0]} -o {output[0]}"
+        "python {hdx_limit_dir}/hdx_limit/auxiliar/generate_benchmark_plots.py -i {input[0]} -o {output[0]}"
