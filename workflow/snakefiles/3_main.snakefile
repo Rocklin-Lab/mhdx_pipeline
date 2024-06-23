@@ -81,7 +81,8 @@ rule all:
         expand("resources/10_ic_time_series/{name}/multibody/{name}_winner_multibody.cpickle.zlib", name=names),
         expand("results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf", name=names),
         expand("results/plots/ic_time_series/ajf_plots/monobody/{name}.pdf", name=names),
-        "results/computational_resources_summary.pdf"
+        "results/computational_resources_summary.pdf",
+        "resources/10_ic_time_series/consolidated_results.json"
 
 
 rule mv_passing_tensors_8:
@@ -277,3 +278,14 @@ rule computational_resources:
     resources: mem_mb=get_mem_mb
     shell:
         "python {hdx_limit_dir}/hdx_limit/auxiliar/generate_benchmark_plots.py -i {input[0]} -o {output[0]}"
+
+
+rule consolidate_po_results:
+    input:
+        "config/config.yaml",
+        expand("resources/10_ic_time_series/{name}/multibody", name=names),
+    output:
+        "resources/10_ic_time_series/consolidated_results.json"
+    resources: mem_mb=get_mem_mb
+    script:
+        f"{hdx_limit_dir}/hdx_limit/auxiliar/consolidate_po_results.py"
