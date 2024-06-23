@@ -1,0 +1,304 @@
+#This file allows its internal values to be accessed by Snakefiles, as well as within python scripts called by rules.
+
+
+#It's treated as a python dictionary in Snakefiles and python scripts, and must be designated as the configfile by a Snakefile
+#to be used by either.
+
+#This is done in Snakefiles with the declaration:
+#configfile: </workdir/relative/path/to/name.yaml>
+
+#which allows it to be called as config in the Snakefile, and snakemake.config in python scripts called by that snakefile.
+
+
+#The values stored are:
+
+#1: HDX Timepoints in integer seconds
+#2: Filenames corresponding to each timepoint (.RAW, .mzML, or .mzML.gz depending on what you're starting with)
+#3: Important parameters which will constrain different functions within the pipeline
+
+####### EXECUTABLE #######
+
+"hdx_limit_dir" : "/projects/b1107/allan/software/hdx_limit"
+
+##########################
+
+##########################
+########INPUTS############
+##########################
+
+#Name for pipeline run:
+"run_name": "libraryname_pH6" # preserve name{underscode}_pHcondition pattern 
+
+#Path to .csv file where each row is a library protein name followed by its sequence
+"names_and_seqs": "resources/0_names_seqs_masses/library_4.csv"
+
+# This pipeline will automatically evaluate a list of decoys to estimate the FDR at the identification level
+# Create HX paths for decoys?
+"decoys" : False
+"decoy_level" : 2
+
+###############TIMEPOINTS###############
+
+#updated to first 5 timepoints to actual times from HDX log
+
+timepoints:
+   - 0
+   - 25
+   - 33
+   - 43
+   - 58
+   - 77
+   - 102
+   - 135
+   - 179
+   - 237
+   - 314
+   - 416
+   - 552
+   - 732
+   - 969
+   - 1285
+   - 1702
+   - 2256
+   - 2989
+   - 3961
+   - 5248
+   - 6954
+   - 9214
+   - 12209
+   - 16177
+   - 21434
+   - 28401
+   - 37631
+   - 49861
+   - 66067
+   - 87538
+
+###############FILE PATHS###############
+
+0:
+  - "20240619_Mutant4_0s_01_pH6.mzML"
+25:
+  - "20240619_Mutant4_25s_01_pH6.mzML"
+33:
+  - "20240619_Mutant4_33s_01_pH6.mzML"
+43:
+  - "20240619_Mutant4_43s_01_pH6.mzML"
+58:
+  - "20240619_Mutant4_58s_01_pH6.mzML"
+77:
+  - "20240619_Mutant4_77s_01_pH6.mzML"
+102:
+  - "20240619_Mutant4_102s_01_pH6.mzML"
+135:
+  - "20240619_Mutant4_135s_01_pH6.mzML"
+179:
+  - "20240619_Mutant4_179s_01_pH6.mzML"
+237:
+  - "20240619_Mutant4_237s_01_pH6.mzML"
+314:
+  - "20240619_Mutant4_314s_01_pH6.mzML"
+416:
+  - "20240619_Mutant4_416s_01_pH6.mzML"
+552:
+  - "20240619_Mutant4_552s_01_pH6.mzML"
+732:
+  - "20240619_Mutant4_732s_01_pH6.mzML"
+969:
+  - "20240619_Mutant4_969s_01_pH6.mzML"
+1285:
+  - "20240619_Mutant4_1285s_01_pH6.mzML"
+1702:
+  - "20240619_Mutant4_1702s_01_pH6.mzML"
+2256:
+  - "20240619_Mutant4_2256s_01_pH6.mzML"
+2989:
+  - "20240619_Mutant4_2989s_01_pH6.mzML"
+3961:
+  - "20240619_Mutant4_3961s_01_pH6.mzML"
+5248:
+  - "20240619_Mutant4_5248s_01_pH6.mzML"
+6954:
+  - "20240619_Mutant4_6954s_01_pH6.mzML"
+9214:
+  - "20240619_Mutant4_9214s_01_pH6.mzML"
+12209:
+  - "20240619_Mutant4_12209s_01_pH6.mzML"
+16177:
+  - "20240619_Mutant4_16177s_01_pH6.mzML"
+21434:
+  - "20240619_Mutant4_21434s_01_pH6.mzML"
+28401:
+  - "20240619_Mutant4_28401s_01_pH6.mzML"
+37631:
+  - "20240619_Mutant4_37631s_01_pH6.mzML"
+49861:
+  - "20240619_Mutant4_49861s_01_pH6.mzML"
+66067:
+  - "20240619_Mutant4_66067s_01_pH6.mzML"
+87538:
+  - "20240619_Mutant4_87538s_01_pH6.mzML"
+
+########################################
+###############PARAMETERS###############
+########################################
+
+#Control parameters for various important functional values in the pipeline, format is <(str) name_of_param>: <value>;
+# value datatype is specific to use within pipeline.
+
+
+#############PREPROCESSING##############
+
+# polyfit degree: (int) degree to use to polynomial fitting when generating calibration curves
+# Used for lockmass fitting and protein polyfit if these are set to True
+
+"polyfit_deg": 1
+
+# Set calibration from MZML file
+# lockmass: (bool) True if calibration should be performed from mzml function 2
+# lockmass compound: (str) which compound was used for lockmass. Choose from: SodiumFormate, GluFibPrecursor, GluFibFragments
+# ms_resolution: (int) proxy for peak resolution on the ms instrument which is used when reprofiling peaks
+# m0: (float) lower bound of the mz range acquired on the MS experiment
+# m1: (float) upper bound of the mz range acquired on the MS experiment
+# ppm_lockmass_radius: (float) window to consider when reprofiling peaks
+# bins_per_isotopic_peak: (int) number of points to define the peak distribution. These points are linearly spaced on the ppm window range
+# time_bins: (int) how many parts should the chromatography be divided to extract calibration curves from lockmass
+"lockmass": True
+"lockmass_compound": "SodiumFormate"
+"ppm_lockmass_radius": 100
+"runtime": 30
+"time_bins": 5
+"min_intensity": 5e2
+
+# Set calibration from identified proteins at ppm_tolerance level
+# protein_polyfit (bool) True if calibration based on identified proteins should be performed
+# ppm_tolerance (float) first ppm threshold to identify proteins which will be used for protein polyfit
+# cluster_corr_tolerance (float) correlation used by DBSCan to group signals coming from IMTBX
+# intensity_tolerance (float) minimum intensity for signal to be considered for calibration purposes
+"protein_polyfit": True
+"ppm_tolerance": 50
+"cluster_corr_tolerance": 0.99
+"intensity_tolerance": 10000
+
+# Protein Identification
+# ppm_refilter (float) ppm threshold used for final identifications
+"ppm_refilter": 10
+
+# Use time warping (bool) if True, use TimeWarping to map RT from first run to predicted RT in all other LC-IMS-MS runs
+"use_time_warping" : False
+
+### PREPROCESSING ###
+# Determines percentage of max LC peak an LC peak must reach to be included in creation of consensus RT bounds
+"lc_peak_prominence_cutoff": 0.15
+#Sets bounds on how far away a peak can be in LC from others like it and still be processed in a single DataTensor, default is 0.2 mins
+"rt_group_cutoff": 0.2
+
+# dt upper bound (in milliseconds); dt max can change as a function of traveling wave IM settings so make sure to put
+# correct dt max value for accurate dt values
+"dt_max": 13.781163434903
+"rt_max": 28.0
+
+# Use RTDT recenter
+"use_rtdt_recenter" : True
+# Plot RTDT recenter
+"plot_rtdt_recenter" : False
+#0 for false, 1 for true
+#Check 'isotopic dot product' of Undeuterated replicates for a charge,
+#do not include in downstream if idotp is lower than cutoff
+"idotp_filter": 1
+#idotp <= cutoff will not be considered for rt_groups
+"idotp_cutoff": 0.98
+# gaussian thresholds for RT and DT distributions
+"DT_gaussian_rmse_threshold" : 0.1
+"RT_gaussian_rmse_threshold" : 0.1
+
+# Remove duplicates from checked_library_info
+# default values: delta_rt <= 0.2 min, delta_dt <= 0.05 * dt
+# Use this option with use_rtdt_recenter = True
+"remove_duplicates" : True
+"rt_threshold" : 0.2
+"dt_threshold" : 0.05
+
+### Main Snakefile ###
+
+#boundaries on tensor size in each dimension (LC-time in decimal minutes, IMS time in ms, M/Z by mass-units)
+"rt_radius": 0.40
+"dt_radius_scale": 0.06
+
+#the two values below are added to the length of the protein sequence to determine the total_mass_window of a tensor (70 for a protein with 43 resiudes)
+
+#this value creates a margin behind the POI monoisotopic mass to avoid IsotopicCluster truncation
+"low_mass_margin": 10
+#this value is added to the length of the amino acid sequence to give a 'rightward' margin for readability
+"high_mass_margin": 17
+
+#error bounds on expected peak positions
+"ppm_radius": 30
+
+#Number of factors to use in the Non-Negative_PARAFAC decompositions of all DataTensors, ideally should be = (# of protein signals in DataTensor + 1 factor for noise)
+#if n_factors_low = n_factors_high, only the low value is used, otherwise all intervening values are used, including the upper value. 2 - 5 will perform 4 factorizations.
+#use multiple factorizations to get better chances of a good factorization for each tensor. Beware the factorization is computationally intensive, increasing with n_factors
+"n_factors_low": 3
+"n_factors_high": 3
+
+#used for smoothing coarse retention and drift time axes of DataTensors
+#std-dev of rt dimension gaussian
+#std_dev of dt dimension gaussian
+"gauss_params":
+  - 3
+  - 1
+
+# factor generation options
+# max_num_factors: maximum number of factors to be considered
+# init_method: options for init method are "nndsvd", "random", and "custom". For "custom", you need to supply initial
+# factors list and is applicable for optimizing/developing/debugging (not applicable to be used with the scope of snakemake pipeline)
+# n_inter_max: max iteration during factorization
+# tolerance: reconstruction error tolerance during factorization
+# factor_corr_threshold: factor similarity to determine the final number of factors
+"num_factors_guess": 5
+"init_method": "nndsvd"
+"n_iter_max": 100000
+"tolerance": 0.00000001
+"factor_corr_threshold": 0.17
+
+#factor filter option. bool (True or False)
+# set the r2 cutoff values for rt and dt data of the factors
+"save_factor_data" : False
+"save_factor_plot" : True
+"filter_factor": False
+"factor_rt_r2_cutoff": 0.91
+"factor_dt_r2_cutoff": 0.91
+
+
+# ic generation options
+# ic_peak_prominence: sets the prominence value for finding peaks in the intergated mz distribution
+# ic_peak_width: sets with width value for finding peaks in the integrated mz distribution
+# ic_rel_height_filter: bool (True or False). Whether to filter indices based on relative intensity of mz values within the peak
+# ic_rel_height_filter_baseline: sets baseline threshold for relative height filtering
+# ic_rel_height_threshold: sets the relative peak height to include based on the ht of the peak center
+"save_ic_plot" : True
+"ic_peak_prominence": 0.10
+"ic_peak_width": 2
+"auto_ic_peak_width": True
+"ic_rel_height_filter": True
+"ic_rel_height_filter_baseline": 0.10
+"ic_rel_height_threshold": 0.10
+
+# User weak pareto filter to retain only ics that are best in at least one criterion
+"pareto_prefilter": True
+
+# User defined thresholds to filter ics before weak_pareto_filter and optimize paths
+"user_prefilter": True
+"thresholds":
+  "idotp_cutoff" : 0.98
+  "baseline_peak_error": 20.
+  "dt_ground_err": 5.
+  "dt_ground_fit": 0.8
+  "rt_ground_err": 25
+  "rt_ground_fit": 0.8
+  "baseline_integrated_rmse": 0.15
+  "baseline_integrated_FWHM": 1.
+  "nearest_neighbor_correlation": 0.
+  "min_timepoints" : 5
+
+
