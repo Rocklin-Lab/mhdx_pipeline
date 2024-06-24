@@ -283,7 +283,7 @@ rule computational_resources:
 rule consolidate_po_results:
     input:
         "config/config.yaml",
-        expand("resources/10_ic_time_series/{name}/multibody", name=names),
+        expand("results/plots/ic_time_series/ajf_plots/multibody/{name}.pdf", name=names),
     output:
         "resources/10_ic_time_series/consolidated_results.json"
     resources: mem_mb=get_mem_mb
