@@ -301,4 +301,8 @@ timepoints:
   "nearest_neighbor_correlation": 0.
   "min_timepoints" : 5
 
+# What is the minimum number of timepoints and the max po_total_score to be considered in the final dataframe?
+"consolidate":
+   "n_timepoints_min" : 20
+   "po_total_score_max" : 50
 
