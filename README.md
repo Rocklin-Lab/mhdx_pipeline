@@ -55,7 +55,7 @@ Zero Samples: Remove --> Add
 4) isotope file for each undeuterated sample. This file is generated with `IMTBX` and `Grppr`. More information can be found at `https://dmtavt.com/IMTBX`.
 
 ### Running IMTBX and Grppr
-The following command runs the `IMTBX` and `Grppr` executable with various parameters to process peaks:
+The following commands run the `IMTBX` and `Grppr` executables to process peaks:
 
 ```bash
 .\IMTBX.exe peaks \
