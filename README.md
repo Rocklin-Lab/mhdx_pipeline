@@ -20,13 +20,16 @@ mamba create -c conda-forge -c bioconda -n mhdxms snakemake==7.26.0 python==3.9
 Step 3: Activate mhdxms environment, clone pipeline and executable repositories, and install executable into current environment
 
 ```conda activate mhdxms
-git clone https://github.com/Rocklin-Lab/hdx_limit-pipeline.git
 git clone https://github.com/Rocklin-Lab/hdx_limit.git 
 python -m pip install hdx_limit
 ```
 
 
 ## Configuration
+
+For each mHDX-MS experiment, clone a new pipeline repository
+
+`git clone https://github.com/Rocklin-Lab/hdx_limit-pipeline.git`
 
 The pipeline expects a set of input files:
 
