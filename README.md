@@ -25,7 +25,7 @@ python -m pip install hdx_limit
 ```
 
 
-## Configuration
+## Setting up a new experiment
 
 For each mHDX-MS experiment, clone a new pipeline repository
 
