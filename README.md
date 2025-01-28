@@ -14,7 +14,7 @@ Step 2: Create a new environment to support the pipeline:
 
 ```conda install -n base -c conda-forge mamba
 conda activate base
-mamba create -c conda-forge -c bioconda -n mhdxms snakemake==7.26.0
+mamba create -c conda-forge -c bioconda -n mhdxms snakemake==7.26.0 python==3.9
 ```
 
 Step 3: Activate mhdxms environment, clone pipeline and executable repositories, and install executable into current environment
