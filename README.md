@@ -21,7 +21,7 @@ Step 3: Activate mhdxms environment, clone pipeline and executable repositories,
 
 ```conda activate mhdxms
 git clone https://github.com/Rocklin-Lab/hdx_limit.git 
-python -m pip install hdx_limit
+python -m pip install ./hdx_limit
 ```
 
 
