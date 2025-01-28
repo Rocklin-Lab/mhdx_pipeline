@@ -1,6 +1,6 @@
 ### version 0.25.028
 
-# The hdx_limit pipeline with Snakemake
+# The mHDX-MS pipeline with Snakemake
 
 ## Installing hdx_limit
 
