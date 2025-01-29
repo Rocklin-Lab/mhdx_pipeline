@@ -37,7 +37,7 @@ For each mHDX-MS experiment, clone a new pipeline repository
 
 The pipeline expects a set of input files:
 
-1) a csv file contaning protein name, protein sequence, and monoisotopic mass. Copy this file to resources/0_names_seqs_masses <br />
+1) a csv file contaning protein name, protein sequence, and monoisotopic mass. Copy this file to `resources/0_names_seqs_masses` <br />
 e.g. names_and_seqs.csv <br />
 ```
 name,sequence,mono_mass
@@ -47,7 +47,7 @@ PDB2LZP,HMDTEIIGGLTIPPVVALVVMSRFGFFAHLLPR,3632.972752
 ```
 
 2) mzML files from HX-MS experiment. Current pipeline module to read .gz files was fully tested with `ms-convert` from `ProteomeWizard 3.0.21193-ccb3e0136`. <br />
-Copy `mzML` files to resources/0_mzml. Preferably, the user can provide already gziped versions of the mzML files. In this case, copy `mzML.gz` files to `resources/2_mzml_gz`. 
+Copy `mzML` files to `resources/0_mzml`. Preferably, the user can provide already `gziped` versions of the `mzML` files. In this case, copy `mzML.gz` files to `resources/2_mzml_gz`. 
 
 Some options I suggest when converting files:
 ```bash
@@ -114,7 +114,7 @@ Import blocks to edit
 There is also a block for file paths. Even if you transfered .gz files, here you should not use this suffix.
 e.g. `20220212_Lib01_pH6_0s_01.mzML` not `20220212_Lib01_pH6_0s_01.mzML.gz`
 
-A number of additional parameters is available in config/config.yaml. Default parameters were found to best perform in our experiments. 
+A number of additional parameters is available in config/config.yaml. Default parameters were found empirally to perform best in our experiments. 
 
 ## Running main mHDX-MS pipeline
 
