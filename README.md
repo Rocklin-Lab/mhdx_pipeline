@@ -4,23 +4,27 @@
 
 ## Installing hdx_limit
 
-Step 1: Install Miniconda (if you don't have yet): 
+Step 1: Install Miniconda (if not already installed). Follow the instruction for your operating system: 
 
 ```
 https://docs.anaconda.com/miniconda/install/#quick-command-line-install
 ```
 
-Step 2: Create a new environment to support the pipeline:
-
-```conda install -n base -c conda-forge mamba
-conda activate base
-mamba create -c conda-forge -c bioconda -n mhdxms snakemake==7.26.0 python==3.9
+Step 2: Download `hdx_limit` package
+```
+git clone https://github.com/Rocklin-Lab/hdx_limit.git
 ```
 
-Step 3: Activate mhdxms environment, clone pipeline and executable repositories, and install executable into current environment
+Step 3: Install `mamba` and create a new environment
+```
+conda install -n base -c conda-forge mamba
+mamba env create -f hdx_limit/environment.yaml
+```
 
-```conda activate mhdxms
-git clone https://github.com/Rocklin-Lab/hdx_limit.git 
+Step 4: Activate the environment and install `hdx_limit`
+
+```
+conda activate mhdxms 
 python -m pip install ./hdx_limit
 ```
 
@@ -33,18 +37,20 @@ For each mHDX-MS experiment, clone a new pipeline repository
 
 The pipeline expects a set of input files:
 
-1) a csv file contaning protein name, protein sequence, and monoisotopic mass. This file should be stored at resources/0_names_seqs_masses <br />
+1) a csv file contaning protein name, protein sequence, and monoisotopic mass. Copy this file to resources/0_names_seqs_masses <br />
 e.g. names_and_seqs.csv <br />
-```name,sequence,mono_mass
+```
+name,sequence,mono_mass
 PDB2PJV,HMAVGIGALFLGFLGAAGSTVGAASGGGKKKKK,3085.722267
 PDB2N92,HMSWLSKTAKKLENSAKKRISEGIAIAIQGGPR,3604.9987800000013
 PDB2LZP,HMDTEIIGGLTIPPVVALVVMSRFGFFAHLLPR,3632.972752
 ```
 
-2) mzML files from HX-MS experiment. These files should be stored at resources/0_mzml. Preferably, the user can provide already gziped versions of the mzML files. In this case, mzML.gz files should be stored at resources/2_mzml_gz. Current pipeline module to read .gz files was fully tested with `ms-convert` from `ProteomeWizard 3.0.21193-ccb3e0136`
+2) mzML files from HX-MS experiment. Current pipeline module to read .gz files was fully tested with `ms-convert` from `ProteomeWizard 3.0.21193-ccb3e0136`. <br />
+Copy `mzML` files to resources/0_mzml. Preferably, the user can provide already gziped versions of the mzML files. In this case, copy `mzML.gz` files to `resources/2_mzml_gz`. 
 
-Some options I suggest:
-```
+Some options I suggest when converting files:
+```bash
 - Options
 Binary encoding precision: 32-bit
 Use zlib compression: True
@@ -55,7 +61,7 @@ All other Options not selected
 Zero Samples: Remove --> Add
 ```
 
-4) isotope file for each undeuterated sample. This file is generated with `IMTBX` and `Grppr`. More information can be found at `https://dmtavt.com/IMTBX`.
+4) isotope file for each undeuterated sample. This file is generated with `IMTBX` and `Grppr`. More information can be found at `https://dmtavt.com/IMTBX`. Copy these files to `resources/0_isotopes`.
 
 ### Running IMTBX and Grppr
 The following commands run the `IMTBX` and `Grppr` executables to process peaks:
