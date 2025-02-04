@@ -34,6 +34,6 @@ Todo:
 """
 
 """
-The first snakefile of the HDX_LIMIT pipeline.
+The first snakefile of the mhdx_tools pipeline.
 Determines signals to analyze by similarity to library protein expected values.
 """

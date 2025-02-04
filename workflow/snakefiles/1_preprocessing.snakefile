@@ -1,14 +1,14 @@
 import os
 import glob
 from pathlib import Path
-from hdx_limit.core.generate_decoy_database import main as generate_decoy_database
+from mhdx_tools.core.generate_decoy_database import main as generate_decoy_database
 
 def get_mem_mb(wildcards, attempt):
     return attempt * 2000
 
 configfile : "config/config.yaml"  # Sets 'config' global object.
 
-hdx_limit_dir = config["hdx_limit_dir"]
+mhdx_tools_dir = config["mhdx_tools_dir"]
 
 # Generate decoy dataset
 if not os.path.exists(f'{os.path.dirname(config["names_and_seqs"])}/decoys.csv'):
@@ -46,7 +46,7 @@ rule calibration_from_lockmass_0:
     resources: mem_mb=get_mem_mb
     priority: 2
     script:
-        f"{hdx_limit_dir}/hdx_limit/preprocessing/0_calibration.py"
+        f"{mhdx_tools_dir}/mhdx_tools/preprocessing/0_calibration.py"
 
 rule read_imtbx_1:
     """
@@ -66,7 +66,7 @@ rule read_imtbx_1:
         "results/benchmarks/1_read_imtbx.{undeut_fn}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     script:
-         f"{hdx_limit_dir}/hdx_limit/preprocessing/1_imtbx_reader.py"
+         f"{mhdx_tools_dir}/mhdx_tools/preprocessing/1_imtbx_reader.py"
 
 rule gzip_mzmls_2:
     """
@@ -80,7 +80,7 @@ rule gzip_mzmls_2:
         "results/benchmarks/2_gzip_mzml.{mzml}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     shell:
-        "python {hdx_limit_dir}/hdx_limit/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}"
+        "python {mhdx_tools_dir}/mhdx_tools/preprocessing/2_gzip_mzml.py {input} --delete_source --out_path {output}"
 
 rule make_ims_mz_tics_3:
     """
@@ -96,7 +96,7 @@ rule make_ims_mz_tics_3:
         "results/benchmarks/3_make_ims_mz_tics.{mzml}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     shell:
-        "python {hdx_limit_dir}/hdx_limit/preprocessing/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
+        "python {mhdx_tools_dir}/mhdx_tools/preprocessing/3_make_ims_mz_tics.py {input} --out_path {output[0]} --mzml_sum_outpath {output[1]}"
 
 rule make_library_master_list_4:
     """
@@ -125,4 +125,4 @@ rule make_library_master_list_4:
     benchmark:
         "results/benchmarks/4_make_library_master_list.benchmark.txt"
     script:
-        f"{hdx_limit_dir}/hdx_limit/preprocessing/4_make_library_master_list.py"
+        f"{mhdx_tools_dir}/mhdx_tools/preprocessing/4_make_library_master_list.py"

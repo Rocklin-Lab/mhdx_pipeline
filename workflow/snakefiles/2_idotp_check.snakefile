@@ -31,7 +31,7 @@ def idotp_check_inputs(config, rt_group_name, charge):
 
 configfile: "config/config.yaml"
 
-hdx_limit_dir = config["hdx_limit_dir"]
+mhdx_tools_dir = config["mhdx_tools_dir"]
 
 # Read list of candidate POI charge states produced by preprocessing snakefile
 library_info_fn = "resources/4_library_info/library_info.json"
@@ -80,7 +80,7 @@ rule extract_tensors_5:
     benchmark:
         "results/benchmarks/5_extract_tensors.{mzml}.gz.benchmark.txt"
     script:
-        f"{hdx_limit_dir}/hdx_limit/pipeline/5_extract_timepoint_tensors.py"
+        f"{mhdx_tools_dir}/mhdx_tools/pipeline/5_extract_timepoint_tensors.py"
 
 
 rule idotp_check_6:
@@ -99,7 +99,7 @@ rule idotp_check_6:
     benchmark:
         "results/benchmarks/6_idotp_check.{name}_charge{charge}.benchmark.txt"
     script:
-        f"{hdx_limit_dir}/hdx_limit/pipeline/6_idotp_check.py"
+        f"{mhdx_tools_dir}/mhdx_tools/pipeline/6_idotp_check.py"
 
 
 rule idotp_filter_7:
@@ -131,6 +131,6 @@ rule idotp_filter_7:
     benchmark:
         "results/benchmarks/7_idotp_filter.benchmark.txt"
     script:
-        f"{hdx_limit_dir}/hdx_limit/pipeline/7_idotp_filter.py"
+        f"{mhdx_tools_dir}/mhdx_tools/pipeline/7_idotp_filter.py"
 
 

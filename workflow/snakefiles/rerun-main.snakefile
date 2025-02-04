@@ -1,5 +1,5 @@
 """
-The third and final (maybe) snakefile of the HDX_LIMIT pipeline.
+The third and final (maybe) snakefile of the mhdx_tools pipeline.
 Extracts signals for quality-checked charge states, deconvolutes and outputs candidate IsotopeCluster objects.
 Candidate IsotopeClusters from all charge states of an rt-group are pooled and a best-estimate HDX mass-addition timeseries is generated.
 (Soon) Each mass-addition timeseries is used to estimate a set of amide hydrogen-deuterium exchange rates for the rt-group.
@@ -42,7 +42,7 @@ def optimize_paths_inputs(name, library_info):
 
 
 configfile: "config/config.yaml"
-hdx_limit_dir = config["hdx_limit_dir"]
+mhdx_tools_dir = config["mhdx_tools_dir"]
 
 # Reads post idotp_check library_info.
 library_info_fn = "resources/7_idotp_filter/checked_library_info.json"
@@ -96,7 +96,7 @@ rule all:
 #        "results/benchmarks/11_generate_atcs.{name}.benchmark.txt"
 #    resources: mem_mb=get_mem_mb
 #   script:
-#        f"{hdx_limit_dir}/hdx_limit/pipeline/10_generate_atcs.py"
+#        f"{mhdx_tools_dir}/mhdx_tools/pipeline/10_generate_atcs.py"
 
 
 rule optimize_paths_tmp_12:
@@ -117,7 +117,7 @@ rule optimize_paths_tmp_12:
         "results/benchmarks/12_optimize_paths.{name}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     script:
-        f"{hdx_limit_dir}/hdx_limit/pipeline/11_optimize_paths.py"
+        f"{mhdx_tools_dir}/mhdx_tools/pipeline/11_optimize_paths.py"
 
 
 rule get_thresholds_13:
@@ -132,7 +132,7 @@ rule get_thresholds_13:
         "results/benchmarks/13_get_thresholds.benchmark.txt"
     resources: mem_mb=get_mem_mb
     script:
-        f"{hdx_limit_dir}/hdx_limit/pipeline/12_get_thresholds.py"
+        f"{mhdx_tools_dir}/mhdx_tools/pipeline/12_get_thresholds.py"
 
 
 rule optimize_paths_14:
@@ -167,7 +167,7 @@ rule optimize_paths_14:
         "results/benchmarks/12_optimize_paths.{name}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     script:
-        f"{hdx_limit_dir}/hdx_limit/pipeline/11_optimize_paths.py"
+        f"{mhdx_tools_dir}/mhdx_tools/pipeline/11_optimize_paths.py"
 
 
 rule ajf_plot_14:
@@ -184,7 +184,7 @@ rule ajf_plot_14:
         "results/benchmarks/13_ajf_plots.{name}.benchmark.txt"
     resources: mem_mb=get_mem_mb
     shell:
-         "python {hdx_limit_dir}/hdx_limit/pipeline/13_ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w_multi {input[3]} -w_mono {input[4]} -o_multi {output[0]} -o_mono {output[1]}"
+         "python {mhdx_tools_dir}/mhdx_tools/pipeline/13_ajf_plot.py -c {input[0]} -a {input[1]} -f {input[2]} -w_multi {input[3]} -w_mono {input[4]} -o_multi {output[0]} -o_mono {output[1]}"
 
 rule computational_resources:
     input:
@@ -194,4 +194,4 @@ rule computational_resources:
         "results/computational_resources_summary.pdf"
     resources: mem_mb=get_mem_mb
     shell:
-        "python {hdx_limit_dir}/hdx_limit/core/generate_benchmark_plots.py -i {input[0]} -o {output[0]}"
+        "python {mhdx_tools_dir}/mhdx_tools/core/generate_benchmark_plots.py -i {input[0]} -o {output[0]}"

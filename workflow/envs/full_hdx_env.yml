@@ -1,4 +1,4 @@
-name: hdx_limit_full
+name: mhdx
 channels:
   - bioconda
   - conda-forge
@@ -25,5 +25,5 @@ dependencies:
   - fastdtw==0.3.*
   - molmass
   - ipdb
-  - -e file:../../workflow/scripts/hdx_limit/ # Path relative to .snakemake/conda/
-  #- git+https://github.com/Rocklin-Lab/hdx_limit - Useful to know this is possible.
+  - -e file:../../workflow/scripts/mhdx_tools/ # Path relative to .snakemake/conda/
+  #- git+https://github.com/Rocklin-Lab/mhdx_tools - Useful to know this is possible.
