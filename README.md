@@ -2,7 +2,7 @@
 
 # The mHDX-MS pipeline with Snakemake
 
-## Installing hdx_limit
+## Installing mhdx-tools
 
 Step 1: Install Miniconda (if not already installed). Follow the instruction for your operating system: 
 
@@ -10,22 +10,22 @@ Step 1: Install Miniconda (if not already installed). Follow the instruction for
 https://docs.anaconda.com/miniconda/install/#quick-command-line-install
 ```
 
-Step 2: Download `hdx_limit` package
+Step 2: Download `mhdx-tools` package
 ```
-git clone https://github.com/Rocklin-Lab/hdx_limit.git
+git clone https://github.com/Rocklin-Lab/mhdx-tools.git
 ```
 
 Step 3: Install `mamba` and create a new environment
 ```
 conda install -n base -c conda-forge mamba
-mamba env create -f hdx_limit/environment.yaml
+mamba env create -f mhdx-tools/environment.yaml
 ```
 
-Step 4: Activate the environment and install `hdx_limit`
+Step 4: Activate the environment and install `mhdx-tools`
 
 ```
 conda activate mhdxms 
-python -m pip install ./hdx_limit
+python -m pip install ./mhdx-tools
 ```
 
 
@@ -33,7 +33,7 @@ python -m pip install ./hdx_limit
 
 For each mHDX-MS experiment, clone a new pipeline repository
 
-`git clone https://github.com/Rocklin-Lab/hdx_limit-pipeline.git`
+`git clone https://github.com/Rocklin-Lab/mhdx-pipeline.git`
 
 The pipeline expects a set of input files:
 
@@ -103,7 +103,7 @@ java -jar .\grppr-0.3.21.jar \
 
 Import blocks to edit
 ```
-"hdx_limit_dir": <path-to-hdx_limit-directory>  # Path to the hdx_limit directory
+"mhdx-tools_dir": <path-to-mhdx-tools-directory>  # Path to the mhdx-tools directory
 "run_name": {library}_{pH}  # A descriptive name for your run
 "names_and_seqs": {path-to-csv, input file 1}  # Path to the CSV input file
 "timepoints": [timepoints in seconds]  # List of timepoints for your experiment
