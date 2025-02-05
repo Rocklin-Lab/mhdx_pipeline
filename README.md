@@ -31,7 +31,7 @@ python -m pip install ./mhdx_tools
 
 ## Setting up a new experiment
 
-For each mHDX-MS experiment, clone a new pipeline repository
+For each mHDX-MS experiment, clone a new pipeline repository. For example, within `{library}/{date-of-experiment}_{pH6/pH9}/`
 
 `git clone https://github.com/Rocklin-Lab/mhdx_pipeline.git`
 
