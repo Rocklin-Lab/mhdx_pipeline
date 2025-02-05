@@ -2,7 +2,7 @@
 
 # The mHDX-MS pipeline with Snakemake
 
-## Installing mhdx-tools
+## Installing mhdx_tools
 
 Step 1: Install Miniconda (if not already installed). Follow the instruction for your operating system: 
 
@@ -10,22 +10,22 @@ Step 1: Install Miniconda (if not already installed). Follow the instruction for
 https://docs.anaconda.com/miniconda/install/#quick-command-line-install
 ```
 
-Step 2: Download `mhdx-tools` package
+Step 2: Download `mhdx_tools` package
 ```
-git clone https://github.com/Rocklin-Lab/mhdx-tools.git
+git clone https://github.com/Rocklin-Lab/mhdx_tools.git
 ```
 
 Step 3: Install `mamba` and create a new environment
 ```
 conda install -n base -c conda-forge mamba
-mamba env create -f mhdx-tools/environment.yaml
+mamba env create -f mhdx_tools/environment.yaml
 ```
 
-Step 4: Activate the environment and install `mhdx-tools`
+Step 4: Activate the environment and install `mhdx_tools`
 
 ```
 conda activate mhdxms 
-python -m pip install ./mhdx-tools
+python -m pip install ./mhdx_tools
 ```
 
 
@@ -103,7 +103,7 @@ java -jar .\grppr-0.3.21.jar \
 
 Import blocks to edit
 ```
-"mhdx-tools_dir": <path-to-mhdx-tools-directory>  # Path to the mhdx-tools directory
+"mhdx_tools_dir": <path-to-mhdx_tools-directory>  # Path to the mhdx_tools directory
 "run_name": {library}_{pH}  # A descriptive name for your run
 "names_and_seqs": {path-to-csv, input file 1}  # Path to the CSV input file
 "timepoints": [timepoints in seconds]  # List of timepoints for your experiment
