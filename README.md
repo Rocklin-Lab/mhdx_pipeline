@@ -24,7 +24,7 @@ mamba env create -f mhdx_tools/environment.yaml
 Step 4: Activate the environment and install `mhdx_tools`
 
 ```
-conda activate mhdxms 
+conda activate mhdx
 python -m pip install ./mhdx_tools
 ```
 
