@@ -33,7 +33,7 @@ python -m pip install ./mhdx_tools
 
 For each mHDX-MS experiment, clone a new pipeline repository
 
-`git clone https://github.com/Rocklin-Lab/mhdx-pipeline.git`
+`git clone https://github.com/Rocklin-Lab/mhdx_pipeline.git`
 
 The pipeline expects a set of input files:
 
