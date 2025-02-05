@@ -1,14 +1,15 @@
 import os
 import glob
+import yaml
 from pathlib import Path
 from mhdx_tools.core.generate_decoy_database import main as generate_decoy_database
 
-def get_mem_mb(wildcards, attempt):
-    return attempt * 2000
+#######
 
-configfile : "config/config.yaml"  # Sets 'config' global object.
-
-mhdx_tools_dir = config["mhdx_tools_dir"]
+# Modify config.yaml to map library to decoys.csv
+config_path = "config/config.yaml"
+with open(config_path, "r") as file:
+    config = yaml.safe_load(file)
 
 # Generate decoy dataset
 if not os.path.exists(f'{os.path.dirname(config["names_and_seqs"])}/decoys.csv'):
@@ -18,6 +19,17 @@ if not os.path.exists(f'{os.path.dirname(config["names_and_seqs"])}/decoys.csv')
                             )
 
 config["names_and_seqs"] = f'{os.path.dirname(config["names_and_seqs"])}/decoys.csv'
+with open("config/config.yaml", "w") as file:
+    yaml.dump(config, file, default_flow_style=False)
+
+#######
+
+def get_mem_mb(wildcards, attempt):
+    return attempt * 2000
+
+configfile : "config/config.yaml"  # Sets 'config' global object.
+
+mhdx_tools_dir = config["mhdx_tools_dir"]
 
 
 # Make flat list of all MS datafiles.
