@@ -122,7 +122,7 @@ Our pipeline consists of three sequential steps. It was designed to take advanta
 
 ```
 # Step 0: Activate python env `mhdxms`
-conda activate mhdxms
+conda activate mhdx
 
 # Step 1: Run preprocessing
 snakemake -s workflow/snakefiles/1_preprocessing.snakefile -j 1000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 04:00:00' --max-jobs-per-second 5
