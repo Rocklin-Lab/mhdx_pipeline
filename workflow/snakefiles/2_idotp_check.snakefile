@@ -123,7 +123,7 @@ rule idotp_filter_7:
             charge=zippable_charges
         )
     output:
-        "resources/7_idotp_filter/checked_library_info_preprocessed.json",
+        "resources/7_idotp_filter/checked_library_info.json",
         "results/plots/idotp_filter/idotp_distribution.png",
         "results/plots/idotp_filter/undeuderated_deviations.pdf",
         "results/plots/idotp_filter/fdr_stats.pdf"
@@ -134,19 +134,5 @@ rule idotp_filter_7:
         f"{mhdx_tools_dir}/mhdx_tools/pipeline/7_idotp_filter.py"
 
 
-rule qvalue_estimator_7:
-    """
-    Read results of idotp_check for all undeuterated tensors and apply a high-pass filter. 
-    Produces a list of passing indices and and edited version of library_info. 
-    """
-    input:
-        "resources/7_idotp_filter/checked_library_info.json",
-        config["mhdx_tools_dir"] + "/models/qvalue_estimador/"
-    output:
-        "resources/7_idotp_filter/checked_library_info.json",
-    resources: mem_mb=get_mem_mb
-    benchmark:
-        "results/benchmarks/7_qvalue_estimator.benchmark.txt"
-    shell:
-        f"python {mhdx_tools_dir}/mhdx_tools/auxiliar/qvalue_estimator.py --input {input[0]} --model_dir {input[1]} --mode predict --prob_threshold_value 0.781 --output_file_path {output[0]}"
+
 
