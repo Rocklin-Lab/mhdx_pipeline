@@ -212,6 +212,9 @@ timepoints:
 "DT_gaussian_rmse_threshold" : 0.1
 "RT_gaussian_rmse_threshold" : 0.1
 
+# logistic regression probability threshold to reduce FDR (q-value 0.025)
+prob_threshold_value : 0.781
+
 # Remove duplicates from checked_library_info
 # default values: delta_rt <= 0.2 min, delta_dt <= 0.05 * dt
 # Use this option with use_rtdt_recenter = True
