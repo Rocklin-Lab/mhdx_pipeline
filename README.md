@@ -1,6 +1,13 @@
-### version 1.25.35
+# The mHDX-MS Pipeline with Snakemake
 
-# The mHDX-MS pipeline with Snakemake
+### Version 1.25.35
+
+## Overview
+
+The `mHDX-MS` pipeline is designed for processing mass spectrometry data from hydrogen-deuterium exchange (HDX-MS) experiments from LC-IMS-MS analysis. Utilizing `Snakemake`, it ensures scalable, reproducible data analysis. 
+
+---
+
 
 ## Installing mhdx_tools
 
@@ -116,28 +123,47 @@ e.g. `20220212_Lib01_pH6_0s_01.mzML` not `20220212_Lib01_pH6_0s_01.mzML.gz`
 
 A number of additional parameters is available in config/config.yaml. Default parameters were found empirally to perform best in our experiments. 
 
-## Running main mHDX-MS pipeline
+# **Running main mHDX-MS pipeline**
 
 Our pipeline consists of three sequential steps. It was designed to take advantage of cluster resources. Edit the string after `--cluster` to match the cluster scheduler syntax from your cluster. Or omit if using local machine.
 
-```
-# Step 0: Activate python env `mhdxms`
+### Step 0: Activate python env `mhdxms`
+```bash
 conda activate mhdx
+```
 
-# Step 1: Run preprocessing
+### **Step 1: Run preprocessing**
+```bash
 snakemake -s workflow/snakefiles/1_preprocessing.snakefile -j 1000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 04:00:00' --max-jobs-per-second 5
+```
 
-# Step 2: Run factorization on undeuterated samples and check idotp
+### **Step 2: Run factorization on undeuterated samples, check idotp and filter based on estimated qvalues**
+```bash
 snakemake -s workflow/snakefiles/2_idotp_check.snakefile -j 1000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 04:00:00' --max-jobs-per-second 5
+```
 
-# Step 3: Run factorization and path optimizer on all timepoints
+### **Step 3: Run factorization and path optimizer on all timepoints**
+```bash
 snakemake -s workflow/snakefiles/3_main.snakefile -j 1000 --keep-going --cluster 'sbatch -A p31346 -p short -N 1 -n 1 --mem=3GB -t 04:00:00' --max-jobs-per-second 5
+```
 
+### **Some of the expected final results**
+```bash
+resources/7_idotp_check/checked_library_info.json: Summary of identification results per protein.
+resources/10_time_series_ics/po_consolidated.json: Path optimizer results.
+results/plots/ic_time_series/ajf_plots: PDFs visualizing isotopic clusters.
+results/plots/ic_time_series/winner_plots: PDFs of the final selected isotopic clusters.
 ```
 
 ## Authors
 
 Állan Ferrari, Sugyan Dixit, Robert Wes Ludwig, Gabriel Rocklin
+
+## Troubleshooting & Support ##
+Ensure paths in config.yaml are correct before running.<br />
+Adjust computational resources (`--mem=4GB, -t 04:00:00`) to match your HPC setup.<br />
+For troubleshooting, review Snakemake logs and intermediate outputs.<br />
+**Contact**: For any questions, contact `ajrferrari@gmail.com` or open an issue in this repository.<br />
 
 ## Credits + Aknowledgments
 
