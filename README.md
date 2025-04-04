@@ -68,7 +68,7 @@ All other Options not selected
 Zero Samples: Remove --> Add
 ```
 
-4) isotope file for each undeuterated sample. This file is generated with `IMTBX` and `Grppr`. Example commands are provided below. More information can be found at `https://dmtavt.com/IMTBX`. Copy these files to `resources/0_isotopes`. They should be named `{undeuterated-file-name}.mzML.peaks.isotopes`
+3) isotope file for each undeuterated sample. This file is generated with `IMTBX` and `Grppr`. Example commands are provided below. More information can be found at `https://dmtavt.com/IMTBX`. Copy these files to `resources/0_isotopes`. They should be named `{undeuterated-file-name}.mzML.peaks.isotopes`
 
 ### Running IMTBX and Grppr
 The following commands run the `IMTBX` and `Grppr` executables to process peaks:
