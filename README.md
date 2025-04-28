@@ -150,7 +150,7 @@ snakemake -s workflow/snakefiles/3_main.snakefile -j 1000 --keep-going --cluster
 ### **Some of the expected final results**
 ```bash
 resources/7_idotp_check/checked_library_info.json: Summary of identification results per protein.
-resources/10_time_series_ics/po_consolidated.json: Path optimizer results.
+resources/10_time_series_ics/consolidated_results.json: Path optimizer results.
 results/plots/ic_time_series/ajf_plots: PDFs visualizing isotopic clusters.
 results/plots/ic_time_series/winner_plots: PDFs of the final selected isotopic clusters.
 ```
@@ -164,6 +164,7 @@ Ensure paths in config.yaml are correct before running.<br />
 Adjust computational resources (`--mem=4GB, -t 04:00:00`) to match your HPC setup.<br />
 For troubleshooting, review Snakemake logs and intermediate outputs.<br />
 **Contact**: For any questions, contact `ajrferrari@gmail.com` or open an issue in this repository.<br />
+
 
 ## Credits + Aknowledgments
 
