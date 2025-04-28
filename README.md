@@ -6,6 +6,8 @@
 
 The `mHDX-MS` pipeline is designed for processing mass spectrometry data from hydrogen-deuterium exchange (HDX-MS) experiments from LC-IMS-MS analysis. Utilizing `Snakemake`, it ensures scalable, reproducible data analysis. 
 
+To facilitate reproducibility and user onboarding, we provide a set of curated example files associated with one of our experimental libraries. These files, available under the `Demo` section, include all necessary inputs to execute a full pipeline run, including protein sequences, processed mass spectrometry data, and a template configuration file for both pH6 and pH9 experiments. 
+
 ---
 
 
@@ -166,8 +168,44 @@ For troubleshooting, review Snakemake logs and intermediate outputs.<br />
 **Contact**: For any questions, contact `ajrferrari@gmail.com` or open an issue in this repository.<br />
 
 
-## Credits + Aknowledgments
+# Demo
 
-## Sources
+To facilitate reproducibility and provide a fully worked example, we offer a curated demo dataset at:
 
-## License
+**[2025_Ferrari_mHDX_demo](https://nuwildcat.sharepoint.com/:f:/r/sites/FSM-RocklinLab/Shared%20Documents/2025_Ferrari_mHDX_demo?csf=1&web=1&e=vPDClt)**
+
+The demo dataset is organized as follows:
+
+### Description of folders:
+
+- **pH6/** and **pH9/**:
+  - Contain all necessary processed files for each condition.
+  - Includes isotope files (`.isotopes`), gzipped mzML files (`.mzML.gz`), and prepopulated `config.yaml` files.
+
+- **sequences/**:
+  - Contains `2018_HX_Mix1.csv`, a file with protein names, sequences, and monoisotopic masses.
+  - This file should be used for setting up both the pH6 and pH9 experiments.
+
+- **raw_files/**:
+  - Contains the original raw mass spectrometry data.
+  - Provided for users who wish to reprocess the raw data, generate their own mzML files using ProteoWizard, or recreate isotope files using IMTBX and Grppr.
+
+### Important Note:
+
+Before running the pipeline on the demo data, please edit the provided `config.yaml` files to update the `"mhdx_tools_dir"` field with the absolute path where you installed `mhdx_tools`.
+
+All other settings are preconfigured and should work directly following the step-by-step instructions detailed above.
+
+## System configuration
+
+The pipeline was executed on the Northwestern Quest cluster equipped with the following specifications:
+
+- **CPU**: Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz
+- **Memory**: 188 GB RAM per node
+- **Operating System**: Fedora 8.10
+
+## Pipeline benchmark
+
+- **Total CPU time**: 52 hours
+- **Execution mode**: Single-core execution (benchmark simulated)
+
