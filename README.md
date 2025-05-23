@@ -172,7 +172,7 @@ For troubleshooting, review Snakemake logs and intermediate outputs.<br />
 
 To facilitate reproducibility and provide a fully worked example, we offer a curated demo dataset at:
 
-**[2025_Ferrari_mHDX_demo](https://nuwildcat.sharepoint.com/:f:/r/sites/FSM-RocklinLab/Shared%20Documents/2025_Ferrari_mHDX_demo?csf=1&web=1&e=vPDClt)**
+**[2025_Ferrari_mHDX_demo](https://nuwildcat.sharepoint.com/:f:/s/FSM-RocklinLab/EoPlHsYMMGNIlSeO1mWAl5ABpvMWeh918G7M7t0KBhES9A?e=IaLgqB)**
 
 The demo dataset is organized as follows:
 
