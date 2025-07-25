@@ -209,3 +209,7 @@ The pipeline was executed on the Northwestern Quest cluster equipped with the fo
 - **Total CPU time**: 52 hours
 - **Execution mode**: Single-core execution (benchmark simulated)
 
+## Demo
+
+Example input files for testing the pipeline are provided [here](https://nuwildcat.sharepoint.com/:f:/r/sites/FSM-RocklinLab/Shared%20Documents/%5BPublic%5D%202025_Ferrari_mHDX_demo?csf=1&web=1&e=a1yyTv).
+
